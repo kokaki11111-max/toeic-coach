@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOEIC Coach · 800分教练</title>
+<style>
+:root{
+  --green:#1e7a3c; --green-dark:#155c2c; --green-light:#e8f3ec; --green-mid:#cfe6d8;
+  --ink:#1a2b20; --gray:#6b7a70; --line:#e3ece6; --bg:#f7faf8; --card:#ffffff;
+  --amber:#b45309; --amber-bg:#fef3e2; --red:#b91c1c; --red-bg:#fdeaea; --blue:#1d4ed8;
+  --radius:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;}
+.app{max-width:1080px;margin:0 auto;padding:16px;}
+header.top{display:flex;align-items:center;justify-content:space-between;padding:8px 4px 16px;}
+header.top h1{font-size:22px;letter-spacing:.2px;}
+header.top .sub{font-size:12px;color:var(--gray);}
+nav.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+nav.tabs button{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:999px;font-size:14px;cursor:pointer;transition:.15s;}
+nav.tabs button.active{background:var(--green);border-color:var(--green);color:#fff;font-weight:600;}
+nav.tabs button:hover:not(.active){border-color:var(--green);color:var(--green);}
+.view{display:none;}
+.view.active{display:block;animation:fade .2s ease;}
+@keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:14px;}
+.card h2{font-size:16px;margin-bottom:10px;}
+.card h3{font-size:14px;margin-bottom:8px;}
+.hero{background:var(--green-light);border-color:var(--green-mid);display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;}
+.hero .label{color:var(--green);font-weight:700;font-size:12px;letter-spacing:1px;}
+.hero .focus{font-size:20px;font-weight:700;margin-top:4px;}
+.ring{position:relative;width:110px;height:110px;flex:none;}
+.ring svg{transform:rotate(-90deg);}
+.ring .txt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.ring .txt b{font-size:22px;color:var(--green-dark);}
+.ring .txt span{font-size:11px;color:var(--gray);}
+.grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;}
+@media(max-width:760px){.grid2{grid-template-columns:1fr;}}
+.tasklist .task{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;background:#fff;cursor:pointer;transition:.15s;}
+.tasklist .task:hover{border-color:var(--green);}
+.tasklist .task.done{background:var(--green-light);border-color:var(--green-mid);}
+.tasklist .task.done .tname{text-decoration:line-through;color:var(--gray);}
+.tasklist .icon{width:38px;height:38px;border-radius:50%;background:var(--green-light);display:flex;align-items:center;justify-content:center;font-size:18px;flex:none;}
+.tasklist .tname{flex:1;font-weight:600;font-size:14px;}
+.tasklist .tmin{color:var(--green);font-weight:700;font-size:13px;}
+.tasklist .swap{border:none;background:none;color:var(--gray);cursor:pointer;font-size:12px;padding:4px;}
+.scores{display:flex;justify-content:space-around;text-align:center;}
+.scores .num{font-size:36px;font-weight:800;color:var(--green);}
+.scores .cap{font-size:12px;color:var(--gray);}
+.divider{width:1px;background:var(--line);}
+.callout{display:flex;gap:12px;background:var(--green-light);border-left:4px solid var(--green);border-radius:10px;padding:14px;font-size:14px;}
+.callout.warn{background:var(--amber-bg);border-left-color:var(--amber);}
+.callout.danger{background:var(--red-bg);border-left-color:var(--red);}
+.btn{display:inline-block;border:none;background:var(--green);color:#fff;padding:10px 18px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s;}
+.btn:hover{background:var(--green-dark);}
+.btn.ghost{background:#fff;color:var(--green);border:1px solid var(--green);}
+.btn.small{padding:6px 12px;font-size:13px;}
+.btn.gray{background:#eef2ef;color:var(--ink);}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600;}
+.pill.g{background:var(--green-light);color:var(--green-dark);}
+.pill.a{background:var(--amber-bg);color:var(--amber);}
+.pill.r{background:var(--red-bg);color:var(--red);}
+.pill.b{background:#e7edfb;color:var(--blue);}
+.vocab-card{max-width:560px;margin:0 auto;text-align:center;padding:30px 20px;}
+.vocab-card .phrase{font-size:28px;font-weight:800;color:var(--green-dark);margin-bottom:6px;}
+.vocab-card .word{font-size:13px;color:var(--gray);}
+.vocab-card .cn{font-size:18px;margin:14px 0 6px;}
+.vocab-card .ex{font-size:14px;color:var(--ink);background:var(--bg);border-radius:10px;padding:10px;margin-top:12px;text-align:left;}
+.vocab-card .ex .t{color:var(--gray);font-size:13px;}
+.hidden{display:none!important;}
+.opt{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:10px;padding:12px 14px;margin-bottom:8px;font-size:14px;cursor:pointer;transition:.12s;}
+.opt:hover{border-color:var(--green);}
+.opt.correct{background:var(--green-light);border-color:var(--green);font-weight:600;}
+.opt.wrong{background:var(--red-bg);border-color:var(--red);}
+.passage{white-space:pre-wrap;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:14px;font-size:14px;margin-bottom:12px;max-height:340px;overflow:auto;}
+input[type=text],input[type=number],select,textarea{border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-size:14px;font-family:inherit;background:#fff;color:var(--ink);}
+input:focus,select:focus{outline:2px solid var(--green-mid);}
+.formrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;}
+.formrow label{font-size:13px;color:var(--gray);}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px;}
+table.tbl th,table.tbl td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;}
+table.tbl th{color:var(--gray);font-weight:600;font-size:12px;}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:13px;}
+.bar-row .bl{width:110px;flex:none;color:var(--gray);}
+.bar-row .track{flex:1;height:8px;background:var(--line);border-radius:4px;overflow:hidden;}
+.bar-row .fill{height:100%;background:var(--green);border-radius:4px;}
+.bar-row .val{width:48px;text-align:right;font-weight:600;}
+canvas.chart{width:100%;height:200px;}
+.muted{color:var(--gray);font-size:13px;}
+.stat-chips{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0;}
+.chip{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 14px;text-align:center;}
+.chip b{display:block;font-size:20px;color:var(--green-dark);}
+.chip span{font-size:11px;color:var(--gray);}
+.conf-btns{display:flex;gap:8px;margin-top:10px;}
+.timerbox{font-variant-numeric:tabular-nums;font-weight:700;color:var(--green-dark);}
+.book-tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
+.book-tabs button{border:1px solid var(--line);background:#fff;padding:6px 12px;border-radius:8px;font-size:13px;cursor:pointer;}
+.book-tabs button.active{background:var(--green);color:#fff;border-color:var(--green);}
+.book-tabs button:disabled{opacity:.5;cursor:not-allowed;}
+.footer-note{text-align:center;color:var(--gray);font-size:12px;padding:20px 0;}
+dialog{border:none;border-radius:14px;padding:22px;max-width:420px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+dialog::backdrop{background:rgba(20,40,28,.35);}
+@media(max-width:600px){
+  .app{padding:10px;}
+  .scores .num{font-size:28px;}
+  .hero .focus{font-size:17px;}
+  nav.tabs{position:sticky;top:0;background:var(--bg);z-index:10;padding:8px 0;}
+  nav.tabs button{padding:7px 11px;font-size:13px;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top">
+  <div><h1>TOEIC Coach</h1><div class="sub">目标 800 · 听力 420 / 阅读 380</div></div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <span id="syncStatus" class="muted" style="font-size:11px"></span>
+    <button class="btn small ghost" id="syncBtn">☁️ 同步</button>
+    <div id="todayDate" class="muted"></div>
+  </div>
+</header>
+<nav class="tabs" id="mainTabs">
+  <button data-v="home" class="active">首页</button>
+  <button data-v="vocab">词汇短语</button>
+  <button data-v="reading">阅读训练</button>
+  <button data-v="listening">听力训练</button>
+  <button data-v="review">错题复盘</button>
+  <button data-v="progress">进度分析</button>
+  <button data-v="mock">模考·报考</button>
+</nav>
+
+<section class="view active" id="v-home"></section>
+<section class="view" id="v-vocab"></section>
+<section class="view" id="v-reading"></section>
+<section class="view" id="v-listening"></section>
+<section class="view" id="v-review"></section>
+<section class="view" id="v-progress"></section>
+<section class="view" id="v-mock"></section>
+
+<div class="footer-note">数据保存在本浏览器 · 配置云同步后手机电脑自动互通 · 词库：银之短语 → 金之短语 → 官方蓝皮书</div>
+</div>
+<dialog id="syncDlg">
+  <h3 style="margin-bottom:8px">☁️ 云同步设置</h3>
+  <p class="muted" style="margin-bottom:10px">手机和电脑填<b>同一个</b>数据库地址与同步码，数据自动双向合并。配置方法见部署指南。</p>
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <input type="text" id="syDb" placeholder="数据库地址 https://xxx.firebasedatabase.app">
+    <input type="text" id="syCode" placeholder="同步码（自己定，越长越难猜越好）">
+  </div>
+  <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+    <button class="btn" id="sySave">保存并同步</button>
+    <button class="btn gray" id="syExport">导出备份</button>
+    <button class="btn gray" id="syClose">关闭</button>
+  </div>
+  <div id="syMsg" class="muted" style="margin-top:8px"></div>
+</dialog>
+<script>
+// 银之短语 Part 1 —— 基础词汇
+window.VOCAB_S1=[
+{b:"s",l:"基础",w:"refund",p:"get a full refund",c:"获得全额退款",e:"You can get a full refund within 30 days.",t:"30天内可获得全额退款。"},
+{b:"s",l:"基础",w:"receipt",p:"keep the receipt",c:"保留收据",e:"Please keep the receipt for the exchange.",t:"请保留收据以便换货。"},
+{b:"s",l:"基础",w:"appointment",p:"make an appointment",c:"预约",e:"I'd like to make an appointment with Dr. Lee.",t:"我想预约李医生。"},
+{b:"s",l:"基础",w:"available",p:"be available on Monday",c:"周一有空/可用",e:"The meeting room is available on Monday.",t:"会议室周一可以使用。"},
+{b:"s",l:"基础",w:"schedule",p:"a tight schedule",c:"紧凑的日程",e:"We are on a tight schedule this week.",t:"我们这周日程很紧。"},
+{b:"s",l:"基础",w:"deadline",p:"meet the deadline",c:"赶上截止日期",e:"We worked overtime to meet the deadline.",t:"我们加班以赶上截止日期。"},
+{b:"s",l:"基础",w:"attend",p:"attend the meeting",c:"参加会议",e:"All staff must attend the meeting.",t:"全体员工必须参加会议。"},
+{b:"s",l:"基础",w:"customer",p:"a regular customer",c:"老顾客",e:"She is a regular customer at our store.",t:"她是我们店的老顾客。"},
+{b:"s",l:"基础",w:"order",p:"place an order",c:"下订单",e:"I placed an order for office supplies.",t:"我订购了办公用品。"},
+{b:"s",l:"基础",w:"deliver",p:"deliver the package",c:"递送包裹",e:"We can deliver the package by Friday.",t:"我们能在周五前送达包裹。"},
+{b:"s",l:"基础",w:"charge",p:"free of charge",c:"免费",e:"Delivery is free of charge.",t:"送货免费。"},
+{b:"s",l:"基础",w:"repair",p:"repair the copier",c:"修理复印机",e:"A technician came to repair the copier.",t:"技术人员来修理复印机了。"},
+{b:"s",l:"基础",w:"equipment",p:"office equipment",c:"办公设备",e:"The office equipment needs to be replaced.",t:"办公设备需要更换。"},
+{b:"s",l:"基础",w:"supply",p:"office supplies",c:"办公用品",e:"We are running out of office supplies.",t:"我们的办公用品快用完了。"},
+{b:"s",l:"基础",w:"conference",p:"a conference room",c:"会议室",e:"The conference room is on the third floor.",t:"会议室在三楼。"},
+{b:"s",l:"基础",w:"document",p:"sign the document",c:"签署文件",e:"Please sign the document and return it.",t:"请签署文件后交回。"},
+{b:"s",l:"基础",w:"colleague",p:"a former colleague",c:"以前的同事",e:"I had lunch with a former colleague.",t:"我和以前的同事吃了午饭。"},
+{b:"s",l:"基础",w:"manager",p:"the sales manager",c:"销售经理",e:"The sales manager approved the plan.",t:"销售经理批准了这个计划。"},
+{b:"s",l:"基础",w:"employee",p:"a new employee",c:"新员工",e:"Each new employee receives training.",t:"每位新员工都会接受培训。"},
+{b:"s",l:"基础",w:"hire",p:"hire additional staff",c:"雇用更多员工",e:"We plan to hire additional staff next month.",t:"我们计划下个月增聘员工。"},
+{b:"s",l:"基础",w:"interview",p:"a job interview",c:"求职面试",e:"He has a job interview on Thursday.",t:"他周四有一场求职面试。"},
+{b:"s",l:"基础",w:"salary",p:"a higher salary",c:"更高的薪水",e:"She accepted a position with a higher salary.",t:"她接受了一个薪水更高的职位。"},
+{b:"s",l:"基础",w:"promote",p:"be promoted to manager",c:"被提升为经理",e:"He was promoted to manager last year.",t:"他去年被提升为经理。"},
+{b:"s",l:"基础",w:"retire",p:"retire next year",c:"明年退休",e:"Mr. Tanaka will retire next year.",t:"田中先生明年退休。"},
+{b:"s",l:"基础",w:"branch",p:"open a new branch",c:"开设新分店",e:"The bank opened a new branch downtown.",t:"这家银行在市中心开了新分行。"},
+{b:"s",l:"基础",w:"headquarters",p:"the company headquarters",c:"公司总部",e:"The headquarters is located in Osaka.",t:"总部位于大阪。"},
+{b:"s",l:"基础",w:"department",p:"the personnel department",c:"人事部",e:"Contact the personnel department for details.",t:"详情请联系人事部。"},
+{b:"s",l:"基础",w:"client",p:"meet with a client",c:"会见客户",e:"She is meeting with a client this afternoon.",t:"她今天下午要会见客户。"},
+{b:"s",l:"基础",w:"contract",p:"sign a contract",c:"签合同",e:"The two companies signed a contract.",t:"两家公司签署了合同。"},
+{b:"s",l:"基础",w:"agreement",p:"reach an agreement",c:"达成协议",e:"They finally reached an agreement.",t:"他们最终达成了协议。"},
+{b:"s",l:"基础",w:"negotiate",p:"negotiate the price",c:"协商价格",e:"We need to negotiate the price with the supplier.",t:"我们需要和供应商协商价格。"},
+{b:"s",l:"基础",w:"budget",p:"within the budget",c:"在预算内",e:"The project was completed within the budget.",t:"项目在预算内完成了。"},
+{b:"s",l:"基础",w:"invoice",p:"send an invoice",c:"寄送发票/账单",e:"Please send an invoice to our office.",t:"请把发票寄到我们办公室。"},
+{b:"s",l:"基础",w:"payment",p:"payment is due",c:"付款到期",e:"Payment is due by the end of the month.",t:"付款期限为月底。"},
+{b:"s",l:"基础",w:"discount",p:"a 20% discount",c:"八折优惠",e:"Members receive a 20% discount.",t:"会员可享八折优惠。"},
+{b:"s",l:"基础",w:"purchase",p:"purchase a ticket",c:"购买票",e:"Tickets can be purchased online.",t:"票可以在网上购买。"},
+{b:"s",l:"基础",w:"expense",p:"travel expenses",c:"差旅费",e:"The company covers all travel expenses.",t:"公司承担所有差旅费。"},
+{b:"s",l:"基础",w:"receipt",p:"submit receipts",c:"提交收据",e:"Submit receipts to claim your expenses.",t:"提交收据以报销费用。"},
+{b:"s",l:"基础",w:"warranty",p:"under warranty",c:"在保修期内",e:"The printer is still under warranty.",t:"这台打印机还在保修期内。"},
+{b:"s",l:"基础",w:"proud",p:"be proud to announce",c:"自豪地宣布",e:"We are proud to announce our new product.",t:"我们自豪地宣布推出新产品。"},
+{b:"s",l:"基础",w:"noise",p:"reduce the noise",c:"减少噪音",e:"The new machine reduces noise significantly.",t:"新机器显著降低了噪音。"},
+{b:"s",l:"基础",w:"perhaps",p:"perhaps we could",c:"或许我们可以",e:"Perhaps we could have lunch together.",t:"或许我们可以一起吃午饭。"},
+{b:"s",l:"基础",w:"product",p:"launch a product",c:"推出产品",e:"The company will launch a new product in May.",t:"公司将于五月推出新产品。"},
+{b:"s",l:"基础",w:"invite",p:"invite him to speak",c:"邀请他演讲",e:"We invited Mr. Kato to give a speech.",t:"我们邀请加藤先生发表演讲。"},
+{b:"s",l:"基础",w:"offer",p:"offer him a job",c:"给他提供工作",e:"We offered him a job at our firm.",t:"我们给他提供了一份工作。"},
+{b:"s",l:"基础",w:"provide",p:"provide A with B",c:"向A提供B",e:"The hotel provides guests with free breakfast.",t:"酒店为客人提供免费早餐。"},
+{b:"s",l:"基础",w:"include",p:"including Sunday",c:"包括周日",e:"The store is open every day including Sunday.",t:"商店每天营业，包括周日。"},
+{b:"s",l:"基础",w:"reserve",p:"reserve a table",c:"预订座位",e:"I reserved a table for two at seven.",t:"我预订了七点的双人桌。"},
+{b:"s",l:"基础",w:"confirm",p:"confirm the reservation",c:"确认预订",e:"Please confirm your reservation by email.",t:"请通过邮件确认您的预订。"},
+{b:"s",l:"基础",w:"cancel",p:"cancel the flight",c:"取消航班",e:"The flight was canceled due to bad weather.",t:"航班因恶劣天气被取消。"},
+{b:"s",l:"基础",w:"postpone",p:"postpone the meeting",c:"推迟会议",e:"The meeting was postponed until Friday.",t:"会议被推迟到周五。"},
+{b:"s",l:"基础",w:"announce",p:"announce the results",c:"宣布结果",e:"The results will be announced tomorrow.",t:"结果将于明天公布。"},
+{b:"s",l:"基础",w:"notice",p:"until further notice",c:"直至另行通知",e:"The pool is closed until further notice.",t:"泳池关闭，直至另行通知。"},
+{b:"s",l:"基础",w:"remind",p:"remind him of the meeting",c:"提醒他开会",e:"Please remind him of tomorrow's meeting.",t:"请提醒他明天的会议。"},
+{b:"s",l:"基础",w:"inform",p:"inform us of any changes",c:"通知我们任何变动",e:"Please inform us of any schedule changes.",t:"如日程有变动请通知我们。"},
+{b:"s",l:"基础",w:"request",p:"upon request",c:"应要求",e:"Vegetarian meals are available upon request.",t:"素食餐应要求提供。"},
+{b:"s",l:"基础",w:"require",p:"be required to attend",c:"被要求参加",e:"All employees are required to attend.",t:"所有员工都必须参加。"},
+{b:"s",l:"基础",w:"complete",p:"complete the form",c:"填写完表格",e:"Please complete the form and submit it.",t:"请填好表格并提交。"},
+{b:"s",l:"基础",w:"submit",p:"submit an application",c:"提交申请",e:"Submit your application by March 1.",t:"请在3月1日前提交申请。"},
+{b:"s",l:"基础",w:"apply",p:"apply for the position",c:"申请职位",e:"More than 50 people applied for the position.",t:"超过50人申请了该职位。"},
+{b:"s",l:"基础",w:"candidate",p:"a qualified candidate",c:"合格的候选人",e:"She is the most qualified candidate.",t:"她是最合格的候选人。"},
+{b:"s",l:"基础",w:"experience",p:"five years of experience",c:"五年经验",e:"The job requires five years of experience.",t:"该职位要求五年经验。"},
+{b:"s",l:"基础",w:"training",p:"a training session",c:"培训课程",e:"A training session will be held next week.",t:"下周将举行培训课程。"},
+{b:"s",l:"基础",w:"skill",p:"communication skills",c:"沟通能力",e:"Good communication skills are essential.",t:"良好的沟通能力至关重要。"},
+{b:"s",l:"基础",w:"improve",p:"improve efficiency",c:"提高效率",e:"The new system improved efficiency.",t:"新系统提高了效率。"},
+{b:"s",l:"基础",w:"increase",p:"increase sales",c:"增加销售额",e:"Sales increased by 15% last quarter.",t:"上季度销售额增长了15%。"},
+{b:"s",l:"基础",w:"decrease",p:"decrease in demand",c:"需求下降",e:"There was a decrease in demand for the product.",t:"该产品的需求有所下降。"},
+{b:"s",l:"基础",w:"result",p:"as a result of",c:"由于……的结果",e:"As a result of the merger, sales doubled.",t:"由于合并，销售额翻了一番。"},
+{b:"s",l:"基础",w:"due",p:"due to the rain",c:"由于下雨",e:"The event was canceled due to the rain.",t:"活动因下雨取消了。"},
+{b:"s",l:"基础",w:"despite",p:"despite the delay",c:"尽管延误",e:"Despite the delay, we arrived on time.",t:"尽管延误，我们还是准时到达。"},
+{b:"s",l:"基础",w:"although",p:"although it was late",c:"虽然很晚了",e:"Although it was late, they kept working.",t:"虽然很晚了，他们仍在工作。"},
+{b:"s",l:"基础",w:"however",p:"however, prices rose",c:"然而价格上涨了",e:"We cut costs; however, prices rose.",t:"我们削减了成本，然而价格上涨了。"},
+{b:"s",l:"基础",w:"therefore",p:"therefore, we agreed",c:"因此我们同意了",e:"The offer was fair; therefore, we agreed.",t:"报价合理，因此我们同意了。"},
+{b:"s",l:"基础",w:"located",p:"be located near the station",c:"位于车站附近",e:"Our office is located near the station.",t:"我们的办公室位于车站附近。"},
+{b:"s",l:"基础",w:"directions",p:"directions to the hotel",c:"去酒店的路线",e:"Could you give me directions to the hotel?",t:"您能告诉我去酒店怎么走吗？"},
+{b:"s",l:"基础",w:"construction",p:"under construction",c:"在建设中",e:"The new bridge is under construction.",t:"新桥正在建设中。"},
+{b:"s",l:"基础",w:"renovation",p:"closed for renovation",c:"因装修关闭",e:"The museum is closed for renovation.",t:"博物馆因装修闭馆。"},
+{b:"s",l:"基础",w:"facility",p:"sports facilities",c:"体育设施",e:"The hotel has excellent sports facilities.",t:"酒店拥有一流的体育设施。"},
+{b:"s",l:"基础",w:"vehicle",p:"park your vehicle",c:"停放车辆",e:"Please park your vehicle in the designated area.",t:"请将车辆停放在指定区域。"},
+{b:"s",l:"基础",w:"passenger",p:"passengers on board",c:"机上/车上乘客",e:"All passengers must fasten their seat belts.",t:"所有乘客必须系好安全带。"},
+{b:"s",l:"基础",w:"luggage",p:"carry-on luggage",c:"随身行李",e:"Carry-on luggage must fit under the seat.",t:"随身行李必须能放在座位下。"},
+{b:"s",l:"基础",w:"board",p:"board the plane",c:"登机",e:"Passengers will board the plane at Gate 5.",t:"乘客将在5号登机口登机。"},
+{b:"s",l:"基础",w:"depart",p:"depart at noon",c:"中午出发",e:"The train departs at noon.",t:"火车中午发车。"},
+{b:"s",l:"基础",w:"destination",p:"reach the destination",c:"到达目的地",e:"We reached our destination before dark.",t:"我们在天黑前到达了目的地。"},
+{b:"s",l:"基础",w:"fare",p:"the bus fare",c:"公交车费",e:"The bus fare will increase next month.",t:"下个月公交车费将上涨。"},
+{b:"s",l:"基础",w:"crowded",p:"a crowded train",c:"拥挤的列车",e:"The train was crowded this morning.",t:"今早的火车很拥挤。"},
+{b:"s",l:"基础",w:"weather",p:"weather permitting",c:"天气允许的话",e:"The picnic will be held, weather permitting.",t:"天气允许的话，野餐将照常举行。"},
+{b:"s",l:"基础",w:"forecast",p:"the weather forecast",c:"天气预报",e:"The forecast says it will rain tomorrow.",t:"天气预报说明天有雨。"}
+];
+// 银之短语 Part 2 —— 600分水平
+window.VOCAB_S2=[
+{b:"s",l:"600",w:"necessary",p:"not necessarily",c:"未必，不一定",e:"Expensive does not necessarily mean good.",t:"贵未必就好。"},
+{b:"s",l:"600",w:"resident",p:"local residents",c:"当地居民",e:"Local residents opposed the construction plan.",t:"当地居民反对该建设计划。"},
+{b:"s",l:"600",w:"create",p:"create new jobs",c:"创造新的就业机会",e:"The factory will create 200 new jobs.",t:"这家工厂将创造200个新岗位。"},
+{b:"s",l:"600",w:"allow",p:"allow us to expand",c:"使我们得以扩张",e:"The funding allowed us to expand overseas.",t:"这笔资金使我们得以拓展海外业务。"},
+{b:"s",l:"600",w:"mention",p:"as mentioned above",c:"如上所述",e:"As mentioned above, the policy has changed.",t:"如上所述，政策已经改变。"},
+{b:"s",l:"600",w:"appreciate",p:"appreciate your help",c:"感谢你的帮助",e:"I really appreciate your help with the report.",t:"非常感谢你对报告的帮助。"},
+{b:"s",l:"600",w:"replacement",p:"find a replacement",c:"寻找替代者/替代品",e:"We need to find a replacement for Ms. Ito.",t:"我们需要找人接替伊藤女士。"},
+{b:"s",l:"600",w:"attach",p:"attached file",c:"附件",e:"Please review the attached file.",t:"请查看附件。"},
+{b:"s",l:"600",w:"enclose",p:"enclosed brochure",c:"随函附上的手册",e:"See the enclosed brochure for details.",t:"详情请见随函附上的手册。"},
+{b:"s",l:"600",w:"regarding",p:"regarding your inquiry",c:"关于您的咨询",e:"Regarding your inquiry, please see below.",t:"关于您的咨询，请见下文。"},
+{b:"s",l:"600",w:"inquiry",p:"respond to inquiries",c:"回复咨询",e:"We respond to all inquiries within 24 hours.",t:"我们在24小时内回复所有咨询。"},
+{b:"s",l:"600",w:"response",p:"in response to",c:"作为对……的回应",e:"In response to demand, we extended hours.",t:"为回应需求，我们延长了营业时间。"},
+{b:"s",l:"600",w:"currently",p:"be currently unavailable",c:"目前无法使用",e:"The service is currently unavailable.",t:"该服务目前无法使用。"},
+{b:"s",l:"600",w:"recently",p:"recently renovated",c:"最近装修过的",e:"The recently renovated lobby looks great.",t:"最近装修过的大堂非常漂亮。"},
+{b:"s",l:"600",w:"previous",p:"previous experience",c:"以往的经验",e:"Previous experience in sales is preferred.",t:"有销售经验者优先。"},
+{b:"s",l:"600",w:"following",p:"the following day",c:"第二天",e:"The order arrived the following day.",t:"订单第二天就到了。"},
+{b:"s",l:"600",w:"approximately",p:"approximately 30 minutes",c:"大约30分钟",e:"The tour lasts approximately 30 minutes.",t:"游览大约持续30分钟。"},
+{b:"s",l:"600",w:"immediately",p:"take effect immediately",c:"立即生效",e:"The new rules take effect immediately.",t:"新规定立即生效。"},
+{b:"s",l:"600",w:"frequently",p:"frequently asked questions",c:"常见问题",e:"Check the frequently asked questions page.",t:"请查看常见问题页面。"},
+{b:"s",l:"600",w:"rarely",p:"rarely available",c:"很少有货",e:"This model is rarely available in stores.",t:"这款商品店里很少有货。"},
+{b:"s",l:"600",w:"conveniently",p:"conveniently located",c:"位置便利",e:"The hotel is conveniently located downtown.",t:"酒店位于市中心，位置便利。"},
+{b:"s",l:"600",w:"temporarily",p:"temporarily closed",c:"暂时关闭",e:"The road is temporarily closed for repairs.",t:"道路因维修暂时封闭。"},
+{b:"s",l:"600",w:"quarterly",p:"quarterly report",c:"季度报告",e:"The quarterly report shows strong growth.",t:"季度报告显示强劲增长。"},
+{b:"s",l:"600",w:"annual",p:"the annual conference",c:"年度会议",e:"The annual conference is held in June.",t:"年会于六月举行。"},
+{b:"s",l:"600",w:"monthly",p:"a monthly newsletter",c:"每月通讯",e:"Subscribe to our monthly newsletter.",t:"订阅我们的每月通讯。"},
+{b:"s",l:"600",w:"upcoming",p:"the upcoming event",c:"即将举行的活动",e:"Register early for the upcoming event.",t:"请尽早报名参加即将举行的活动。"},
+{b:"s",l:"600",w:"current",p:"the current issue",c:"本期（刊物）",e:"The current issue features local artists.",t:"本期杂志专题介绍本地艺术家。"},
+{b:"s",l:"600",w:"advance",p:"in advance",c:"提前",e:"Please book at least two days in advance.",t:"请至少提前两天预订。"},
+{b:"s",l:"600",w:"advance",p:"advance notice",c:"提前通知",e:"We require advance notice of cancellations.",t:"取消需提前通知。"},
+{b:"s",l:"600",w:"reservation",p:"make a reservation",c:"预订",e:"I made a reservation under the name Sato.",t:"我以佐藤的名义做了预订。"},
+{b:"s",l:"600",w:"registration",p:"registration form",c:"报名表",e:"Fill out the registration form online.",t:"请在线填写报名表。"},
+{b:"s",l:"600",w:"participant",p:"participants in the seminar",c:"研讨会参与者",e:"All participants will receive a certificate.",t:"所有参与者都将获得证书。"},
+{b:"s",l:"600",w:"audience",p:"a large audience",c:"众多观众",e:"The lecture attracted a large audience.",t:"讲座吸引了众多听众。"},
+{b:"s",l:"600",w:"presentation",p:"give a presentation",c:"做报告/演示",e:"She gave a presentation on marketing.",t:"她做了一场关于营销的报告。"},
+{b:"s",l:"600",w:"agenda",p:"on the agenda",c:"在议程上",e:"The budget is the first item on the agenda.",t:"预算是议程的第一项。"},
+{b:"s",l:"600",w:"minutes",p:"take the minutes",c:"做会议记录",e:"Who will take the minutes today?",t:"今天谁做会议记录？"},
+{b:"s",l:"600",w:"handout",p:"distribute handouts",c:"分发讲义",e:"Handouts will be distributed before the talk.",t:"讲义将在演讲前分发。"},
+{b:"s",l:"600",w:"deadline",p:"extend the deadline",c:"延长截止日期",e:"The deadline was extended to May 10.",t:"截止日期延长到5月10日。"},
+{b:"s",l:"600",w:"extension",p:"request an extension",c:"申请延期",e:"He requested an extension on the project.",t:"他申请了项目延期。"},
+{b:"s",l:"600",w:"approval",p:"receive approval",c:"获得批准",e:"The plan received approval from the board.",t:"该计划获得了董事会批准。"},
+{b:"s",l:"600",w:"permission",p:"without permission",c:"未经许可",e:"Do not enter without permission.",t:"未经许可不得入内。"},
+{b:"s",l:"600",w:"policy",p:"company policy",c:"公司政策",e:"It is company policy to verify all invoices.",t:"核对所有发票是公司规定。"},
+{b:"s",l:"600",w:"procedure",p:"safety procedures",c:"安全流程",e:"Follow the safety procedures at all times.",t:"请始终遵守安全流程。"},
+{b:"s",l:"600",w:"regulation",p:"comply with regulations",c:"遵守规定",e:"All factories must comply with regulations.",t:"所有工厂必须遵守规定。"},
+{b:"s",l:"600",w:"instruction",p:"follow the instructions",c:"按照说明操作",e:"Follow the instructions on the label.",t:"请按照标签上的说明操作。"},
+{b:"s",l:"600",w:"manual",p:"the user manual",c:"用户手册",e:"Refer to the user manual for setup.",t:"安装请参考用户手册。"},
+{b:"s",l:"600",w:"describe",p:"as described below",c:"如下所述",e:"The process is described below.",t:"流程如下所述。"},
+{b:"s",l:"600",w:"detail",p:"in detail",c:"详细地",e:"The changes are explained in detail.",t:"这些变更有详细说明。"},
+{b:"s",l:"600",w:"summary",p:"a brief summary",c:"简要总结",e:"Here is a brief summary of the meeting.",t:"这是会议的简要总结。"},
+{b:"s",l:"600",w:"conclusion",p:"in conclusion",c:"总而言之",e:"In conclusion, the project was a success.",t:"总而言之，项目很成功。"},
+{b:"s",l:"600",w:"suggest",p:"suggest a change",c:"建议修改",e:"I suggest a change to the schedule.",t:"我建议调整日程。"},
+{b:"s",l:"600",w:"recommend",p:"highly recommend",c:"强烈推荐",e:"I highly recommend this restaurant.",t:"我强烈推荐这家餐厅。"},
+{b:"s",l:"600",w:"encourage",p:"be encouraged to apply",c:"被鼓励申请",e:"Recent graduates are encouraged to apply.",t:"欢迎应届毕业生申请。"},
+{b:"s",l:"600",w:"prefer",p:"prefer A to B",c:"比起B更喜欢A",e:"I prefer the morning flight to the evening one.",t:"比起晚班机我更喜欢早班机。"},
+{b:"s",l:"600",w:"decision",p:"make a decision",c:"做决定",e:"We need to make a decision by Friday.",t:"我们需要在周五前做决定。"},
+{b:"s",l:"600",w:"option",p:"consider other options",c:"考虑其他选择",e:"Let's consider other options first.",t:"我们先考虑一下其他选择。"},
+{b:"s",l:"600",w:"opportunity",p:"a great opportunity",c:"绝佳机会",e:"This is a great opportunity to learn.",t:"这是一个绝佳的学习机会。"},
+{b:"s",l:"600",w:"responsible",p:"be responsible for",c:"负责……",e:"She is responsible for customer service.",t:"她负责客户服务。"},
+{b:"s",l:"600",w:"duty",p:"daily duties",c:"日常职责",e:"His daily duties include managing inventory.",t:"他的日常职责包括管理库存。"},
+{b:"s",l:"600",w:"task",p:"complete the task",c:"完成任务",e:"She completed the task ahead of schedule.",t:"她提前完成了任务。"},
+{b:"s",l:"600",w:"assign",p:"be assigned to the project",c:"被分配到项目",e:"Two engineers were assigned to the project.",t:"两名工程师被分配到该项目。"},
+{b:"s",l:"600",w:"transfer",p:"transfer to the Tokyo office",c:"调到东京办公室",e:"He will transfer to the Tokyo office in April.",t:"他四月将调往东京办公室。"},
+{b:"s",l:"600",w:"relocate",p:"relocate the office",c:"搬迁办公室",e:"The company will relocate its office downtown.",t:"公司将把办公室迁至市中心。"},
+{b:"s",l:"600",w:"expand",p:"expand the business",c:"扩大业务",e:"They plan to expand the business into Asia.",t:"他们计划将业务扩展到亚洲。"},
+{b:"s",l:"600",w:"merge",p:"merge with a rival",c:"与竞争对手合并",e:"The firm merged with its largest rival.",t:"该公司与其最大的竞争对手合并了。"},
+{b:"s",l:"600",w:"found",p:"founded in 1990",c:"创立于1990年",e:"The company was founded in 1990.",t:"公司创立于1990年。"},
+{b:"s",l:"600",w:"launch",p:"launch a campaign",c:"发起活动",e:"We will launch an advertising campaign.",t:"我们将发起一场广告活动。"},
+{b:"s",l:"600",w:"advertise",p:"advertise the sale",c:"为促销做广告",e:"The sale was advertised in the newspaper.",t:"促销活动在报纸上登了广告。"},
+{b:"s",l:"600",w:"promotion",p:"a promotional event",c:"促销活动",e:"The store is holding a promotional event.",t:"商店正在举办促销活动。"},
+{b:"s",l:"600",w:"competitor",p:"a major competitor",c:"主要竞争对手",e:"They lost market share to a major competitor.",t:"他们的市场份额被主要竞争对手夺走。"},
+{b:"s",l:"600",w:"demand",p:"meet the demand",c:"满足需求",e:"We increased production to meet the demand.",t:"我们提高产量以满足需求。"},
+{b:"s",l:"600",w:"consumer",p:"consumer spending",c:"消费者支出",e:"Consumer spending rose sharply in May.",t:"五月消费者支出大幅上升。"},
+{b:"s",l:"600",w:"survey",p:"conduct a survey",c:"进行调查",e:"We conducted a survey of 500 customers.",t:"我们对500名顾客进行了调查。"},
+{b:"s",l:"600",w:"questionnaire",p:"fill out a questionnaire",c:"填写问卷",e:"Please fill out the questionnaire.",t:"请填写这份问卷。"},
+{b:"s",l:"600",w:"feedback",p:"customer feedback",c:"顾客反馈",e:"We value your feedback on our service.",t:"我们重视您对服务的反馈。"},
+{b:"s",l:"600",w:"complaint",p:"handle complaints",c:"处理投诉",e:"The staff handles complaints politely.",t:"员工礼貌地处理投诉。"},
+{b:"s",l:"600",w:"apologize",p:"apologize for the delay",c:"为延误道歉",e:"We apologize for the delay in shipping.",t:"我们为发货延误道歉。"},
+{b:"s",l:"600",w:"inconvenience",p:"apologize for the inconvenience",c:"为不便道歉",e:"We apologize for any inconvenience.",t:"对由此造成的不便我们深表歉意。"},
+{b:"s",l:"600",w:"refund",p:"issue a refund",c:"退款",e:"We will issue a refund within 5 days.",t:"我们将在5天内退款。"},
+{b:"s",l:"600",w:"exchange",p:"exchange the item",c:"换货",e:"You may exchange the item within 14 days.",t:"14天内可以换货。"},
+{b:"s",l:"600",w:"defective",p:"a defective product",c:"有缺陷的产品",e:"Return defective products for a refund.",t:"有缺陷的产品可退货退款。"},
+{b:"s",l:"600",w:"ship",p:"ship the order",c:"发货",e:"Your order will be shipped tomorrow.",t:"您的订单明天发货。"},
+{b:"s",l:"600",w:"track",p:"track the shipment",c:"追踪货件",e:"You can track your shipment online.",t:"您可以在线追踪货件。"},
+{b:"s",l:"600",w:"inventory",p:"check the inventory",c:"检查库存",e:"We check the inventory every Monday.",t:"我们每周一检查库存。"},
+{b:"s",l:"600",w:"warehouse",p:"store in the warehouse",c:"存放在仓库",e:"The goods are stored in the warehouse.",t:"货物存放在仓库里。"},
+{b:"s",l:"600",w:"manufacture",p:"manufacturing plant",c:"制造工厂",e:"The manufacturing plant runs 24 hours.",t:"这家制造厂24小时运转。"},
+{b:"s",l:"600",w:"supplier",p:"a reliable supplier",c:"可靠的供应商",e:"We found a reliable supplier of parts.",t:"我们找到了一家可靠的零件供应商。"},
+{b:"s",l:"600",w:"estimate",p:"a cost estimate",c:"成本估算/报价",e:"Please send us a cost estimate.",t:"请给我们发一份报价单。"},
+{b:"s",l:"600",w:"quote",p:"request a quote",c:"索取报价",e:"You can request a quote on our website.",t:"您可以在我们网站上索取报价。"},
+{b:"s",l:"600",w:"bill",p:"pay the bill",c:"付账单",e:"You can pay the bill by credit card.",t:"您可以用信用卡支付账单。"},
+{b:"s",l:"600",w:"utility",p:"utility costs",c:"水电费",e:"Utility costs are included in the rent.",t:"房租包含水电费。"},
+{b:"s",l:"600",w:"lease",p:"sign a lease",c:"签租约",e:"They signed a two-year lease on the office.",t:"他们签了两年的办公室租约。"},
+{b:"s",l:"600",w:"tenant",p:"the new tenant",c:"新租户",e:"The new tenant moves in next week.",t:"新租户下周搬入。"},
+{b:"s",l:"600",w:"property",p:"commercial property",c:"商业地产",e:"They invest in commercial property.",t:"他们投资商业地产。"},
+{b:"s",l:"600",w:"real estate",p:"a real estate agent",c:"房地产经纪人",e:"A real estate agent showed us the office.",t:"房产经纪人带我们看了办公室。"}
+];
+// 金之短语 Part 1 —— 730分水平
+window.VOCAB_G1=[
+{b:"g",l:"730",w:"implement",p:"implement a new policy",c:"实施新政策",e:"The company implemented a new remote-work policy.",t:"公司实施了新的远程办公政策。"},
+{b:"g",l:"730",w:"comprehensive",p:"a comprehensive report",c:"全面的报告",e:"She prepared a comprehensive report on sales.",t:"她准备了一份全面的销售报告。"},
+{b:"g",l:"730",w:"anticipate",p:"anticipate strong demand",c:"预计需求旺盛",e:"We anticipate strong demand for the new model.",t:"我们预计新型号需求旺盛。"},
+{b:"g",l:"730",w:"revenue",p:"annual revenue",c:"年收入（营收）",e:"Annual revenue exceeded 10 million dollars.",t:"年营收超过一千万美元。"},
+{b:"g",l:"730",w:"profit",p:"profit margin",c:"利润率",e:"The profit margin improved this quarter.",t:"本季度利润率有所提高。"},
+{b:"g",l:"730",w:"invest",p:"invest in equipment",c:"投资设备",e:"The firm invested heavily in new equipment.",t:"公司在新设备上投入巨资。"},
+{b:"g",l:"730",w:"acquire",p:"acquire a company",c:"收购公司",e:"They acquired a software company last year.",t:"他们去年收购了一家软件公司。"},
+{b:"g",l:"730",w:"strategy",p:"a marketing strategy",c:"营销策略",e:"We revised our marketing strategy.",t:"我们修改了营销策略。"},
+{b:"g",l:"730",w:"objective",p:"achieve the objective",c:"实现目标",e:"The team achieved its sales objective.",t:"团队实现了销售目标。"},
+{b:"g",l:"730",w:"evaluate",p:"evaluate the performance",c:"评估表现",e:"Managers evaluate employee performance yearly.",t:"经理每年评估员工表现。"},
+{b:"g",l:"730",w:"assess",p:"assess the impact",c:"评估影响",e:"We need to assess the impact of the change.",t:"我们需要评估这一变化的影响。"},
+{b:"g",l:"730",w:"analyze",p:"analyze the data",c:"分析数据",e:"The team analyzed the survey data.",t:"团队分析了调查数据。"},
+{b:"g",l:"730",w:"indicate",p:"indicate an increase",c:"显示增长",e:"The figures indicate a steady increase.",t:"数据显示稳步增长。"},
+{b:"g",l:"730",w:"determine",p:"determine the cause",c:"查明原因",e:"Inspectors determined the cause of the defect.",t:"检查人员查明了缺陷的原因。"},
+{b:"g",l:"730",w:"ensure",p:"ensure quality",c:"确保质量",e:"We test every unit to ensure quality.",t:"我们检测每件产品以确保质量。"},
+{b:"g",l:"730",w:"guarantee",p:"guarantee satisfaction",c:"保证满意",e:"We guarantee your satisfaction or your money back.",t:"我们保证您满意，否则退款。"},
+{b:"g",l:"730",w:"maintain",p:"maintain high standards",c:"保持高标准",e:"The hotel maintains high standards of service.",t:"这家酒店保持着高标准的服务。"},
+{b:"g",l:"730",w:"efficient",p:"an efficient system",c:"高效的系统",e:"The new system is more efficient.",t:"新系统更加高效。"},
+{b:"g",l:"730",w:"productivity",p:"boost productivity",c:"提高生产率",e:"Flexible hours boosted productivity.",t:"弹性工作时间提高了生产率。"},
+{b:"g",l:"730",w:"significant",p:"a significant increase",c:"显著增长",e:"There was a significant increase in orders.",t:"订单显著增加。"},
+{b:"g",l:"730",w:"substantial",p:"a substantial discount",c:"大幅折扣",e:"Bulk buyers receive a substantial discount.",t:"批量购买者可享大幅折扣。"},
+{b:"g",l:"730",w:"considerable",p:"considerable experience",c:"丰富的经验",e:"She has considerable experience in finance.",t:"她在金融方面经验丰富。"},
+{b:"g",l:"730",w:"expertise",p:"technical expertise",c:"专业技术知识",e:"His technical expertise is invaluable.",t:"他的专业技术知识非常宝贵。"},
+{b:"g",l:"730",w:"qualified",p:"highly qualified applicants",c:"非常合格的申请者",e:"We received many highly qualified applicants.",t:"我们收到了许多条件优秀的申请。"},
+{b:"g",l:"730",w:"proficient",p:"proficient in English",c:"精通英语",e:"Applicants must be proficient in English.",t:"申请者须精通英语。"},
+{b:"g",l:"730",w:"exceptional",p:"exceptional service",c:"卓越的服务",e:"The restaurant is known for exceptional service.",t:"这家餐厅以卓越服务闻名。"},
+{b:"g",l:"730",w:"outstanding",p:"outstanding performance",c:"杰出表现；未清账款",e:"She received an award for outstanding performance.",t:"她因表现杰出而获奖。"},
+{b:"g",l:"730",w:"exceed",p:"exceed expectations",c:"超出预期",e:"The results exceeded our expectations.",t:"结果超出了我们的预期。"},
+{b:"g",l:"730",w:"surpass",p:"surpass the record",c:"打破纪录",e:"Sales surpassed last year's record.",t:"销售额超过了去年的纪录。"},
+{b:"g",l:"730",w:"achieve",p:"achieve growth",c:"实现增长",e:"The region achieved double-digit growth.",t:"该地区实现了两位数增长。"},
+{b:"g",l:"730",w:"accomplish",p:"accomplish the goal",c:"完成目标",e:"We accomplished our goal ahead of schedule.",t:"我们提前完成了目标。"},
+{b:"g",l:"730",w:"collaborate",p:"collaborate with partners",c:"与伙伴合作",e:"We collaborate with local partners.",t:"我们与当地伙伴合作。"},
+{b:"g",l:"730",w:"coordinate",p:"coordinate the event",c:"统筹活动",e:"She coordinated the charity event.",t:"她统筹了慈善活动。"},
+{b:"g",l:"730",w:"oversee",p:"oversee the operation",c:"监督运营",e:"He oversees the daily operations.",t:"他负责监督日常运营。"},
+{b:"g",l:"730",w:"supervise",p:"supervise the staff",c:"管理员工",e:"She supervises a staff of twenty.",t:"她管理着二十名员工。"},
+{b:"g",l:"730",w:"delegate",p:"delegate tasks",c:"分派任务",e:"Good managers delegate tasks effectively.",t:"优秀的经理善于分派任务。"},
+{b:"g",l:"730",w:"authorize",p:"authorize the payment",c:"批准付款",e:"Only the director can authorize the payment.",t:"只有主管才能批准付款。"},
+{b:"g",l:"730",w:"comply",p:"comply with the rules",c:"遵守规则",e:"All vendors must comply with the rules.",t:"所有供应商必须遵守规则。"},
+{b:"g",l:"730",w:"adhere",p:"adhere to the schedule",c:"严格遵守日程",e:"Please adhere to the project schedule.",t:"请严格遵守项目日程。"},
+{b:"g",l:"730",w:"eligible",p:"be eligible for a discount",c:"有资格享受折扣",e:"Members are eligible for a 10% discount.",t:"会员有资格享受九折优惠。"},
+{b:"g",l:"730",w:"entitle",p:"be entitled to a refund",c:"有权获得退款",e:"You are entitled to a full refund.",t:"您有权获得全额退款。"},
+{b:"g",l:"730",w:"valid",p:"valid until March",c:"有效期至三月",e:"The coupon is valid until March 31.",t:"优惠券有效期至3月31日。"},
+{b:"g",l:"730",w:"expire",p:"the contract expires",c:"合同到期",e:"The contract expires at the end of June.",t:"合同六月底到期。"},
+{b:"g",l:"730",w:"renew",p:"renew the subscription",c:"续订",e:"Don't forget to renew your subscription.",t:"别忘了续订。"},
+{b:"g",l:"730",w:"subscription",p:"an annual subscription",c:"年度订阅",e:"An annual subscription costs $99.",t:"年度订阅费用为99美元。"},
+{b:"g",l:"730",w:"membership",p:"membership benefits",c:"会员福利",e:"Membership benefits include free shipping.",t:"会员福利包括免运费。"},
+{b:"g",l:"730",w:"exclusive",p:"exclusive access",c:"专属使用权",e:"Members enjoy exclusive access to the lounge.",t:"会员享有休息室的专属使用权。"},
+{b:"g",l:"730",w:"complimentary",p:"complimentary breakfast",c:"免费早餐",e:"All guests receive a complimentary breakfast.",t:"所有客人均可享用免费早餐。"},
+{b:"g",l:"730",w:"voucher",p:"a gift voucher",c:"礼品券",e:"Winners will receive a $50 gift voucher.",t:"获奖者将获得50美元礼品券。"},
+{b:"g",l:"730",w:"redeem",p:"redeem the coupon",c:"兑换优惠券",e:"Redeem the coupon at checkout.",t:"结账时使用优惠券。"},
+{b:"g",l:"730",w:"itinerary",p:"a travel itinerary",c:"旅行行程单",e:"I attached the travel itinerary for your trip.",t:"我附上了您此行的行程单。"},
+{b:"g",l:"730",w:"accommodation",p:"arrange accommodation",c:"安排住宿",e:"We will arrange accommodation for speakers.",t:"我们将为演讲者安排住宿。"},
+{b:"g",l:"730",w:"venue",p:"the conference venue",c:"会议场地",e:"The venue can hold 500 people.",t:"该场地可容纳500人。"},
+{b:"g",l:"730",w:"banquet",p:"a banquet hall",c:"宴会厅",e:"The banquet hall is booked for the reception.",t:"宴会厅已被预订用于招待会。"},
+{b:"g",l:"730",w:"refreshments",p:"refreshments will be served",c:"将提供茶点",e:"Refreshments will be served after the talk.",t:"演讲后将提供茶点。"},
+{b:"g",l:"730",w:"attendee",p:"conference attendees",c:"与会者",e:"Attendees should register by Friday.",t:"与会者应在周五前报名。"},
+{b:"g",l:"730",w:"keynote",p:"the keynote speaker",c:"主旨演讲人",e:"The keynote speaker is a famous economist.",t:"主旨演讲人是一位著名经济学家。"},
+{b:"g",l:"730",w:"workshop",p:"attend a workshop",c:"参加研习会",e:"She attended a workshop on leadership.",t:"她参加了领导力研习会。"},
+{b:"g",l:"730",w:"enroll",p:"enroll in the course",c:"报名课程",e:"Over 100 people enrolled in the course.",t:"超过100人报名了该课程。"},
+{b:"g",l:"730",w:"tuition",p:"tuition fees",c:"学费",e:"The company covers tuition fees for staff.",t:"公司为员工承担学费。"},
+{b:"g",l:"730",w:"certificate",p:"a certificate of completion",c:"结业证书",e:"Participants receive a certificate of completion.",t:"学员将获得结业证书。"},
+{b:"g",l:"730",w:"reimburse",p:"reimburse travel expenses",c:"报销差旅费",e:"The company will reimburse your travel expenses.",t:"公司会报销您的差旅费。"},
+{b:"g",l:"730",w:"compensation",p:"compensation package",c:"薪酬待遇",e:"The compensation package includes bonuses.",t:"薪酬待遇包含奖金。"},
+{b:"g",l:"730",w:"benefit",p:"employee benefits",c:"员工福利",e:"Employee benefits include health insurance.",t:"员工福利包括医疗保险。"},
+{b:"g",l:"730",w:"paycheck",p:"a monthly paycheck",c:"月薪工资单",e:"Your paycheck is deposited on the 25th.",t:"工资于每月25日到账。"},
+{b:"g",l:"730",w:"raise",p:"get a raise",c:"加薪",e:"She got a raise after the review.",t:"考核后她获得了加薪。"},
+{b:"g",l:"730",w:"payroll",p:"the payroll department",c:"工资部门",e:"Contact payroll about the error.",t:"如有错误请联系工资部门。"},
+{b:"g",l:"730",w:"resign",p:"resign from the position",c:"辞职",e:"He resigned from the position in May.",t:"他五月辞去了职务。"},
+{b:"g",l:"730",w:"successor",p:"name a successor",c:"任命继任者",e:"The board named a successor to the CEO.",t:"董事会任命了首席执行官的继任者。"},
+{b:"g",l:"730",w:"predecessor",p:"her predecessor",c:"她的前任",e:"She continued her predecessor's reforms.",t:"她延续了前任的改革。"},
+{b:"g",l:"730",w:"executive",p:"a senior executive",c:"高级管理人员",e:"Senior executives met to discuss the merger.",t:"高管们开会讨论合并事宜。"},
+{b:"g",l:"730",w:"board",p:"the board of directors",c:"董事会",e:"The board of directors approved the budget.",t:"董事会批准了预算。"},
+{b:"g",l:"730",w:"shareholder",p:"shareholder meeting",c:"股东大会",e:"The shareholder meeting is in April.",t:"股东大会在四月举行。"},
+{b:"g",l:"730",w:"stock",p:"stock prices rose",c:"股价上涨",e:"Stock prices rose after the announcement.",t:"公告发布后股价上涨。"},
+{b:"g",l:"730",w:"quarter",p:"the fiscal quarter",c:"财季",e:"Profits doubled in the last fiscal quarter.",t:"上一财季利润翻番。"},
+{b:"g",l:"730",w:"fiscal",p:"the fiscal year",c:"财政年度",e:"The fiscal year ends in March.",t:"财年于三月结束。"},
+{b:"g",l:"730",w:"forecast",p:"a sales forecast",c:"销售预测",e:"The sales forecast looks promising.",t:"销售预测前景看好。"},
+{b:"g",l:"730",w:"projection",p:"revenue projections",c:"营收预测",e:"Revenue projections were revised upward.",t:"营收预测被上调。"},
+{b:"g",l:"730",w:"decline",p:"decline an offer",c:"婉拒提议；下降",e:"She politely declined the offer.",t:"她礼貌地婉拒了提议。"},
+{b:"g",l:"730",w:"fluctuate",p:"prices fluctuate",c:"价格波动",e:"Fuel prices fluctuate seasonally.",t:"燃油价格随季节波动。"},
+{b:"g",l:"730",w:"steadily",p:"grow steadily",c:"稳步增长",e:"Membership has grown steadily since 2020.",t:"会员数自2020年以来稳步增长。"},
+{b:"g",l:"730",w:"gradually",p:"gradually improve",c:"逐步改善",e:"Service quality gradually improved.",t:"服务质量逐步改善。"},
+{b:"g",l:"730",w:"dramatically",p:"increase dramatically",c:"急剧增长",e:"Online sales increased dramatically.",t:"线上销售急剧增长。"},
+{b:"g",l:"730",w:"approximately",p:"approximately double",c:"大约翻倍",e:"Output is approximately double last year's.",t:"产量约为去年的两倍。"}
+];
+// 金之短语 Part 2 —— 860分水平
+window.VOCAB_G2=[
+{b:"g",l:"860",w:"streamline",p:"streamline the process",c:"精简流程",e:"We streamlined the approval process.",t:"我们精简了审批流程。"},
+{b:"g",l:"860",w:"facilitate",p:"facilitate communication",c:"促进沟通",e:"The new tool facilitates communication.",t:"新工具促进了沟通。"},
+{b:"g",l:"860",w:"leverage",p:"leverage our strengths",c:"利用我们的优势",e:"We should leverage our strengths in design.",t:"我们应利用设计方面的优势。"},
+{b:"g",l:"860",w:"consolidate",p:"consolidate operations",c:"整合业务",e:"The firm consolidated its European operations.",t:"公司整合了欧洲业务。"},
+{b:"g",l:"860",w:"diversify",p:"diversify the portfolio",c:"多元化投资组合",e:"Investors should diversify their portfolios.",t:"投资者应使投资组合多元化。"},
+{b:"g",l:"860",w:"initiative",p:"a cost-cutting initiative",c:"削减成本的举措",e:"The initiative saved millions of dollars.",t:"该举措节省了数百万美元。"},
+{b:"g",l:"860",w:"incentive",p:"offer incentives",c:"提供激励",e:"The city offers tax incentives to startups.",t:"该市为初创企业提供税收优惠。"},
+{b:"g",l:"860",w:"prospective",p:"prospective clients",c:"潜在客户",e:"We presented our services to prospective clients.",t:"我们向潜在客户介绍了服务。"},
+{b:"g",l:"860",w:"lucrative",p:"a lucrative market",c:"利润丰厚的市场",e:"Asia is a lucrative market for luxury goods.",t:"亚洲是奢侈品的利润丰厚市场。"},
+{b:"g",l:"860",w:"venture",p:"a joint venture",c:"合资企业",e:"The two firms formed a joint venture.",t:"两家公司成立了合资企业。"},
+{b:"g",l:"860",w:"endeavor",p:"a new endeavor",c:"新的事业/尝试",e:"We wish her success in her new endeavor.",t:"祝她在新事业中取得成功。"},
+{b:"g",l:"860",w:"undertake",p:"undertake a project",c:"承接项目",e:"The firm undertook a major renovation project.",t:"公司承接了一个大型翻新项目。"},
+{b:"g",l:"860",w:"outsource",p:"outsource the work",c:"外包工作",e:"They outsourced the IT support work.",t:"他们将IT支持工作外包了。"},
+{b:"g",l:"860",w:"procurement",p:"the procurement team",c:"采购团队",e:"The procurement team negotiates contracts.",t:"采购团队负责合同谈判。"},
+{b:"g",l:"860",w:"tentative",p:"a tentative schedule",c:"暂定的日程",e:"Here is a tentative schedule for the tour.",t:"这是巡访的暂定日程。"},
+{b:"g",l:"860",w:"pending",p:"pending approval",c:"待批准",e:"The proposal is pending approval.",t:"提案正待批准。"},
+{b:"g",l:"860",w:"provisional",p:"a provisional agreement",c:"临时协议",e:"They reached a provisional agreement.",t:"他们达成了临时协议。"},
+{b:"g",l:"860",w:"contingent",p:"contingent on approval",c:"取决于批准",e:"The deal is contingent on board approval.",t:"交易取决于董事会批准。"},
+{b:"g",l:"860",w:"clause",p:"a contract clause",c:"合同条款",e:"Review the confidentiality clause carefully.",t:"请仔细阅读保密条款。"},
+{b:"g",l:"860",w:"stipulate",p:"as stipulated in the contract",c:"如合同所规定",e:"Payment terms are stipulated in the contract.",t:"付款条件在合同中有规定。"},
+{b:"g",l:"860",w:"amendment",p:"an amendment to the contract",c:"合同修正案",e:"Both parties signed the amendment.",t:"双方签署了修正案。"},
+{b:"g",l:"860",w:"terminate",p:"terminate the agreement",c:"终止协议",e:"Either party may terminate the agreement.",t:"任何一方均可终止协议。"},
+{b:"g",l:"860",w:"breach",p:"a breach of contract",c:"违约",e:"The delay constituted a breach of contract.",t:"延误构成了违约。"},
+{b:"g",l:"860",w:"liability",p:"limit the liability",c:"限制责任",e:"The clause limits the seller's liability.",t:"该条款限制了卖方的责任。"},
+{b:"g",l:"860",w:"audit",p:"an annual audit",c:"年度审计",e:"The annual audit begins next month.",t:"年度审计下月开始。"},
+{b:"g",l:"860",w:"disclose",p:"disclose the information",c:"披露信息",e:"Companies must disclose financial information.",t:"公司必须披露财务信息。"},
+{b:"g",l:"860",w:"deficit",p:"a budget deficit",c:"预算赤字",e:"The city faces a budget deficit.",t:"该市面临预算赤字。"},
+{b:"g",l:"860",w:"surplus",p:"a trade surplus",c:"贸易顺差；盈余",e:"The country recorded a trade surplus.",t:"该国录得贸易顺差。"},
+{b:"g",l:"860",w:"asset",p:"a valuable asset",c:"宝贵的资产",e:"Her experience is a valuable asset to the team.",t:"她的经验是团队的宝贵资产。"},
+{b:"g",l:"860",w:"overhead",p:"reduce overhead costs",c:"降低管理费用",e:"Remote work reduced overhead costs.",t:"远程办公降低了管理费用。"},
+{b:"g",l:"860",w:"expenditure",p:"capital expenditure",c:"资本支出",e:"Capital expenditure rose 8% this year.",t:"今年资本支出增长了8%。"},
+{b:"g",l:"860",w:"allocate",p:"allocate the budget",c:"分配预算",e:"Funds were allocated to each department.",t:"资金已分配给各部门。"},
+{b:"g",l:"860",w:"appropriate",p:"appropriate measures",c:"适当的措施",e:"Take appropriate measures to prevent errors.",t:"采取适当措施防止错误。"},
+{b:"g",l:"860",w:"adequate",p:"adequate funding",c:"充足的资金",e:"The project lacks adequate funding.",t:"该项目缺乏充足的资金。"},
+{b:"g",l:"860",w:"sufficient",p:"sufficient notice",c:"足够的通知时间",e:"Please give sufficient notice before canceling.",t:"取消前请提前足够时间通知。"},
+{b:"g",l:"860",w:"surplus",p:"surplus inventory",c:"过剩库存",e:"We sold the surplus inventory at a discount.",t:"我们折价出售了过剩库存。"},
+{b:"g",l:"860",w:"durable",p:"durable materials",c:"耐用的材料",e:"The cases are made of durable materials.",t:"箱子由耐用材料制成。"},
+{b:"g",l:"860",w:"fragile",p:"fragile items",c:"易碎物品",e:"Handle fragile items with care.",t:"易碎物品请小心轻放。"},
+{b:"g",l:"860",w:"sturdy",p:"a sturdy design",c:"坚固的设计",e:"The shelf has a sturdy steel design.",t:"这个架子采用坚固的钢结构设计。"},
+{b:"g",l:"860",w:"state-of-the-art",p:"state-of-the-art equipment",c:"最先进的设备",e:"The lab features state-of-the-art equipment.",t:"实验室配备最先进的设备。"},
+{b:"g",l:"860",w:"cutting-edge",p:"cutting-edge technology",c:"尖端技术",e:"The firm develops cutting-edge technology.",t:"该公司开发尖端技术。"},
+{b:"g",l:"860",w:"innovative",p:"an innovative solution",c:"创新的解决方案",e:"They proposed an innovative solution.",t:"他们提出了创新的解决方案。"},
+{b:"g",l:"860",w:"feasible",p:"a feasible plan",c:"可行的计划",e:"Is the timeline feasible?",t:"这个时间表可行吗？"},
+{b:"g",l:"860",w:"viable",p:"a viable alternative",c:"可行的替代方案",e:"Solar power is a viable alternative.",t:"太阳能是可行的替代方案。"},
+{b:"g",l:"860",w:"compatible",p:"compatible with the system",c:"与系统兼容",e:"The software is compatible with all devices.",t:"该软件与所有设备兼容。"},
+{b:"g",l:"860",w:"malfunction",p:"the machine malfunctioned",c:"机器出故障",e:"The printer malfunctioned again this morning.",t:"打印机今早又出故障了。"},
+{b:"g",l:"860",w:"troubleshoot",p:"troubleshoot the issue",c:"排查问题",e:"IT staff will troubleshoot the issue.",t:"IT人员将排查这个问题。"},
+{b:"g",l:"860",w:"specification",p:"technical specifications",c:"技术规格",e:"Check the technical specifications online.",t:"请在线查看技术规格。"},
+{b:"g",l:"860",w:"component",p:"replacement components",c:"替换零部件",e:"Replacement components are in stock.",t:"替换零部件有库存。"},
+{b:"g",l:"860",w:"assembly",p:"assembly instructions",c:"组装说明",e:"Follow the assembly instructions carefully.",t:"请仔细按照组装说明操作。"},
+{b:"g",l:"860",w:"inspection",p:"pass the inspection",c:"通过检查",e:"The building passed the safety inspection.",t:"大楼通过了安全检查。"},
+{b:"g",l:"860",w:"thorough",p:"a thorough review",c:"彻底的审查",e:"We conducted a thorough review of the accounts.",t:"我们对账目进行了彻底审查。"},
+{b:"g",l:"860",w:"meticulous",p:"meticulous attention to detail",c:"一丝不苟的细节关注",e:"Her work shows meticulous attention to detail.",t:"她的工作体现了一丝不苟的细节把控。"},
+{b:"g",l:"860",w:"promptly",p:"respond promptly",c:"迅速回复",e:"Please respond promptly to customer emails.",t:"请迅速回复客户邮件。"},
+{b:"g",l:"860",w:"punctual",p:"be punctual for meetings",c:"开会守时",e:"Employees are expected to be punctual.",t:"员工应当守时。"},
+{b:"g",l:"860",w:"courteous",p:"courteous staff",c:"彬彬有礼的员工",e:"The staff was courteous and helpful.",t:"员工彬彬有礼且乐于助人。"},
+{b:"g",l:"860",w:"attentive",p:"attentive service",c:"周到的服务",e:"The waiters provide attentive service.",t:"服务员提供周到的服务。"},
+{b:"g",l:"860",w:"hospitality",p:"the hospitality industry",c:"酒店服务业",e:"She works in the hospitality industry.",t:"她在酒店服务业工作。"},
+{b:"g",l:"860",w:"amenity",p:"hotel amenities",c:"酒店设施",e:"Amenities include a gym and a pool.",t:"设施包括健身房和泳池。"},
+{b:"g",l:"860",w:"proximity",p:"in close proximity to",c:"紧邻……",e:"The hotel is in close proximity to the airport.",t:"酒店紧邻机场。"},
+{b:"g",l:"860",w:"adjacent",p:"adjacent to the lobby",c:"与大堂相邻",e:"The café is adjacent to the lobby.",t:"咖啡厅与大堂相邻。"},
+{b:"g",l:"860",w:"spacious",p:"a spacious office",c:"宽敞的办公室",e:"The new office is bright and spacious.",t:"新办公室明亮宽敞。"},
+{b:"g",l:"860",w:"vacant",p:"a vacant position",c:"空缺职位",e:"There are two vacant positions in sales.",t:"销售部有两个空缺职位。"},
+{b:"g",l:"860",w:"occupancy",p:"a high occupancy rate",c:"高入住率",e:"The hotel enjoys a high occupancy rate.",t:"这家酒店入住率很高。"},
+{b:"g",l:"860",w:"utilize",p:"utilize the space",c:"利用空间",e:"We should utilize the space more efficiently.",t:"我们应更高效地利用空间。"},
+{b:"g",l:"860",w:"accommodate",p:"accommodate 200 guests",c:"容纳200位客人",e:"The hall can accommodate 200 guests.",t:"大厅可容纳200位客人。"},
+{b:"g",l:"860",w:"capacity",p:"at full capacity",c:"满负荷",e:"The factory is operating at full capacity.",t:"工厂正满负荷运转。"},
+{b:"g",l:"860",w:"duration",p:"for the duration of",c:"在……期间",e:"Parking is free for the duration of the event.",t:"活动期间停车免费。"},
+{b:"g",l:"860",w:"interval",p:"at regular intervals",c:"每隔一定时间",e:"Buses run at regular intervals.",t:"公交车定时发车。"},
+{b:"g",l:"860",w:"consecutive",p:"three consecutive years",c:"连续三年",e:"Sales rose for three consecutive years.",t:"销售额连续三年增长。"},
+{b:"g",l:"860",w:"preliminary",p:"preliminary results",c:"初步结果",e:"Preliminary results look encouraging.",t:"初步结果令人鼓舞。"},
+{b:"g",l:"860",w:"subsequent",p:"subsequent changes",c:"后续变更",e:"Subsequent changes require approval.",t:"后续变更需要审批。"},
+{b:"g",l:"860",w:"prior",p:"prior to the meeting",c:"在会议之前",e:"Submit questions prior to the meeting.",t:"请在会前提交问题。"},
+{b:"g",l:"860",w:"designated",p:"the designated area",c:"指定区域",e:"Smoking is allowed only in designated areas.",t:"仅指定区域可吸烟。"},
+{b:"g",l:"860",w:"mandatory",p:"mandatory training",c:"强制培训",e:"Safety training is mandatory for all staff.",t:"安全培训对全体员工是强制性的。"},
+{b:"g",l:"860",w:"optional",p:"an optional session",c:"可自由参加的场次",e:"The afternoon session is optional.",t:"下午场次可自由参加。"},
+{b:"g",l:"860",w:"refrain",p:"refrain from smoking",c:"请勿吸烟",e:"Please refrain from smoking in this area.",t:"请勿在此区域吸烟。"},
+{b:"g",l:"860",w:"prohibit",p:"be prohibited",c:"被禁止",e:"Photography is prohibited in the gallery.",t:"展厅内禁止拍照。"},
+{b:"g",l:"860",w:"restrict",p:"restricted access",c:"限制进入",e:"Access to the lab is restricted.",t:"实验室限制进入。"},
+{b:"g",l:"860",w:"compile",p:"compile a report",c:"汇编报告",e:"She compiled a report from the survey data.",t:"她根据调查数据汇编了报告。"},
+{b:"g",l:"860",w:"revise",p:"revise the proposal",c:"修改提案",e:"Please revise the proposal by Monday.",t:"请在周一前修改提案。"},
+{b:"g",l:"860",w:"proofread",p:"proofread the document",c:"校对文件",e:"Ask a colleague to proofread the document.",t:"请同事校对一下文件。"},
+{b:"g",l:"860",w:"draft",p:"a first draft",c:"初稿",e:"Send me the first draft by Friday.",t:"请在周五前把初稿发给我。"},
+{b:"g",l:"860",w:"finalize",p:"finalize the details",c:"敲定细节",e:"We need to finalize the details today.",t:"我们今天需要敲定细节。"}
+];
+// 蓝皮书官方超高频词汇
+window.VOCAB_B1=[
+{b:"b",l:"高频",w:"array",p:"a wide array of",c:"琳琅满目的，一系列",e:"Our gift shop offers a wide array of specialty teas.",t:"我们的礼品店提供各式各样的特色茶。"},
+{b:"b",l:"高频",w:"arrival",p:"estimated arrival",c:"预计到达",e:"Our estimated arrival is 4 P.M.",t:"我们预计下午4点到达。"},
+{b:"b",l:"高频",w:"aspect",p:"all aspects of",c:"……的各个方面",e:"The course covers all aspects of running a company.",t:"该课程涵盖经营公司的各个方面。"},
+{b:"b",l:"高频",w:"assignment",p:"a job assignment",c:"工作任务",e:"The current assignment must be finished before Thursday.",t:"当前任务必须在周四前完成。"},
+{b:"b",l:"高频",w:"patronage",p:"thank you for your patronage",c:"感谢惠顾",e:"We thank you for your continued patronage.",t:"感谢您一直以来的惠顾。"},
+{b:"b",l:"高频",w:"testimonial",p:"customer testimonials",c:"顾客好评推荐",e:"The website features customer testimonials.",t:"网站上展示了顾客的好评。"},
+{b:"b",l:"高频",w:"referral",p:"a customer referral",c:"客户推荐介绍",e:"Most new clients come from referrals.",t:"大多数新客户来自推荐介绍。"},
+{b:"b",l:"高频",w:"solicit",p:"solicit feedback",c:"征求反馈",e:"We solicit feedback from all attendees.",t:"我们向所有与会者征求反馈。"},
+{b:"b",l:"高频",w:"circulate",p:"circulate the memo",c:"传阅备忘录",e:"Please circulate the memo to all staff.",t:"请将备忘录传阅给全体员工。"},
+{b:"b",l:"高频",w:"correspondence",p:"business correspondence",c:"商务信函",e:"File all business correspondence properly.",t:"请妥善归档所有商务信函。"},
+{b:"b",l:"高频",w:"acknowledge",p:"acknowledge receipt of",c:"确认收到",e:"Please acknowledge receipt of this letter.",t:"请确认收到此函。"},
+{b:"b",l:"高频",w:"proceeds",p:"the proceeds from the sale",c:"销售所得款项",e:"All proceeds go to local charities.",t:"所有收益将捐给当地慈善机构。"},
+{b:"b",l:"高频",w:"fundraiser",p:"an annual fundraiser",c:"年度募捐活动",e:"The annual fundraiser raised $50,000.",t:"年度募捐活动筹得五万美元。"},
+{b:"b",l:"高频",w:"philanthropy",p:"corporate philanthropy",c:"企业慈善事业",e:"The firm is known for its philanthropy.",t:"该公司以慈善事业闻名。"},
+{b:"b",l:"高频",w:"commemorate",p:"commemorate the anniversary",c:"纪念周年",e:"A gala will commemorate the 50th anniversary.",t:"将举办晚会纪念50周年。"},
+{b:"b",l:"高频",w:"inaugural",p:"the inaugural ceremony",c:"落成/就职典礼；首次的",e:"The inaugural flight departs on June 1.",t:"首航将于6月1日起飞。"},
+{b:"b",l:"高频",w:"unveil",p:"unveil the new logo",c:"揭幕新标志",e:"The company unveiled its new logo yesterday.",t:"公司昨天发布了新标志。"},
+{b:"b",l:"高频",w:"showcase",p:"showcase local artists",c:"展示本地艺术家",e:"The gallery showcases local artists.",t:"画廊展示本地艺术家的作品。"},
+{b:"b",l:"高频",w:"exhibit",p:"a museum exhibit",c:"博物馆展览",e:"The exhibit runs through September.",t:"展览持续到九月。"},
+{b:"b",l:"高频",w:"admission",p:"free admission",c:"免费入场",e:"Admission is free for children under 12.",t:"12岁以下儿童免费入场。"},
+{b:"b",l:"高频",w:"itinerary",p:"finalize the itinerary",c:"敲定行程",e:"We will finalize the itinerary this week.",t:"我们本周将敲定行程。"},
+{b:"b",l:"高频",w:"embark",p:"embark on a journey",c:"开始旅程/事业",e:"She embarked on a new career in design.",t:"她开始了设计领域的新职业。"},
+{b:"b",l:"高频",w:"layover",p:"a two-hour layover",c:"两小时中转停留",e:"The flight has a two-hour layover in Seoul.",t:"航班在首尔中转停留两小时。"},
+{b:"b",l:"高频",w:"aisle",p:"an aisle seat",c:"靠过道座位",e:"I'd prefer an aisle seat, please.",t:"我想要靠过道的座位。"},
+{b:"b",l:"高频",w:"boarding",p:"a boarding pass",c:"登机牌",e:"Have your boarding pass ready.",t:"请准备好登机牌。"},
+{b:"b",l:"高频",w:"customs",p:"go through customs",c:"过海关",e:"It took an hour to go through customs.",t:"过海关花了一个小时。"},
+{b:"b",l:"高频",w:"declare",p:"declare the goods",c:"申报物品",e:"Do you have anything to declare?",t:"您有需要申报的物品吗？"},
+{b:"b",l:"高频",w:"currency",p:"foreign currency",c:"外币",e:"You can exchange foreign currency at the bank.",t:"您可以在银行兑换外币。"},
+{b:"b",l:"高频",w:"withdraw",p:"withdraw cash",c:"取现金",e:"I withdrew cash from the ATM.",t:"我从自动取款机取了现金。"},
+{b:"b",l:"高频",w:"deposit",p:"a security deposit",c:"押金",e:"A security deposit is required for the rental.",t:"租房需要交押金。"},
+{b:"b",l:"高频",w:"installment",p:"pay in installments",c:"分期付款",e:"You can pay in monthly installments.",t:"您可以按月分期付款。"},
+{b:"b",l:"高频",w:"outstanding",p:"an outstanding balance",c:"未付余额",e:"Please settle the outstanding balance.",t:"请结清未付余额。"},
+{b:"b",l:"高频",w:"overdue",p:"an overdue payment",c:"逾期付款",e:"Your payment is now 30 days overdue.",t:"您的付款已逾期30天。"},
+{b:"b",l:"高频",w:"remit",p:"remit the payment",c:"汇款支付",e:"Please remit the payment by wire transfer.",t:"请通过电汇付款。"},
+{b:"b",l:"高频",w:"bulk",p:"buy in bulk",c:"批量购买",e:"You save more when you buy in bulk.",t:"批量购买更省钱。"},
+{b:"b",l:"高频",w:"wholesale",p:"wholesale prices",c:"批发价",e:"We offer wholesale prices to retailers.",t:"我们向零售商提供批发价。"},
+{b:"b",l:"高频",w:"retail",p:"a retail outlet",c:"零售店",e:"The brand has 50 retail outlets nationwide.",t:"该品牌在全国有50家零售店。"},
+{b:"b",l:"高频",w:"merchandise",p:"display the merchandise",c:"陈列商品",e:"The merchandise is displayed near the entrance.",t:"商品陈列在入口附近。"},
+{b:"b",l:"高频",w:"apparel",p:"sports apparel",c:"运动服装",e:"The store specializes in sports apparel.",t:"这家店专营运动服装。"},
+{b:"b",l:"高频",w:"appliance",p:"household appliances",c:"家用电器",e:"The store sells household appliances.",t:"这家店销售家用电器。"},
+{b:"b",l:"高频",w:"utensil",p:"kitchen utensils",c:"厨房用具",e:"Kitchen utensils are on the second floor.",t:"厨房用具在二楼。"},
+{b:"b",l:"高频",w:"beverage",p:"food and beverages",c:"食品和饮料",e:"Beverages are sold in the lobby.",t:"大堂有饮料出售。"},
+{b:"b",l:"高频",w:"cuisine",p:"local cuisine",c:"当地美食",e:"The restaurant serves authentic local cuisine.",t:"这家餐厅供应地道的当地美食。"},
+{b:"b",l:"高频",w:"culinary",p:"culinary skills",c:"烹饪技艺",e:"He studied culinary skills in Paris.",t:"他在巴黎学习烹饪技艺。"},
+{b:"b",l:"高频",w:"perishable",p:"perishable goods",c:"易腐坏食品",e:"Refrigerate all perishable goods.",t:"所有易腐坏食品需冷藏。"},
+{b:"b",l:"高频",w:"ingredient",p:"fresh ingredients",c:"新鲜食材",e:"We use only fresh, local ingredients.",t:"我们只使用新鲜的本地食材。"},
+{b:"b",l:"高频",w:"nutritious",p:"a nutritious meal",c:"营养丰富的一餐",e:"The cafeteria serves nutritious meals.",t:"食堂供应营养餐。"},
+{b:"b",l:"高频",w:"landscaping",p:"landscaping services",c:"园林绿化服务",e:"We hired a landscaping company.",t:"我们雇了一家园林绿化公司。"},
+{b:"b",l:"高频",w:"horticulture",p:"a horticulture expert",c:"园艺专家",e:"A horticulture expert will give a talk.",t:"一位园艺专家将做讲座。"},
+{b:"b",l:"高频",w:"irrigation",p:"an irrigation system",c:"灌溉系统",e:"The farm installed a new irrigation system.",t:"农场安装了新的灌溉系统。"},
+{b:"b",l:"高频",w:"pavement",p:"repave the pavement",c:"重铺路面",e:"Workers are repaving the pavement.",t:"工人们正在重铺路面。"},
+{b:"b",l:"高频",w:"detour",p:"take a detour",c:"绕行",e:"Drivers should take a detour via Oak Street.",t:"司机应经橡树街绕行。"},
+{b:"b",l:"高频",w:"congestion",p:"traffic congestion",c:"交通拥堵",e:"The new road will reduce traffic congestion.",t:"新道路将缓解交通拥堵。"},
+{b:"b",l:"高频",w:"commute",p:"a daily commute",c:"每日通勤",e:"My daily commute takes 40 minutes.",t:"我每天通勤需要40分钟。"},
+{b:"b",l:"高频",w:"pedestrian",p:"a pedestrian crossing",c:"人行横道",e:"Stop at the pedestrian crossing.",t:"请在人行横道前停车。"},
+{b:"b",l:"高频",w:"municipal",p:"the municipal government",c:"市政府",e:"The municipal government approved the plan.",t:"市政府批准了该计划。"},
+{b:"b",l:"高频",w:"ordinance",p:"a city ordinance",c:"市政条例",e:"The ordinance bans parking overnight.",t:"该条例禁止夜间停车。"},
+{b:"b",l:"高频",w:"zoning",p:"zoning regulations",c:"区划法规",e:"The site complies with zoning regulations.",t:"该地块符合区划法规。"},
+{b:"b",l:"高频",w:"landmark",p:"a historic landmark",c:"历史地标",e:"The tower is a historic landmark.",t:"这座塔是历史地标。"},
+{b:"b",l:"高频",w:"archive",p:"the city archives",c:"城市档案馆",e:"Old maps are kept in the city archives.",t:"旧地图保存在城市档案馆。"},
+{b:"b",l:"高频",w:"manuscript",p:"submit a manuscript",c:"投稿手稿",e:"Authors may submit manuscripts online.",t:"作者可在线投稿。"},
+{b:"b",l:"高频",w:"editorial",p:"the editorial team",c:"编辑团队",e:"The editorial team reviews all articles.",t:"编辑团队审阅所有文章。"},
+{b:"b",l:"高频",w:"publication",p:"a monthly publication",c:"月刊",e:"The magazine is a monthly publication.",t:"该杂志为月刊。"},
+{b:"b",l:"高频",w:"periodical",p:"academic periodicals",c:"学术期刊",e:"The library subscribes to 200 periodicals.",t:"图书馆订阅了200种期刊。"},
+{b:"b",l:"高频",w:"circulation",p:"newspaper circulation",c:"报纸发行量",e:"The paper has a circulation of 100,000.",t:"该报发行量为10万份。"},
+{b:"b",l:"高频",w:"subscriber",p:"loyal subscribers",c:"忠实订户",e:"Subscribers get early access to articles.",t:"订户可提前阅读文章。"},
+{b:"b",l:"高频",w:"anonymous",p:"an anonymous donor",c:"匿名捐赠者",e:"An anonymous donor gave $1 million.",t:"一位匿名捐赠者捐了100万美元。"},
+{b:"b",l:"高频",w:"prestigious",p:"a prestigious award",c:"声望很高的奖项",e:"She won a prestigious design award.",t:"她获得了一项声望很高的设计奖。"},
+{b:"b",l:"高频",w:"renowned",p:"a renowned architect",c:"著名建筑师",e:"The hall was designed by a renowned architect.",t:"大厅由著名建筑师设计。"},
+{b:"b",l:"高频",w:"acclaimed",p:"a critically acclaimed film",c:"广受好评的电影",e:"The acclaimed film won several awards.",t:"这部广受好评的电影获得多个奖项。"},
+{b:"b",l:"高频",w:"aspiring",p:"aspiring writers",c:"有抱负的作家",e:"The workshop is for aspiring writers.",t:"该研习会面向有抱负的写作者。"},
+{b:"b",l:"高频",w:"seasoned",p:"a seasoned professional",c:"经验丰富的专业人士",e:"She is a seasoned professional in HR.",t:"她是人力资源领域经验丰富的专业人士。"},
+{b:"b",l:"高频",w:"versatile",p:"a versatile employee",c:"多面手员工",e:"He is versatile and works across teams.",t:"他是多面手，能跨团队工作。"},
+{b:"b",l:"高频",w:"dedicated",p:"a dedicated team",c:"尽职尽责的团队",e:"A dedicated team handles VIP clients.",t:"专门团队负责VIP客户。"},
+{b:"b",l:"高频",w:"tenure",p:"during her tenure",c:"在她任期内",e:"Sales tripled during her tenure.",t:"她任职期间销售额增长了两倍。"},
+{b:"b",l:"高频",w:"apprentice",p:"an apprentice program",c:"学徒项目",e:"The company runs an apprentice program.",t:"公司开设了学徒项目。"},
+{b:"b",l:"高频",w:"internship",p:"a summer internship",c:"暑期实习",e:"She completed a summer internship at a bank.",t:"她在银行完成了暑期实习。"},
+{b:"b",l:"高频",w:"orientation",p:"new employee orientation",c:"新员工入职培训",e:"Orientation begins at 9 A.M. Monday.",t:"入职培训周一上午9点开始。"},
+{b:"b",l:"高频",w:"probation",p:"a probation period",c:"试用期",e:"New hires have a three-month probation period.",t:"新员工有三个月试用期。"},
+{b:"b",l:"高频",w:"appraisal",p:"a performance appraisal",c:"绩效评估",e:"Appraisals are conducted twice a year.",t:"绩效评估每年进行两次。"}
+];
+// Part 5 语法词汇题
+window.Q_P5=[
+{id:"p5-1",q:"The marketing team ______ a new campaign to promote the spring collection.",o:["launched","launching","to launch","launch"],a:0,tag:"语法",exp:"主语 The marketing team 后缺谓语动词，选过去式 launched。"},
+{id:"p5-2",q:"All employees are required to submit their expense reports ______ the end of each month.",o:["by","until","on","in"],a:0,tag:"语法",exp:"by + 时间点表示'在……之前完成'，与 submit 搭配。until 强调持续状态。"},
+{id:"p5-3",q:"The new software is fully ______ with all existing operating systems.",o:["compatible","comparable","competitive","comprehensive"],a:0,tag:"词汇",exp:"compatible with 与……兼容。形近词辨析：comparable 可比较的，competitive 有竞争力的。"},
+{id:"p5-4",q:"______ the heavy rain, the outdoor concert proceeded as scheduled.",o:["Despite","Although","However","Because of"],a:0,tag:"语法",exp:"空格后是名词短语 the heavy rain，需要介词。Although 接从句，However 是副词。"},
+{id:"p5-5",q:"Ms. Chen reviewed the proposal ______ before sending it to the board.",o:["carefully","careful","care","caring"],a:0,tag:"语法",exp:"修饰动词 reviewed 需要副词 carefully。"},
+{id:"p5-6",q:"The hotel offers a ______ shuttle service to the airport for all guests.",o:["complimentary","complementary","complimenting","complied"],a:0,tag:"词汇",exp:"complimentary 免费赠送的。complementary 是'互补的'，注意拼写区别。"},
+{id:"p5-7",q:"Employees ______ have completed the training program are eligible for promotion.",o:["who","which","whose","whom"],a:0,tag:"语法",exp:"先行词是人 Employees 且在从句中作主语，用 who。"},
+{id:"p5-8",q:"The quarterly report indicates a ______ increase in overseas sales.",o:["significant","significantly","signify","significance"],a:0,tag:"语法",exp:"修饰名词 increase 需要形容词 significant。"},
+{id:"p5-9",q:"Please ______ from using mobile phones during the performance.",o:["refrain","prevent","avoid","prohibit"],a:0,tag:"词汇",exp:"refrain from doing 克制不做某事。avoid 直接接 doing，prohibit 是禁止他人。"},
+{id:"p5-10",q:"The contract must be signed by ______ parties before work can begin.",o:["both","either","every","each other"],a:0,tag:"语法",exp:"parties 是复数，both parties 双方。either/every 接单数。"},
+{id:"p5-11",q:"Ticket holders are ______ to a complimentary beverage at the reception.",o:["entitled","deserved","granted","awarded"],a:0,tag:"词汇",exp:"be entitled to 有权享有。固定搭配。"},
+{id:"p5-12",q:"The factory has been operating at full ______ since the new orders arrived.",o:["capacity","capability","capacity's","capacious"],a:0,tag:"词汇",exp:"at full capacity 满负荷运转，固定搭配。"},
+{id:"p5-13",q:"______ completing the online form, you will receive a confirmation email.",o:["Upon","During","While","Since"],a:0,tag:"语法",exp:"Upon doing = 一……就……。While 接从句或分词但语义不合。"},
+{id:"p5-14",q:"The seminar was ______ attended, with over 300 participants.",o:["well","good","much","very"],a:0,tag:"词汇",exp:"well attended 出席人数多，固定搭配。"},
+{id:"p5-15",q:"Neither the manager ______ the assistant was available to answer the call.",o:["nor","or","and","but"],a:0,tag:"语法",exp:"neither...nor... 固定搭配。"},
+{id:"p5-16",q:"The company's profits have risen ______ over the past three years.",o:["steadily","steady","steadiness","steadier"],a:0,tag:"语法",exp:"修饰动词 have risen 需要副词 steadily。"},
+{id:"p5-17",q:"Applications received after the deadline will not be ______.",o:["considered","considering","considerable","considerate"],a:0,tag:"语法",exp:"被动语态 will not be + 过去分词。considerable 相当大的，considerate 体贴的。"},
+{id:"p5-18",q:"The museum is offering free ______ to all visitors this weekend.",o:["admission","permission","emission","commission"],a:0,tag:"词汇",exp:"admission 入场（费）。permission 许可，commission 佣金。"},
+{id:"p5-19",q:"______ of the two candidates has the required certification.",o:["Neither","Both","All","Most"],a:0,tag:"语法",exp:"谓语 has 是单数，Neither of 接复数名词但谓语用单数。"},
+{id:"p5-20",q:"The shipment was delayed ______ a problem at the customs office.",o:["owing to","because","since","as"],a:0,tag:"语法",exp:"空格后是名词短语，需要复合介词 owing to。其余均接从句。"},
+{id:"p5-21",q:"Mr. Park will assume the role of director ______ Ms. Lopez retires next month.",o:["when","during","despite","among"],a:0,tag:"语法",exp:"空格后是完整从句，需要连词 when。"},
+{id:"p5-22",q:"The R&D division was given ______ funding to develop the prototype.",o:["adequate","adequately","adequacy","more adequately"],a:0,tag:"语法",exp:"修饰名词 funding 需要形容词 adequate。"},
+{id:"p5-23",q:"Reservations can be made ______ by phone or through our website.",o:["either","neither","both","also"],a:0,tag:"语法",exp:"either A or B 结构，与后文 or 呼应。"},
+{id:"p5-24",q:"The keynote address will be delivered by a ______ economist from Seoul National University.",o:["renowned","renown","renownedly","renowning"],a:0,tag:"语法",exp:"修饰名词 economist 需要形容词 renowned 著名的。"},
+{id:"p5-25",q:"Sales representatives must respond to customer inquiries ______.",o:["promptly","prompt","prompting","prompted"],a:0,tag:"语法",exp:"修饰动词 respond 需要副词 promptly 迅速地。"},
+{id:"p5-26",q:"The lease agreement ______ that tenants must give 60 days' notice before moving out.",o:["stipulates","complies","adheres","consists"],a:0,tag:"词汇",exp:"stipulate 规定。comply with / adhere to / consist of 均需介词。"},
+{id:"p5-27",q:"______ joining our company, Ms. Rivera worked at an accounting firm for ten years.",o:["Prior to","In order to","So as to","According"],a:0,tag:"词汇",exp:"Prior to + 动名词/名词 = 在……之前。"},
+{id:"p5-28",q:"Attendance at the safety workshop is ______ for all warehouse personnel.",o:["mandatory","voluntary","tentative","redundant"],a:0,tag:"词汇",exp:"mandatory 强制性的，与 required 同义。语境为仓库人员必须参加。"}
+];
+// Part 6 段落填空 + Part 7 阅读理解
+window.Q_P6=[
+{id:"p6-1",passage:"To: All Staff\nFrom: Facilities Management\nSubject: Elevator Maintenance\n\nPlease be advised that the main elevators will be out of service on Saturday, May 14, for scheduled maintenance. The work is expected to (1)______ approximately six hours. During this time, employees needing access to upper floors should use the service elevator located at the rear of the building. (2)______, the stairways will remain open as usual.\n\nWe apologize for any (3)______ this may cause. If you have questions, please contact the facilities office. (4)______",
+qs:[
+{q:"(1)",o:["last","spend","pass","expire"],a:0,tag:"词汇",exp:"work is expected to last ~ 工程预计持续六小时。spend 主语需是人。"},
+{q:"(2)",o:["In addition","Therefore","Otherwise","For instance"],a:0,tag:"语法",exp:"前句说可用货梯，本句补充楼梯也开放，是并列补充关系，用 In addition。"},
+{q:"(3)",o:["inconvenience","convenience","incident","interruption to"],a:0,tag:"词汇",exp:"apologize for any inconvenience 为不便道歉，TOEIC 高频固定表达。"},
+{q:"(4)",o:["Thank you for your cooperation.","The elevator was installed in 2015.","Our office will relocate soon.","Applications are due Friday."],a:0,tag:"定位",exp:"句子插入题：通知结尾感谢配合最自然，其余选项与主题无关。"}
+]},
+{id:"p6-2",passage:"Dear Ms. Alvarez,\n\nThank you for your order of April 3 (Order #88121). Unfortunately, the ceramic vase you requested is temporarily out of (1)______. We expect a new shipment within two weeks. You may choose to wait, or we can offer you a similar item at the same price. (2)______ option you choose, we will cover the shipping costs.\n\nAs an apology, we have added a 10% discount voucher to your account. It can be (3)______ on any future purchase within six months. (4)______\n\nSincerely,\nHomeStyle Customer Service",
+qs:[
+{q:"(1)",o:["stock","store","supply","order"],a:0,tag:"词汇",exp:"out of stock 缺货，固定搭配。"},
+{q:"(2)",o:["Whichever","However","Whatever is","Either"],a:0,tag:"语法",exp:"Whichever option you choose 无论您选择哪种方案，引导让步从句并修饰 option。"},
+{q:"(3)",o:["redeemed","refunded","reduced","reminded"],a:0,tag:"词汇",exp:"redeem a voucher 使用/兑换优惠券。"},
+{q:"(4)",o:["We appreciate your patience and understanding.","The vase is handmade in Portugal.","Our store hours have changed.","Your account has been closed."],a:0,tag:"定位",exp:"道歉信结尾感谢耐心与理解最连贯。"}
+]}
+];
+window.Q_P7=[
+{id:"p7-1",type:"通知",passage:"NOTICE TO ALL RIVERSIDE FITNESS MEMBERS\n\nBeginning June 1, the indoor swimming pool will be closed for renovation. The project will include new tiling, improved lighting, and an upgraded ventilation system. Work is expected to be completed by July 15.\n\nDuring the closure, members may use the pool at our partner facility, Lakeview Sports Club (25 Harbor Road), free of charge. Simply present your Riverside membership card at the front desk. Please note that Lakeview's pool closes at 8 P.M. on weekends, two hours earlier than on weekdays.\n\nAll other Riverside facilities, including the gym and sauna, will remain open during the renovation. Group swimming classes will resume on July 20. Members enrolled in June classes will receive a prorated refund automatically.\n\nQuestions? Contact us at info@riversidefitness.com.",
+qs:[
+{q:"What is the main purpose of the notice?",o:["To announce a temporary facility closure","To advertise new membership plans","To introduce a new swimming instructor","To report a change in business hours"],a:0,tag:"定位",exp:"首段：泳池6月1日起因翻新关闭 → 宣布设施临时关闭。"},
+{q:"What are members asked to show at Lakeview Sports Club?",o:["Their membership card","A photo ID","A renovation notice","A class enrollment form"],a:0,tag:"定位",exp:"第二段 'present your Riverside membership card at the front desk'。"},
+{q:"What time does Lakeview's pool close on weekdays?",o:["10 P.M.","8 P.M.","6 P.M.","9 P.M."],a:0,tag:"定位",exp:"推断题：周末8点关闭，比工作日早两小时 → 工作日为10点。需要计算，易错。"},
+{q:"What will happen on July 20?",o:["Group swimming classes will restart","The gym will reopen","Refunds will be issued","The renovation will begin"],a:0,tag:"定位",exp:"第三段 'Group swimming classes will resume on July 20'。"}
+]},
+{id:"p7-2",type:"邮件往来",passage:"[E-mail 1]\nFrom: Daniel Reed <dreed@brightpath.com>\nTo: Hana Sato <hsato@brightpath.com>\nSubject: Venue for client workshop\nDate: March 2\n\nHi Hana,\n\nThe Grandview Hotel just informed me that their conference room is double-booked on March 18, so we need a new venue for the client workshop. Attendance is confirmed at 45 people. We need a projector, microphones, and space for catering. Our budget is $1,200 for the day. Could you look into options and get back to me by Friday?\n\nDaniel\n\n[E-mail 2]\nFrom: Hana Sato <hsato@brightpath.com>\nTo: Daniel Reed <dreed@brightpath.com>\nSubject: RE: Venue for client workshop\nDate: March 4\n\nHi Daniel,\n\nI found three options. The Civic Center charges $900 but has no catering space. The Park Plaza meets all our needs at $1,150. The Innovation Hub is only $800 and has everything we need, but it can hold at most 40 people.\n\nGiven our headcount, I recommend booking the Park Plaza. If you agree, I will reserve it today and arrange a site visit next week.\n\nHana",
+qs:[
+{q:"Why does Mr. Reed need a new venue?",o:["The original venue was double-booked","The workshop date was changed","The budget was reduced","More clients registered than expected"],a:0,tag:"定位",exp:"邮件1首句：Grandview Hotel 会议室被重复预订。"},
+{q:"Why does Ms. Sato NOT recommend the Innovation Hub?",o:["It cannot hold enough people","It is too expensive","It lacks catering space","It is too far away"],a:0,tag:"定位",exp:"双篇联动题：邮件1确认45人出席，Innovation Hub 最多容纳40人。需跨篇定位。"},
+{q:"How much will the recommended venue cost?",o:["$1,150","$900","$800","$1,200"],a:0,tag:"定位",exp:"推荐的是 Park Plaza，费用 $1,150。"},
+{q:"What does Ms. Sato offer to do?",o:["Arrange a site visit","Cancel the workshop","Contact the clients","Negotiate a lower price"],a:0,tag:"定位",exp:"邮件2结尾：'arrange a site visit next week'。"}
+]},
+{id:"p7-3",type:"文章",passage:"Local Bakery Rises to National Fame\n\nWhat began as a weekend farmers' market stall has become one of the fastest-growing food businesses in the region. Flour & Stone Bakery, founded five years ago by former accountant Mia Torres, now operates four locations and employs over sixty people.\n\nTorres attributes the bakery's success to its focus on locally sourced ingredients. \"Every grain we use is grown within eighty kilometers of our kitchen,\" she explains. This commitment initially raised costs, and several advisors urged her to switch to cheaper suppliers. Torres refused, believing that quality would eventually win customers over. Her instinct proved correct: last year, the bakery's revenue tripled, and its sourdough loaves won first prize at the National Artisan Bread Fair.\n\nThe company's newest location, opening next month in Westport, will include the firm's first baking school. Classes will be limited to twelve students to ensure hands-on instruction. Registration opens on the bakery's website this Friday, and proceeds from the classes will support a scholarship for culinary students.",
+qs:[
+{q:"What is suggested about Ms. Torres?",o:["She changed careers to start the bakery","She studied baking abroad","She inherited the business","She plans to retire soon"],a:0,tag:"定位",exp:"'founded by former accountant Mia Torres' → 她转行创业。推断题。"},
+{q:"What did advisors suggest Ms. Torres do?",o:["Use less expensive suppliers","Open more locations","Raise her prices","Enter a baking competition"],a:0,tag:"定位",exp:"第二段 'urged her to switch to cheaper suppliers'。"},
+{q:"The word \"instinct\" in paragraph 2 is closest in meaning to",o:["intuition","instruction","ambition","tradition"],a:0,tag:"词汇",exp:"同义替换题：instinct 直觉 ≈ intuition。"},
+{q:"What is indicated about the baking school?",o:["Class size will be limited","It will be free of charge","It opens this Friday","It is located at the first store"],a:0,tag:"定位",exp:"'Classes will be limited to twelve students'。注意周五开放的是报名而非学校。"}
+]}
+];
+// 听力题（TTS 朗读 script，作答后可看原文）
+window.Q_LC=[
+{id:"lc-1",part:"P2",script:"Where is the marketing meeting being held?",o:["In the third-floor conference room.","At two o'clock this afternoon.","Yes, I'll bring the report."],a:0,tag:"应答-疑问词",exp:"Where 问地点，只有 A 回答地点。B 答时间（When 陷阱），C 答 Yes（疑问词问句不能用 Yes/No 回答）。"},
+{id:"lc-2",part:"P2",script:"When does the express train to the airport leave?",o:["Every twenty minutes.","From platform six.","About forty dollars."],a:0,tag:"应答-疑问词",exp:"When 问时间，A 表示班次频率。B 答地点，C 答价格。"},
+{id:"lc-3",part:"P2",script:"Who is preparing the budget proposal this year?",o:["Ms. Ramirez in accounting.","By the end of March.","It was approved yesterday."],a:0,tag:"应答-疑问词",exp:"Who 问人，A 回答具体人物。"},
+{id:"lc-4",part:"P2",script:"Why was the product launch postponed?",o:["Because the samples arrived late.","At the convention center.","No, it wasn't expensive."],a:0,tag:"应答-疑问词",exp:"Why 问原因，A 用 Because 回答。"},
+{id:"lc-5",part:"P2",script:"Would you like me to review your presentation slides?",o:["That would be very helpful, thanks.","The projector in room two.","I liked the presentation."],a:0,tag:"应答-请求提议",exp:"提议帮忙 → 接受并感谢。C 是时态陷阱（过去式）。"},
+{id:"lc-6",part:"P2",script:"How many people have registered for the workshop?",o:["Around fifty so far.","For three hours.","On the second floor."],a:0,tag:"应答-疑问词",exp:"How many 问数量，A 回答约50人。"},
+{id:"lc-7",part:"P3",script:"M: Hi, I'm calling about the laptop I dropped off for repair last Tuesday. It's been a week and I haven't heard anything. W: Let me check... Yes, the screen replacement is done, but we're still waiting for a new battery to arrive. It should be here by Thursday. M: Hmm, I have a business trip on Friday morning. Is there any way to speed things up? W: In that case, I can install a compatible battery we have in stock. It's the same price, and you could pick up the laptop tomorrow afternoon.",
+qs:[{q:"Why is the man calling?",o:["To check on a repair","To cancel an order","To book a business trip","To buy a new laptop"],a:0,tag:"对话-主旨",exp:"开头：calling about the laptop I dropped off for repair。"},
+{q:"What is the man concerned about?",o:["He needs the laptop before a trip","The repair costs too much","The screen was not fixed","The store is too far away"],a:0,tag:"对话-细节",exp:"他周五出差，希望加快维修。"},
+{q:"What does the woman offer to do?",o:["Install a different battery","Give a discount","Deliver the laptop","Extend the warranty"],a:0,tag:"对话-细节",exp:"结尾：install a compatible battery we have in stock。"}]},
+{id:"lc-8",part:"P3",script:"W: Excuse me, I reserved a rental car online for this weekend, but I'd like to change the pickup location from the downtown office to the airport branch. M: Sure, I can do that. May I have your reservation number? W: It's R-4-4-8-2. Also, does the airport branch open earlier? My flight lands at six A.M. M: The airport branch opens at five thirty, so you'll be fine. I've updated your reservation, and there's no extra fee for the change.",
+qs:[{q:"What does the woman want to change?",o:["The pickup location","The rental dates","The car model","The payment method"],a:0,tag:"对话-主旨",exp:"开头：change the pickup location。"},
+{q:"What time does the airport branch open?",o:["5:30 A.M.","6:00 A.M.","6:30 A.M.","5:00 A.M."],a:0,tag:"对话-细节",exp:"The airport branch opens at five thirty。数字细节题。"},
+{q:"What does the man say about the change?",o:["There is no additional charge","It requires manager approval","It must be made in person","It takes 24 hours to process"],a:0,tag:"对话-细节",exp:"结尾：no extra fee for the change。"}]},
+{id:"lc-9",part:"P4",script:"Good morning, everyone. Before we open the store, I have a quick announcement. Starting next Monday, we'll be extending our weekday closing time from eight P.M. to ten P.M. This means we'll need volunteers for the new evening shift. Anyone interested should sign up on the sheet in the break room by Friday. Employees who work the late shift will receive an additional ten percent pay. Also, don't forget that the seasonal sale begins this Saturday, so please make sure all discount signs are in place by Friday evening.",
+qs:[{q:"What change is being announced?",o:["Longer store hours","A new store location","A change in management","New uniforms"],a:0,tag:"短文-主旨",exp:"开头：extending our weekday closing time。"},
+{q:"What benefit is offered for the evening shift?",o:["Extra pay","Free meals","More vacation days","Transportation allowance"],a:0,tag:"短文-细节",exp:"an additional ten percent pay。"},
+{q:"What will happen on Saturday?",o:["A sale will begin","The store will close early","A new shift starts","Signs will be removed"],a:0,tag:"短文-细节",exp:"the seasonal sale begins this Saturday。注意周五是布置标签的期限。"}]},
+{id:"lc-10",part:"P4",script:"Thank you for calling Meridian Dental Clinic. Our office is currently closed. Regular office hours are nine A.M. to six P.M., Monday through Friday, and nine to noon on Saturdays. If you would like to schedule or change an appointment, please leave a message with your name and phone number, and we will return your call on the next business day. For dental emergencies, please press two to be connected to our after-hours service. Thank you.",
+qs:[{q:"What kind of business recorded the message?",o:["A dental clinic","A hair salon","A law office","A pharmacy"],a:0,tag:"短文-主旨",exp:"开头：Meridian Dental Clinic。"},
+{q:"When is the office open on Saturdays?",o:["9 A.M. to noon","9 A.M. to 6 P.M.","It is closed","Noon to 6 P.M."],a:0,tag:"短文-细节",exp:"nine to noon on Saturdays。工作日时间是干扰项。"},
+{q:"Why should a caller press two?",o:["To reach the emergency service","To leave a message","To change an appointment","To hear the hours again"],a:0,tag:"短文-细节",exp:"For dental emergencies, press two。"}]}
+];
+/* ================= 数据与工具 ================= */
+const VOCAB = [].concat(window.VOCAB_S1,window.VOCAB_S2,window.VOCAB_G1,window.VOCAB_G2,window.VOCAB_B1)
+  .map((v,i)=>Object.assign({id:"w"+i},v));
+const KEY="toeicCoach.v1";
+function fmtDate(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+const todayStr=()=>fmtDate(new Date());
+function addDays(ds,n){const d=new Date(ds+"T00:00:00");d.setDate(d.getDate()+n);return fmtDate(d);}
+let S=load();
+function load(){
+  try{const raw=localStorage.getItem(KEY);if(raw)return JSON.parse(raw);}catch(e){}
+  return {srs:{},attempts:[],mocks:[],days:{},settings:{basePred:570}};
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function speak(text,rate){
+  try{speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);u.lang="en-US";u.rate=rate||0.95;
+    const vs=speechSynthesis.getVoices().filter(v=>v.lang.startsWith("en"));
+    if(vs.length)u.voice=vs.find(v=>/female|Samantha|Google US/i.test(v.name))||vs[0];
+    speechSynthesis.speak(u);
+  }catch(e){alert("当前浏览器不支持语音朗读");}
+}
+const REASONS=["词汇","语法","定位关键信息","做题太慢"];
+const R_LABEL={"词汇":"词汇不认识","语法":"语法结构没看懂","定位关键信息":"定位关键信息不足","做题太慢":"做题太慢"};
+
+/* ================= 统计 ================= */
+function recentAttempts(days,type){
+  const cutoff=addDays(todayStr(),-days);
+  return S.attempts.filter(a=>a.date>=cutoff&&(!type||a.type===type));
+}
+function acc(list){if(!list.length)return null;return Math.round(100*list.filter(a=>a.correct).length/list.length);}
+function avgTime(list){const t=list.filter(a=>a.time>0);if(!t.length)return null;return Math.round(t.reduce((s,a)=>s+a.time,0)/t.length);}
+function reasonCounts(days){
+  const c={};recentAttempts(days).filter(a=>!a.correct&&!a.mastered).forEach(a=>{(a.reasons||[]).forEach(r=>c[r]=(c[r]||0)+1);});
+  return c;
+}
+function topWeakness(){
+  const rc=reasonCounts(14);const rAcc=acc(recentAttempts(7,"reading"));const lAcc=acc(recentAttempts(7,"listening"));
+  let best=null,n=0;for(const k in rc){if(rc[k]>n){n=rc[k];best=k;}}
+  if(lAcc!==null&&rAcc!==null&&lAcc<rAcc-10)return{key:"听力",text:"听力正确率明显低于阅读，需要加强听力",detail:"近7天听力 "+lAcc+"% vs 阅读 "+rAcc+"%"};
+  if(best&&n>=2)return{key:best,text:"反复出现的问题是"+R_LABEL[best],detail:"近14天因此错了 "+n+" 题"};
+  if(rAcc!==null&&rAcc<70)return{key:"阅读",text:"阅读正确率低于70%，优先加强阅读",detail:"近7天阅读 "+rAcc+"%"};
+  return{key:"阅读",text:"阅读表现需要优先加强",detail:"持续积累数据后分析会更准确"};
+}
+function predictScore(){
+  const recent=S.mocks.slice(-3);
+  if(recent.length){const av=Math.round(recent.reduce((s,m)=>s+m.l+m.r,0)/recent.length/5)*5;return{total:av,src:"近"+recent.length+"次模考平均"};}
+  const rA=acc(recentAttempts(14,"reading")),lA=acc(recentAttempts(14,"listening"));
+  if(rA===null&&lA===null)return{total:S.settings.basePred,src:"初始估计（做题后自动更新）"};
+  const l=lA===null?S.settings.basePred/2:Math.round((200+lA*2.6)/5)*5;
+  const r=rA===null?S.settings.basePred/2:Math.round((160+rA*2.6)/5)*5;
+  return{total:Math.min(990,l+r),src:"根据近14天练习正确率估算"};
+}
+
+/* ================= 今日计划引擎 ================= */
+const TASK_DEFS={
+  vocabReview:{name:"复习旧词",icon:"📖",view:"vocab"},
+  vocabNew:{name:"新短语",icon:"📝",view:"vocab"},
+  reading:{name:"阅读主训练",icon:"🔍",view:"reading"},
+  listening:{name:"听力维持",icon:"🎧",view:"listening"},
+  review:{name:"错题复盘",icon:"📋",view:"review"}
+};
+function computePlan(){
+  let plan={vocabReview:10,vocabNew:10,reading:25,listening:10,review:5};
+  const rA=acc(recentAttempts(7,"reading")),lA=acc(recentAttempts(7,"listening"));
+  const rT=avgTime(recentAttempts(7,"reading"));
+  const notes=[];
+  if(lA!==null&&rA!==null&&lA<rA-10){plan.reading-=7;plan.listening+=7;notes.push("听力成为短板，从阅读调 7 分钟给听力");}
+  else if(rA!==null&&(rA<70||(rT&&rT>75))){plan.vocabNew-=3;plan.listening-=2;plan.reading+=5;notes.push(rA<70?"阅读正确率 "+rA+"% 低于目标，阅读时间 +5 分钟":"阅读平均用时偏长，阅读时间 +5 分钟");}
+  const wrongs=S.attempts.filter(a=>!a.correct&&!a.mastered).length;
+  if(wrongs>=8){plan.review+=3;plan.vocabNew-=3;notes.push("待复盘错题较多，复盘 +3 分钟");}
+  return{plan,notes};
+}
+function getToday(){
+  const d=todayStr();
+  if(!S.days[d]){
+    const{plan,notes}=computePlan();
+    S.days[d]={plan,notes,done:{},swapped:{}};save();
+  }
+  return S.days[d];
+}
+
+/* ================= 视图切换 ================= */
+const VIEWS=["home","vocab","reading","listening","review","progress","mock"];
+function show(v){
+  document.querySelectorAll("#mainTabs button").forEach(b=>b.classList.toggle("active",b.dataset.v===v));
+  VIEWS.forEach(x=>document.getElementById("v-"+x).classList.toggle("active",x===v));
+  ({home:renderHome,vocab:renderVocab,reading:renderReading,listening:renderListening,review:renderReview,progress:renderProgress,mock:renderMock})[v]();
+  window.scrollTo(0,0);
+}
+document.getElementById("mainTabs").addEventListener("click",e=>{if(e.target.dataset.v)show(e.target.dataset.v);});
+
+/* ================= 首页 ================= */
+function renderHome(){
+  const day=getToday();const w=topWeakness();const pred=predictScore();
+  const keys=Object.keys(day.plan);
+  const doneMin=keys.filter(k=>day.done[k]).reduce((s,k)=>s+day.plan[k],0);
+  const total=keys.reduce((s,k)=>s+day.plan[k],0);
+  const pct=total?Math.round(100*doneMin/total):0;
+  const C=2*Math.PI*46;
+  let focus="今天，专注解决"+(w.key==="听力"?"听力短板":w.key==="阅读"?"阅读瓶颈":R_LABEL[w.key])+"。";
+  document.getElementById("v-home").innerHTML=`
+  <div class="card hero">
+    <div><div class="label">TODAY · 今日计划</div><div class="focus">${esc(focus)}</div>
+      ${day.notes&&day.notes.length?`<div class="muted" style="margin-top:6px">自动调整：${day.notes.map(esc).join("；")}</div>`:""}
+    </div>
+    <div class="ring"><svg width="110" height="110"><circle cx="55" cy="55" r="46" fill="none" stroke="#cfe6d8" stroke-width="9"/><circle cx="55" cy="55" r="46" fill="none" stroke="#1e7a3c" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-pct/100)}"/></svg>
+    <div class="txt"><b>${pct}%</b><span>计划完成</span></div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h2>${total} 分钟学习计划</h2><div class="tasklist">${keys.map(k=>{
+      const def=TASK_DEFS[k];const done=day.done[k];
+      return`<div class="task ${done?"done":""}" data-k="${k}">
+        <div class="icon">${def.icon}</div><div class="tname">${def.name}${day.swapped[k]?` <span class="pill a">已替换</span>`:""}</div>
+        <div class="tmin">${day.plan[k]} 分钟</div>
+        <button class="swap" data-swap="${k}" title="替换任务">⇄</button></div>`;}).join("")}
+      <div class="muted" style="margin-top:6px">点击任务卡片 = 标记完成并进入训练；⇄ = 替换任务</div></div>
+    </div>
+    <div>
+      <div class="card"><div class="scores">
+        <div><div class="num">${pred.total}</div><div class="cap">预测分数</div></div>
+        <div class="divider"></div>
+        <div><div class="num">800</div><div class="cap">目标</div></div>
+      </div><div class="muted" style="text-align:center;margin-top:8px">${esc(pred.src)}</div></div>
+      <div class="card"><div class="callout"><div>🎯</div><div><b>${esc(w.text)}</b><br><span class="muted">${esc(w.detail)}</span></div></div></div>
+    </div>
+  </div>`;
+  document.querySelectorAll("#v-home .task").forEach(el=>{
+    el.addEventListener("click",e=>{
+      if(e.target.dataset.swap)return;
+      const k=el.dataset.k;
+      if(!day.done[k]){day.done[k]=true;save();show(TASK_DEFS[k].view);}
+      else{day.done[k]=false;save();renderHome();}
+    });
+  });
+  document.querySelectorAll("#v-home [data-swap]").forEach(b=>{
+    b.addEventListener("click",e=>{e.stopPropagation();swapTask(b.dataset.swap);});
+  });
+}
+function swapTask(k){
+  const day=getToday();const w=topWeakness();
+  const weakTask=w.key==="听力"?"listening":"reading";
+  const options=Object.keys(TASK_DEFS).filter(x=>x!==k);
+  const choice=prompt("把「"+TASK_DEFS[k].name+"」替换为（输入编号）：\n"+options.map((o,i)=>(i+1)+". "+TASK_DEFS[o].name).join("\n"));
+  const idx=parseInt(choice)-1;
+  if(isNaN(idx)||!options[idx])return;
+  const to=options[idx];
+  if(k===weakTask){
+    if(!confirm("⚠️ 「"+TASK_DEFS[k].name+"」正是你当前的最优先弱项（"+w.text+"）。\n确定要替换掉它吗？"))return;
+  }
+  const min=day.plan[k];delete day.plan[k];delete day.done[k];
+  day.plan[to]=(day.plan[to]||0)+min;day.swapped[to]=true;save();renderHome();
+}
+
+/* ================= 词汇模块 ================= */
+const BOOKS={s:{name:"银之短语",need:null},g:{name:"金之短语",need:"s"},b:{name:"官方蓝皮书",need:"g"}};
+const SRS_INT=[1,3,7,14,30];
+let vState={book:"s",mode:null,queue:[],i:0,revealed:false,quizWrong:0,quizRight:0};
+function srsOf(id){return S.srs[id]||null;}
+function masteredCount(book){return VOCAB.filter(v=>v.b===book&&S.srs[v.id]&&S.srs[v.id].box>=2).length;}
+function bookTotal(book){return VOCAB.filter(v=>v.b===book).length;}
+function bookUnlocked(book){
+  const need=BOOKS[book].need;if(!need)return true;
+  return masteredCount(need)/bookTotal(need)>=0.6;
+}
+function dueWords(){const t=todayStr();return VOCAB.filter(v=>S.srs[v.id]&&S.srs[v.id].due<=t);}
+function newWords(book,n){return VOCAB.filter(v=>v.b===book&&!S.srs[v.id]).slice(0,n);}
+function renderVocab(){
+  const el=document.getElementById("v-vocab");
+  const due=dueWords().length;
+  const learned=Object.keys(S.srs).length;
+  el.innerHTML=`
+  <div class="card"><h2>词汇与短语</h2>
+    <div class="book-tabs">${Object.keys(BOOKS).map(b=>{
+      const un=bookUnlocked(b);
+      return`<button data-book="${b}" ${un?"":"disabled"} class="${vState.book===b?"active":""}">${BOOKS[b].name} ${un?masteredCount(b)+"/"+bookTotal(b):"🔒"}</button>`;}).join("")}</div>
+    ${bookUnlocked("g")?"":`<div class="muted">银之短语掌握 60%（当前 ${Math.round(100*masteredCount("s")/bookTotal("s"))}%）后解锁金之短语；金之短语掌握 60% 后解锁蓝皮书。</div>`}
+    <div class="stat-chips">
+      <div class="chip"><b>${due}</b><span>今日待复习</span></div>
+      <div class="chip"><b>${learned}</b><span>已学词条</span></div>
+      <div class="chip"><b>${VOCAB.length}</b><span>词库总量</span></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+      <button class="btn" id="btnReview" ${due?"":"disabled"}>复习旧词（${due}）</button>
+      <button class="btn ghost" id="btnLearn">学习新短语</button>
+      <button class="btn gray" id="btnQuiz">中译英自测</button>
+    </div>
+  </div>
+  <div id="vocabStage"></div>`;
+  el.querySelectorAll("[data-book]").forEach(b=>b.addEventListener("click",()=>{vState.book=b.dataset.book;renderVocab();}));
+  document.getElementById("btnReview").onclick=()=>{startCards(dueWords(),"review");};
+  document.getElementById("btnLearn").onclick=()=>{
+    const ws=newWords(vState.book,8);
+    if(!ws.length){alert("本书新词已全部学完！");return;}
+    startCards(ws,"new");
+  };
+  document.getElementById("btnQuiz").onclick=startQuiz;
+}
+function startCards(list,mode){
+  if(!list.length)return;
+  vState.mode=mode;vState.queue=list;vState.i=0;vState.revealed=false;
+  renderCard();
+}
+function renderCard(){
+  const st=document.getElementById("vocabStage");
+  if(vState.i>=vState.queue.length){
+    st.innerHTML=`<div class="card" style="text-align:center"><h2>✅ 本组完成！</h2><p class="muted">共 ${vState.queue.length} 条</p><button class="btn" onclick="renderVocab()">返回</button></div>`;return;
+  }
+  const v=vState.queue[vState.i];
+  const isNew=vState.mode==="new";
+  st.innerHTML=`
+  <div class="card vocab-card">
+    <div class="muted" style="text-align:right">${vState.i+1} / ${vState.queue.length} · ${BOOKS[v.b].name}</div>
+    <div class="phrase">${esc(v.p)}</div>
+    <div class="word">${esc(v.w)} <button class="btn small ghost" id="sayBtn">🔊 发音</button></div>
+    <div id="answerArea" class="${vState.revealed||isNew?"":"hidden"}">
+      <div class="cn">${esc(v.c)}</div>
+      <div class="ex">${esc(v.e)}<div class="t">${esc(v.t)}</div>
+      <button class="btn small ghost" id="sayEx">🔊 例句</button></div>
+    </div>
+    <div style="margin-top:16px">
+      ${vState.revealed||isNew
+        ?(isNew?`<button class="btn" id="gotIt">开始记忆 → 明天复习</button>`
+          :`<button class="btn" id="knowBtn">记住了 ✓</button> <button class="btn gray" id="forgotBtn">忘了 ✗</button>`)
+        :`<button class="btn" id="revealBtn">显示释义</button>`}
+    </div>
+  </div>`;
+  document.getElementById("sayBtn").onclick=()=>speak(v.p);
+  const se=document.getElementById("sayEx");if(se)se.onclick=()=>speak(v.e);
+  const rb=document.getElementById("revealBtn");if(rb)rb.onclick=()=>{vState.revealed=true;renderCard();};
+  const gi=document.getElementById("gotIt");if(gi)gi.onclick=()=>{S.srs[v.id]={box:0,due:addDays(todayStr(),1)};save();next();};
+  const kb=document.getElementById("knowBtn");if(kb)kb.onclick=()=>{
+    const r=S.srs[v.id]||{box:0};r.box=Math.min(r.box+1,SRS_INT.length-1);r.due=addDays(todayStr(),SRS_INT[r.box]);S.srs[v.id]=r;save();next();};
+  const fb=document.getElementById("forgotBtn");if(fb)fb.onclick=()=>{S.srs[v.id]={box:0,due:addDays(todayStr(),1)};save();next();};
+  function next(){vState.i++;vState.revealed=false;renderCard();speechSynthesis.cancel();}
+  if(!isNew&&!vState.revealed)speak(v.p);
+}
+function startQuiz(){
+  const learned=VOCAB.filter(v=>S.srs[v.id]);
+  const pool=(learned.length>=5?learned:VOCAB.filter(v=>v.b===vState.book)).slice();
+  pool.sort(()=>Math.random()-0.5);
+  vState.mode="quiz";vState.queue=pool.slice(0,10);vState.i=0;vState.quizRight=0;vState.quizWrong=0;
+  renderQuizItem();
+}
+function renderQuizItem(){
+  const st=document.getElementById("vocabStage");
+  if(vState.i>=vState.queue.length){
+    st.innerHTML=`<div class="card" style="text-align:center"><h2>自测完成</h2>
+    <div class="stat-chips" style="justify-content:center"><div class="chip"><b>${vState.quizRight}</b><span>答对</span></div><div class="chip"><b>${vState.quizWrong}</b><span>答错</span></div></div>
+    <p class="muted">答错的词已安排明天重练</p><button class="btn" onclick="renderVocab()">返回</button></div>`;return;
+  }
+  const v=vState.queue[vState.i];
+  const blanked=v.p.replace(new RegExp(v.w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"i"),"______");
+  st.innerHTML=`
+  <div class="card vocab-card">
+    <div class="muted" style="text-align:right">${vState.i+1} / ${vState.queue.length} · 主动回忆测试</div>
+    <div class="cn" style="font-size:20px">${esc(v.c)}</div>
+    <div class="phrase" style="font-size:22px">${esc(blanked)}</div>
+    <div class="formrow" style="justify-content:center;margin-top:14px">
+      <input type="text" id="quizInput" placeholder="输入缺失的英文单词" autocomplete="off" style="width:240px">
+      <button class="btn" id="quizCheck">检查</button>
+    </div>
+    <div id="quizFb"></div>
+  </div>`;
+  const inp=document.getElementById("quizInput");inp.focus();
+  const check=()=>{
+    const ok=inp.value.trim().toLowerCase()===v.w.toLowerCase();
+    const fb=document.getElementById("quizFb");
+    const r=S.srs[v.id]||{box:0};
+    if(ok){vState.quizRight++;r.box=Math.min((r.box||0)+1,SRS_INT.length-1);r.due=addDays(todayStr(),SRS_INT[r.box]);
+      fb.innerHTML=`<div class="callout" style="margin-top:10px">✅ 正确！${esc(v.p)}（${esc(v.c)}）</div>`;}
+    else{vState.quizWrong++;r.box=0;r.due=addDays(todayStr(),1);
+      fb.innerHTML=`<div class="callout danger" style="margin-top:10px">❌ 正确答案：<b>${esc(v.w)}</b> — ${esc(v.p)}（${esc(v.c)}）</div>`;}
+    S.srs[v.id]=r;save();
+    fb.innerHTML+=`<div style="margin-top:10px"><button class="btn" id="quizNext">下一题</button></div>`;
+    document.getElementById("quizCheck").disabled=true;
+    document.getElementById("quizNext").onclick=()=>{vState.i++;renderQuizItem();};
+  };
+  document.getElementById("quizCheck").onclick=check;
+  inp.addEventListener("keydown",e=>{if(e.key==="Enter"&&!document.getElementById("quizCheck").disabled)check();});
+}
+/* ================= 通用答题引擎 ================= */
+let qState=null;
+function recordAttempt(o){
+  S.attempts.push(Object.assign({date:todayStr(),mastered:false},o));save();
+}
+function answerUI(container,opts,onPick){
+  container.innerHTML=opts.map((o,i)=>`<button class="opt" data-i="${i}">${String.fromCharCode(65+i)}. ${esc(o)}</button>`).join("");
+  container.querySelectorAll(".opt").forEach(b=>b.onclick=()=>onPick(parseInt(b.dataset.i),container));
+}
+function markOpts(container,picked,correct){
+  container.querySelectorAll(".opt").forEach((b,i)=>{
+    b.disabled=true;
+    if(i===correct)b.classList.add("correct");
+    else if(i===picked)b.classList.add("wrong");
+  });
+}
+function reasonPicker(id,timeSec,cb){
+  const auto=timeSec>90?["做题太慢"]:[];
+  const html=`<div class="callout warn" style="margin-top:10px;flex-direction:column">
+    <b>这题错在哪？（可多选，帮助系统对症下药）</b>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+      ${REASONS.map(r=>`<button class="btn small ${auto.includes(r)?"":"gray"}" data-r="${r}">${r}</button>`).join("")}
+    </div>
+    <div style="margin-top:8px"><button class="btn small" id="rDone-${id}">确定</button></div></div>`;
+  const div=document.createElement("div");div.innerHTML=html;
+  const sel=new Set(auto);
+  div.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{
+    const r=b.dataset.r;
+    if(sel.has(r)){sel.delete(r);b.classList.add("gray");}else{sel.add(r);b.classList.remove("gray");}
+  });
+  div.querySelector("#rDone-"+id).onclick=()=>{cb([...sel].length?[...sel]:["定位关键信息"]);};
+  return div;
+}
+
+/* ================= 阅读训练 ================= */
+let rTimer=null,rStart=0;
+function stopTimer(){if(rTimer){clearInterval(rTimer);rTimer=null;}}
+function startTimer(el){
+  rStart=Date.now();stopTimer();
+  rTimer=setInterval(()=>{const s=Math.floor((Date.now()-rStart)/1000);
+    const e=document.getElementById(el);if(e)e.textContent=Math.floor(s/60)+":"+String(s%60).padStart(2,"0");},500);
+}
+function elapsed(){return Math.floor((Date.now()-rStart)/1000);}
+function doneIds(){return new Set(S.attempts.map(a=>a.qid));}
+function renderReading(){
+  const el=document.getElementById("v-reading");
+  const d=doneIds();
+  const p5left=Q_P5.filter(q=>!d.has(q.id)).length;
+  const rAcc=acc(recentAttempts(7,"reading"));const rT=avgTime(recentAttempts(7,"reading"));
+  el.innerHTML=`
+  <div class="card"><h2>阅读训练 · 主攻 Part 5 / 6 / 7</h2>
+    <div class="stat-chips">
+      <div class="chip"><b>${rAcc===null?"—":rAcc+"%"}</b><span>近7天正确率</span></div>
+      <div class="chip"><b>${rT===null?"—":rT+"s"}</b><span>平均用时/题</span></div>
+      <div class="chip"><b>${recentAttempts(7,"reading").length}</b><span>近7天题量</span></div>
+    </div>
+    ${rAcc!==null&&rAcc<70?`<div class="callout warn" style="margin:8px 0">⚠️ 阅读正确率低于 70%，明日计划已自动增加阅读时间。</div>`:""}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+      <button class="btn" id="rp5">Part 5 语法词汇（剩 ${p5left}）</button>
+      <button class="btn" id="rp6">Part 6 段落填空</button>
+      <button class="btn" id="rp7">Part 7 阅读理解</button>
+      <button class="btn gray" id="rManual">录入外部练习结果</button>
+    </div>
+  </div>
+  <div id="readStage"></div>`;
+  document.getElementById("rp5").onclick=()=>startP5();
+  document.getElementById("rp6").onclick=()=>startPassage(Q_P6,"p6");
+  document.getElementById("rp7").onclick=()=>startPassage(Q_P7,"p7");
+  document.getElementById("rManual").onclick=()=>manualEntry("reading");
+}
+function startP5(){
+  const d=doneIds();
+  let pool=Q_P5.filter(q=>!d.has(q.id));
+  if(!pool.length){pool=Q_P5.slice();}
+  qState={list:pool.sort(()=>Math.random()-0.5).slice(0,8),i:0,part:"P5"};
+  renderP5Item();
+}
+function renderP5Item(){
+  const st=document.getElementById("readStage");
+  if(qState.i>=qState.list.length){st.innerHTML=`<div class="card" style="text-align:center"><h2>✅ 本组完成</h2><button class="btn" onclick="renderReading()">返回</button></div>`;stopTimer();return;}
+  const q=qState.list[qState.i];
+  st.innerHTML=`<div class="card">
+    <div style="display:flex;justify-content:space-between"><h3>Part 5 · ${qState.i+1}/${qState.list.length}</h3><span class="timerbox" id="tmr">0:00</span></div>
+    <p style="margin:10px 0;font-size:15px">${esc(q.q)}</p>
+    <div id="optBox"></div>
+    <div class="conf-btns hidden" id="confBox"><span class="muted">信心：</span>
+      <button class="btn small gray" data-c="sure">很确定</button><button class="btn small gray" data-c="unsure">不太确定</button><button class="btn small gray" data-c="guess">蒙的</button></div>
+    <div id="fbBox"></div></div>`;
+  startTimer("tmr");
+  let picked=null;
+  answerUI(document.getElementById("optBox"),q.o,(i,c)=>{
+    if(picked!==null)return;picked=i;stopTimer();
+    const t=elapsed();const ok=i===q.a;
+    markOpts(c,i,q.a);
+    document.getElementById("confBox").classList.remove("hidden");
+    document.querySelectorAll("#confBox [data-c]").forEach(b=>b.onclick=()=>{
+      document.getElementById("confBox").classList.add("hidden");
+      finish(ok,t,b.dataset.c);
+    });
+  });
+  function finish(ok,t,conf){
+    const fb=document.getElementById("fbBox");
+    fb.innerHTML=`<div class="callout ${ok?"":"danger"}" style="margin-top:10px">${ok?"✅ 正确":"❌ 错误"} · 用时 ${t}s<br>${esc(q.exp)}</div>`;
+    if(!ok){
+      fb.appendChild(reasonPicker(q.id,t,reasons=>{
+        recordAttempt({qid:q.id,type:"reading",part:"P5",correct:false,time:t,conf,reasons,q:q.q,ans:q.o[q.a],exp:q.exp,tag:q.tag});
+        nextBtn(fb);
+      }));
+    }else{
+      recordAttempt({qid:q.id,type:"reading",part:"P5",correct:true,time:t,conf});
+      nextBtn(fb);
+    }
+  }
+  function nextBtn(fb){
+    const d=document.createElement("div");d.style.marginTop="10px";
+    d.innerHTML=`<button class="btn">下一题</button>`;
+    d.querySelector("button").onclick=()=>{qState.i++;renderP5Item();};
+    fb.appendChild(d);
+  }
+}
+function startPassage(bank,part){
+  const d=doneIds();
+  let pool=bank.filter(p=>!p.qs.every(q=>d.has(p.id+"-"+q.q)));
+  if(!pool.length)pool=bank.slice();
+  const p=pool[Math.floor(Math.random()*pool.length)];
+  qState={passage:p,i:0,part:part.toUpperCase()};
+  renderPassageItem();
+}
+function renderPassageItem(){
+  const st=document.getElementById("readStage");
+  const p=qState.passage;
+  if(qState.i>=p.qs.length){st.innerHTML=`<div class="card" style="text-align:center"><h2>✅ 本篇完成</h2><button class="btn" onclick="renderReading()">返回</button></div>`;stopTimer();return;}
+  const q=p.qs[qState.i];
+  st.innerHTML=`<div class="card">
+    <div style="display:flex;justify-content:space-between"><h3>${qState.part} ${p.type?("· "+p.type):""} · 第 ${qState.i+1}/${p.qs.length} 题</h3><span class="timerbox" id="tmr">0:00</span></div>
+    <div class="passage">${esc(p.passage)}</div>
+    <p style="margin:8px 0;font-weight:600">${esc(q.q)}</p>
+    <div id="optBox"></div>
+    <div class="conf-btns hidden" id="confBox"><span class="muted">信心：</span>
+      <button class="btn small gray" data-c="sure">很确定</button><button class="btn small gray" data-c="unsure">不太确定</button><button class="btn small gray" data-c="guess">蒙的</button></div>
+    <div id="fbBox"></div></div>`;
+  startTimer("tmr");
+  let picked=null;
+  answerUI(document.getElementById("optBox"),q.o,(i,c)=>{
+    if(picked!==null)return;picked=i;stopTimer();
+    const t=elapsed();const ok=i===q.a;
+    markOpts(c,i,q.a);
+    document.getElementById("confBox").classList.remove("hidden");
+    document.querySelectorAll("#confBox [data-c]").forEach(b=>b.onclick=()=>{
+      document.getElementById("confBox").classList.add("hidden");
+      const fb=document.getElementById("fbBox");
+      fb.innerHTML=`<div class="callout ${ok?"":"danger"}" style="margin-top:10px">${ok?"✅ 正确":"❌ 错误"} · 用时 ${t}s<br>${esc(q.exp)}</div>`;
+      const qid=p.id+"-"+q.q;
+      if(!ok){
+        fb.appendChild(reasonPicker(qid.replace(/[^a-z0-9-]/gi,""),t,reasons=>{
+          recordAttempt({qid,type:"reading",part:qState.part,correct:false,time:t,conf:b.dataset.c,reasons,q:q.q,ans:q.o[q.a],exp:q.exp,tag:q.tag});
+          nx(fb);
+        }));
+      }else{recordAttempt({qid,type:"reading",part:qState.part,correct:true,time:t,conf:b.dataset.c});nx(fb);}
+    });
+  });
+  function nx(fb){const d=document.createElement("div");d.style.marginTop="10px";d.innerHTML=`<button class="btn">下一题</button>`;
+    d.querySelector("button").onclick=()=>{qState.i++;renderPassageItem();};fb.appendChild(d);}
+}
+function manualEntry(type){
+  const st=document.getElementById(type==="reading"?"readStage":"listenStage");
+  st.innerHTML=`<div class="card"><h3>录入外部练习结果（真题书/官方题）</h3>
+    <div class="formrow"><label>Part</label><select id="mePart">${(type==="reading"?["P5","P6","P7"]:["P1","P2","P3","P4"]).map(p=>`<option>${p}</option>`).join("")}</select>
+    <label>总题数</label><input type="number" id="meTotal" style="width:80px" min="1">
+    <label>答对</label><input type="number" id="meCorrect" style="width:80px" min="0">
+    <label>总用时(分钟)</label><input type="number" id="meTime" style="width:80px" min="0"></div>
+    <div class="formrow"><label>主要错因</label><select id="meReason"><option>词汇</option><option>语法</option><option>定位关键信息</option><option>做题太慢</option><option value="">无/未知</option></select>
+    <button class="btn" id="meSave">保存</button></div></div>`;
+  document.getElementById("meSave").onclick=()=>{
+    const total=+document.getElementById("meTotal").value,correct=+document.getElementById("meCorrect").value;
+    if(!total||correct>total){alert("请检查题数");return;}
+    const part=document.getElementById("mePart").value;
+    const timePer=Math.round((+document.getElementById("meTime").value*60)/total)||0;
+    const reason=document.getElementById("meReason").value;
+    for(let i=0;i<total;i++){
+      recordAttempt({qid:"ext-"+Date.now()+"-"+i,type,part,correct:i<correct,time:timePer,conf:"ext",
+        reasons:i<correct?undefined:(reason?[reason]:["定位关键信息"]),q:"外部练习("+part+")",ext:true});
+    }
+    alert("已录入 "+total+" 题");
+    type==="reading"?renderReading():renderListening();
+  };
+}
+
+/* ================= 听力训练 ================= */
+function renderListening(){
+  const el=document.getElementById("v-listening");
+  const lAcc=acc(recentAttempts(7,"listening"));
+  const rAcc=acc(recentAttempts(7,"reading"));
+  el.innerHTML=`
+  <div class="card"><h2>听力训练 · 每日维持</h2>
+    <div class="stat-chips">
+      <div class="chip"><b>${lAcc===null?"—":lAcc+"%"}</b><span>近7天正确率</span></div>
+      <div class="chip"><b>${recentAttempts(7,"listening").length}</b><span>近7天题量</span></div>
+    </div>
+    ${lAcc!==null&&rAcc!==null&&lAcc<rAcc-10?`<div class="callout warn" style="margin:8px 0">⚠️ 听力已成为短板，明日计划已自动从阅读调时间给听力。</div>`:""}
+    <p class="muted">用 🔊 播放音频（浏览器朗读，可重听），听完作答。作答后可查看原文。</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+      <button class="btn" id="lStart">开始今日听力（P2 应答 + P3/P4）</button>
+      <button class="btn gray" id="lManual">录入外部练习结果</button>
+    </div>
+  </div>
+  <div id="listenStage"></div>`;
+  document.getElementById("lStart").onclick=startListening;
+  document.getElementById("lManual").onclick=()=>manualEntry("listening");
+}
+function startListening(){
+  const d=doneIds();
+  let pool=Q_LC.filter(q=>{
+    if(q.qs)return!q.qs.every(x=>d.has(q.id+"-"+x.q));
+    return!d.has(q.id);
+  });
+  if(!pool.length)pool=Q_LC.slice();
+  const p2=pool.filter(q=>q.part==="P2").slice(0,3);
+  const p34=pool.filter(q=>q.part!=="P2").slice(0,2);
+  qState={list:[...p2,...p34],i:0,sub:0};
+  renderListenItem();
+}
+function renderListenItem(){
+  const st=document.getElementById("listenStage");
+  if(qState.i>=qState.list.length){st.innerHTML=`<div class="card" style="text-align:center"><h2>✅ 今日听力完成</h2><button class="btn" onclick="renderListening()">返回</button></div>`;return;}
+  const item=qState.list[qState.i];
+  if(item.part==="P2"){
+    st.innerHTML=`<div class="card"><h3>Part 2 应答问题 · ${qState.i+1}/${qState.list.length}</h3>
+      <p class="muted">听问题，选择最合适的应答。</p>
+      <button class="btn ghost" id="playBtn">🔊 播放问题</button>
+      <div id="optBox" style="margin-top:12px"></div><div id="fbBox"></div></div>`;
+    document.getElementById("playBtn").onclick=()=>speak(item.script,0.9);
+    speak(item.script,0.9);
+    let picked=null;const t0=Date.now();
+    answerUI(document.getElementById("optBox"),item.o,(i,c)=>{
+      if(picked!==null)return;picked=i;
+      const ok=i===item.a;const t=Math.floor((Date.now()-t0)/1000);
+      markOpts(c,i,item.a);
+      const fb=document.getElementById("fbBox");
+      fb.innerHTML=`<div class="callout ${ok?"":"danger"}" style="margin-top:10px">${ok?"✅ 正确":"❌ 错误"}<br>原文：${esc(item.script)}<br>${esc(item.exp)}</div>`;
+      recordAttempt({qid:item.id,type:"listening",part:"P2",correct:ok,time:t,conf:"n",
+        reasons:ok?undefined:[item.tag.includes("应答")?"定位关键信息":item.tag],q:item.script,ans:item.o[item.a],exp:item.exp,tag:item.tag});
+      const d=document.createElement("div");d.style.marginTop="10px";d.innerHTML=`<button class="btn">下一题</button>`;
+      d.querySelector("button").onclick=()=>{qState.i++;renderListenItem();};fb.appendChild(d);
+    });
+  }else{
+    const q=item.qs[qState.sub];
+    st.innerHTML=`<div class="card"><h3>Part ${item.part==="P3"?"3 对话":"4 短文"} · 第 ${qState.sub+1}/${item.qs.length} 题</h3>
+      <button class="btn ghost" id="playBtn">🔊 播放音频</button>
+      <p style="margin:10px 0;font-weight:600">${esc(q.q)}</p>
+      <div id="optBox"></div><div id="fbBox"></div></div>`;
+    document.getElementById("playBtn").onclick=()=>speak(item.script,0.95);
+    if(qState.sub===0)speak(item.script,0.95);
+    let picked=null;const t0=Date.now();
+    answerUI(document.getElementById("optBox"),q.o,(i,c)=>{
+      if(picked!==null)return;picked=i;
+      const ok=i===q.a;const t=Math.floor((Date.now()-t0)/1000);
+      markOpts(c,i,q.a);
+      const fb=document.getElementById("fbBox");
+      fb.innerHTML=`<div class="callout ${ok?"":"danger"}" style="margin-top:10px">${ok?"✅ 正确":"❌ 错误"}<br>${esc(q.exp)}${qState.sub===item.qs.length-1?`<details style="margin-top:6px"><summary>查看听力原文</summary><div class="muted">${esc(item.script)}</div></details>`:""}</div>`;
+      recordAttempt({qid:item.id+"-"+q.q,type:"listening",part:item.part,correct:ok,time:t,conf:"n",
+        reasons:ok?undefined:["定位关键信息"],q:q.q,ans:q.o[q.a],exp:q.exp,tag:q.tag});
+      const d=document.createElement("div");d.style.marginTop="10px";d.innerHTML=`<button class="btn">下一题</button>`;
+      d.querySelector("button").onclick=()=>{
+        qState.sub++;
+        if(qState.sub>=item.qs.length){qState.i++;qState.sub=0;}
+        renderListenItem();
+      };fb.appendChild(d);
+    });
+  }
+}
+
+/* ================= 错题复盘 ================= */
+function renderReview(){
+  const el=document.getElementById("v-review");
+  const wrongs=S.attempts.filter(a=>!a.correct&&!a.mastered&&!a.ext);
+  const rc=reasonCounts(30);
+  const sorted=Object.entries(rc).sort((a,b)=>b[1]-a[1]);
+  const maxN=sorted.length?sorted[0][1]:0;
+  el.innerHTML=`
+  <div class="card"><h2>错题复盘</h2>
+    ${sorted.length?`<h3 style="margin-top:6px">你最近反复卡在哪里（近30天）</h3>
+    ${sorted.map(([r,n])=>`<div class="bar-row"><div class="bl">${R_LABEL[r]}</div><div class="track"><div class="fill" style="width:${Math.round(100*n/maxN)}%"></div></div><div class="val">${n} 题</div></div>`).join("")}
+    ${sorted[0]&&sorted[0][1]>=2?`<div class="callout warn" style="margin-top:10px">🎯 优先攻克：<b>${R_LABEL[sorted[0][0]]}</b> — ${adviceFor(sorted[0][0])}</div>`:""}`
+    :`<p class="muted">暂无错题数据。去做阅读/听力训练吧。</p>`}
+  </div>
+  <div class="card"><h3>待复盘错题（${wrongs.length}）</h3>
+    ${wrongs.length?wrongs.slice().reverse().map((a,ri)=>{
+      const idx=S.attempts.indexOf(a);
+      return`<div style="border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:8px">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+        <span class="pill b">${a.part||a.type}</span>${(a.reasons||[]).map(r=>`<span class="pill r">${r}</span>`).join("")}
+        <span class="muted" style="margin-left:auto">${a.date}</span></div>
+      <div style="font-size:14px">${esc(a.q||"")}</div>
+      <details style="margin-top:6px"><summary class="muted">答案与解析</summary>
+        <div style="margin-top:6px">正确答案：<b>${esc(a.ans||"")}</b><br><span class="muted">${esc(a.exp||"")}</span></div></details>
+      <div style="margin-top:8px"><button class="btn small" data-master="${idx}">已掌握 ✓</button></div>
+      </div>`;}).join("")
+    :`<p class="muted">没有待复盘的错题 🎉</p>`}
+  </div>`;
+  el.querySelectorAll("[data-master]").forEach(b=>b.onclick=()=>{
+    S.attempts[parseInt(b.dataset.master)].mastered=true;save();renderReview();
+  });
+}
+function adviceFor(r){
+  return{
+    "词汇":"回到词汇模块，把错题涉及的词加入复习；先补银之短语再进金之短语。",
+    "语法":"Part 5 错题集中练：先判断句子缺什么成分（谓语/修饰语/连接词），再看选项词性。",
+    "定位关键信息":"读题先抓疑问词和关键词，再回原文扫读定位，不要通读全文；注意换算/推断类陷阱。",
+    "做题太慢":"给自己设单题限时（P5 每题 30 秒、P7 每题 60 秒），超时果断标记跳过。"
+  }[r]||"";
+}
+
+/* ================= 进度分析 ================= */
+function renderProgress(){
+  const el=document.getElementById("v-progress");
+  const days=[];
+  for(let i=13;i>=0;i--){const d=addDays(todayStr(),-i);
+    const dayA=S.attempts.filter(a=>a.date===d);
+    const r=dayA.filter(a=>a.type==="reading"),l=dayA.filter(a=>a.type==="listening");
+    days.push({d,r:acc(r),l:acc(l)});}
+  const w=topWeakness();
+  const pred=predictScore();
+  const partStats={};
+  ["P1","P2","P3","P4","P5","P6","P7"].forEach(p=>{
+    const list=recentAttempts(30).filter(a=>a.part===p);
+    if(list.length)partStats[p]={acc:acc(list),n:list.length};
+  });
+  const stag=stagnationReasons();
+  el.innerHTML=`
+  <div class="card"><h2>进度与分析</h2>
+    <div class="stat-chips">
+      <div class="chip"><b>${pred.total}</b><span>当前预测</span></div>
+      <div class="chip"><b>${acc(recentAttempts(14,"listening"))??"—"}${acc(recentAttempts(14,"listening"))!==null?"%":""}</b><span>听力正确率(14天)</span></div>
+      <div class="chip"><b>${acc(recentAttempts(14,"reading"))??"—"}${acc(recentAttempts(14,"reading"))!==null?"%":""}</b><span>阅读正确率(14天)</span></div>
+      <div class="chip"><b>${Object.keys(S.srs).length}</b><span>已学词条</span></div>
+    </div>
+    <h3 style="margin-top:10px">近14天正确率趋势</h3>
+    <canvas class="chart" id="trendChart" width="900" height="220"></canvas>
+    <div class="muted">绿线 = 阅读 · 蓝线 = 听力</div>
+  </div>
+  <div class="card"><h3>各 Part 表现（近30天）</h3>
+    ${Object.keys(partStats).length?Object.entries(partStats).map(([p,s])=>
+      `<div class="bar-row"><div class="bl">${p}（${s.n}题）</div><div class="track"><div class="fill" style="width:${s.acc}%;background:${s.acc>=80?"var(--green)":s.acc>=65?"#d97706":"var(--red)"}"></div></div><div class="val">${s.acc}%</div></div>`).join("")
+    :`<p class="muted">暂无数据</p>`}
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>📌 本周唯一改进重点</h3>
+      <div class="callout"><div>🎯</div><div><b>${esc(w.text)}</b><br><span class="muted">${esc(w.detail)}</span><br><span class="muted">${esc(adviceFor(w.key)||"保持当前节奏，持续积累数据。")}</span></div></div>
+    </div>
+    <div class="card"><h3>近期停滞原因</h3>
+      ${stag.length?`<ul style="padding-left:18px;font-size:14px">${stag.map(s=>`<li>${esc(s)}</li>`).join("")}</ul>`:`<p class="muted">暂未发现明显停滞。</p>`}
+    </div>
+  </div>
+  <div class="card"><h3>下一周计划（根据数据生成）</h3><p style="font-size:14px">${esc(nextWeekPlan())}</p></div>`;
+  drawTrend(days);
+}
+function drawTrend(days){
+  const cv=document.getElementById("trendChart");if(!cv)return;
+  const ctx=cv.getContext("2d");const W=cv.width,H=cv.height,pad=30;
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle="#e3ece6";ctx.beginPath();
+  [0,25,50,75,100].forEach(p=>{const y=H-pad-(H-2*pad)*p/100;ctx.moveTo(pad,y);ctx.lineTo(W-10,y);});
+  ctx.stroke();
+  ctx.fillStyle="#6b7a70";ctx.font="11px sans-serif";
+  [0,50,100].forEach(p=>{const y=H-pad-(H-2*pad)*p/100;ctx.fillText(p+"%",2,y+4);});
+  const step=(W-pad-20)/(days.length-1);
+  function line(key,color){
+    ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();let started=false;
+    days.forEach((d,i)=>{if(d[key]===null)return;
+      const x=pad+i*step,y=H-pad-(H-2*pad)*d[key]/100;
+      if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);});
+    ctx.stroke();
+    days.forEach((d,i)=>{if(d[key]===null)return;
+      const x=pad+i*step,y=H-pad-(H-2*pad)*d[key]/100;
+      ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,3,0,7);ctx.fill();});
+  }
+  line("r","#1e7a3c");line("l","#1d4ed8");
+}
+function stagnationReasons(){
+  const out=[];
+  const vDue=dueWords().length;
+  const wrongVocab=reasonCounts(14)["词汇"]||0;
+  if(vDue>15)out.push("词汇不稳：积压 "+vDue+" 个待复习词条，先清空复习队列。");
+  if(wrongVocab>=3)out.push("词汇是错题主要来源（近14天 "+wrongVocab+" 题），生词在拖累阅读。");
+  const rT=avgTime(recentAttempts(14,"reading"));
+  if(rT&&rT>75)out.push("阅读速度慢：平均每题 "+rT+" 秒，Part 7 时间会不够。");
+  const locErr=(reasonCounts(14)["定位关键信息"]||0);
+  if(locErr>=3)out.push("Part 7 定位错误反复出现（近14天 "+locErr+" 题）。");
+  return out;
+}
+function nextWeekPlan(){
+  const w=topWeakness();
+  const base="每天保持 60 分钟：复习旧词 + 新短语 20 分钟、阅读 25 分钟、听力 10 分钟、复盘 5 分钟。";
+  if(w.key==="听力")return "下周重点：听力。每日听力提到 20 分钟（从阅读调 10 分钟），P2 应答题每天 10 题起步。"+base;
+  if(w.key==="词汇")return "下周重点：词汇。新短语翻倍到 20 分钟，优先清掉复习积压，阅读错题中的生词全部入库。";
+  if(w.key==="做题太慢")return "下周重点：限时训练。P5 每题 30 秒、P7 每题 60 秒计时练习，每天至少一组计时套题。";
+  if(w.key==="定位关键信息")return "下周重点：Part 7 定位。每天 1 篇 P7 精读：先读题干划关键词 → 回文定位 → 核对选项换说法。";
+  return "下周保持当前节奏。"+base;
+}
+
+/* ================= 模考与报考判断 ================= */
+function renderMock(){
+  const el=document.getElementById("v-mock");
+  const mocks=S.mocks;
+  const last3=mocks.slice(-3);
+  const avg3=last3.length===3?Math.round(last3.reduce((s,m)=>s+m.l+m.r,0)/3):null;
+  const allAbove780=last3.length===3&&last3.every(m=>m.l+m.r>=780);
+  const ready=avg3!==null&&avg3>=800&&allAbove780;
+  el.innerHTML=`
+  <div class="card"><h2>模考与报考判断</h2>
+    <div class="callout" style="margin-bottom:12px"><div>📏</div><div>目标线：<b>听力 420 / 阅读 380 / 总分 800</b><br>
+    <span class="muted">报考条件：连续 3 次完整模考平均 ≥ 800，且单次不低于 780</span></div></div>
+    ${ready?`<div class="callout" style="background:#dcfce7;border-left-color:#16a34a"><div>🎉</div><div><b>恭喜！近 3 次模考平均 ${avg3} 分，全部 ≥780。可以考虑报名托业了！</b></div></div>`
+      :last3.length===3?`<div class="callout warn"><div>⏳</div><div>近 3 次平均 ${avg3} 分${allAbove780?"":"，且有单次低于 780"}。还未达到报考条件，继续训练。</div></div>`
+      :`<div class="muted" style="margin-bottom:10px">已记录 ${mocks.length} 次模考，需至少 3 次判断报考时机。</div>`}
+  </div>
+  <div class="card"><h3>记录一次完整模考</h3>
+    <div class="formrow"><label>日期</label><input type="text" id="mkDate" value="${todayStr()}" style="width:130px">
+      <label>听力</label><input type="number" id="mkL" style="width:90px" min="5" max="495" step="5">
+      <label>阅读</label><input type="number" id="mkR" style="width:90px" min="5" max="495" step="5"></div>
+    <div class="formrow"><label>各 Part 正确数（选填，格式 P1-P7 用逗号分隔，如 5,20,30,25,26,12,44）</label></div>
+    <div class="formrow"><input type="text" id="mkParts" placeholder="6,25,39,30,30,16,54 满分参考" style="width:100%;max-width:420px"></div>
+    <button class="btn" id="mkSave">保存模考</button>
+  </div>
+  <div class="card"><h3>模考历史</h3>
+    ${mocks.length?`<table class="tbl"><tr><th>日期</th><th>听力</th><th>阅读</th><th>总分</th><th>达标</th><th></th></tr>
+      ${mocks.slice().reverse().map((m,i)=>{
+        const idx=mocks.length-1-i;const tot=m.l+m.r;
+        return`<tr><td>${m.date}</td><td>${m.l}${m.l>=420?" ✅":""}</td><td>${m.r}${m.r>=380?" ✅":""}</td><td><b>${tot}</b></td>
+        <td>${tot>=800?`<span class="pill g">≥800</span>`:tot>=780?`<span class="pill a">≥780</span>`:`<span class="pill r">未达标</span>`}</td>
+        <td><button class="btn small gray" data-del="${idx}">删</button></td></tr>`;}).join("")}</table>`
+    :`<p class="muted">暂无模考记录。建议每 1-2 周做一次完整计时模考（2 小时 200 题）。</p>`}
+  </div>`;
+  document.getElementById("mkSave").onclick=()=>{
+    const l=+document.getElementById("mkL").value,r=+document.getElementById("mkR").value;
+    const date=document.getElementById("mkDate").value||todayStr();
+    if(!l||!r){alert("请填写听力和阅读分数");return;}
+    const parts=document.getElementById("mkParts").value.split(",").map(x=>parseInt(x.trim())).filter(x=>!isNaN(x));
+    S.mocks.push({date,l,r,parts});
+    S.mocks.sort((a,b)=>a.date<b.date?-1:1);
+    save();renderMock();
+  };
+  el.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
+    if(confirm("删除这条模考记录？")){S.mocks.splice(parseInt(b.dataset.del),1);save();renderMock();}
+  });
+}
+
+/* ================= 启动 ================= */
+document.getElementById("todayDate").textContent=new Date().toLocaleDateString("zh-CN",{month:"long",day:"numeric",weekday:"long"});
+if(speechSynthesis)speechSynthesis.getVoices();
+
+/* ================= 云同步（Firebase Realtime DB REST） ================= */
+const SYNCKEY="toeicCoach.sync";
+let SY={};try{SY=JSON.parse(localStorage.getItem(SYNCKEY))||{};}catch(e){}
+function saveSY(){try{localStorage.setItem(SYNCKEY,JSON.stringify(SY));}catch(e){}}
+function syncUrl(){
+  if(!SY.db||!SY.code)return null;
+  let u=SY.db.trim().replace(/\/+$/,"");
+  if(!/^https:\/\//.test(u))return null;
+  return u+"/toeic/"+encodeURIComponent(SY.code.trim())+".json";
+}
+function setSyncStatus(t){const e=document.getElementById("syncStatus");if(e)e.textContent=t;}
+let pushTmr=null;
+function schedulePush(){if(!syncUrl())return;clearTimeout(pushTmr);pushTmr=setTimeout(pushRemote,2500);}
+async function pushRemote(){
+  const u=syncUrl();if(!u)return;
+  try{
+    S.updatedAt=Date.now();
+    const res=await fetch(u,{method:"PUT",body:JSON.stringify(S)});
+    if(!res.ok)throw 0;
+    SY.last=Date.now();saveSY();
+    setSyncStatus("✅ 已同步 "+new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"}));
+  }catch(e){setSyncStatus("⚠️ 同步失败");}
+}
+function mergeState(r){
+  if(!r||typeof r!=="object")return;
+  if(r.srs)Object.keys(r.srs).forEach(id=>{
+    const a=S.srs[id],b=r.srs[id];
+    if(!a||b.box>a.box||(b.box===a.box&&b.due>a.due))S.srs[id]=b;
+  });
+  const sig=a=>[a.qid,a.date,a.time,a.correct,a.type].join("|");
+  if(Array.isArray(r.attempts)){
+    const have=new Set(S.attempts.map(sig));
+    r.attempts.forEach(a=>{if(!have.has(sig(a)))S.attempts.push(a);});
+    const rm={};r.attempts.forEach(a=>{if(a.mastered)rm[sig(a)]=1;});
+    S.attempts.forEach(a=>{if(rm[sig(a)])a.mastered=true;});
+    S.attempts.sort((x,y)=>x.date<y.date?-1:1);
+  }
+  if(Array.isArray(r.mocks)){
+    const ms=m=>[m.date,m.l,m.r].join("|");
+    const have=new Set(S.mocks.map(ms));
+    r.mocks.forEach(m=>{if(!have.has(ms(m)))S.mocks.push(m);});
+    S.mocks.sort((a,b)=>a.date<b.date?-1:1);
+  }
+  if(r.days)Object.keys(r.days).forEach(d=>{
+    const a=S.days[d],b=r.days[d];
+    if(!a){S.days[d]=b;return;}
+    if(b.done)Object.keys(b.done).forEach(k=>{if(b.done[k])a.done[k]=true;});
+  });
+  if(r.settings)S.settings=Object.assign({},r.settings,S.settings);
+}
+async function pullAndMerge(){
+  const u=syncUrl();if(!u)return false;
+  try{
+    setSyncStatus("⏳ 同步中…");
+    const res=await fetch(u);
+    if(!res.ok)throw 0;
+    const remote=await res.json();
+    if(remote)mergeState(remote);
+    save0();
+    await pushRemote();
+    return true;
+  }catch(e){setSyncStatus("⚠️ 同步失败");return false;}
+}
+const save0=save;
+save=function(){save0();schedulePush();};
+document.getElementById("syncBtn").onclick=()=>{
+  document.getElementById("syDb").value=SY.db||"";
+  document.getElementById("syCode").value=SY.code||"";
+  document.getElementById("syMsg").textContent=SY.last?("上次同步："+new Date(SY.last).toLocaleString("zh-CN")):"";
+  document.getElementById("syncDlg").showModal();
+};
+document.getElementById("syClose").onclick=()=>document.getElementById("syncDlg").close();
+document.getElementById("syExport").onclick=()=>{
+  const blob=new Blob([JSON.stringify(S,null,1)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="toeic-backup-"+todayStr()+".json";
+  a.click();
+};
+document.getElementById("sySave").onclick=async()=>{
+  SY.db=document.getElementById("syDb").value.trim();
+  SY.code=document.getElementById("syCode").value.trim();
+  saveSY();
+  const m=document.getElementById("syMsg");
+  if(!syncUrl()){m.textContent="请填写完整：数据库地址需以 https:// 开头";return;}
+  m.textContent="⏳ 同步中…";
+  const ok=await pullAndMerge();
+  m.textContent=ok?"✅ 同步成功！两端数据已合并。":"❌ 同步失败：请检查数据库地址（形如 https://xxx-default-rtdb.firebasedatabase.app）、规则是否已开放、网络是否可用。";
+  if(ok)renderHome();
+};
+if(syncUrl()){pullAndMerge().then(ok=>{renderHome();});}
+
+renderHome();
+</script>
+</body>
+</html>
