@@ -126,6 +126,7 @@ dialog::backdrop{background:rgba(20,40,28,.35);}
   <button data-v="vocab">词汇短语</button>
   <button data-v="reading">阅读训练</button>
   <button data-v="listening">听力训练</button>
+  <button data-v="strategy">解题思路</button>
   <button data-v="review">错题复盘</button>
   <button data-v="progress">进度分析</button>
   <button data-v="mock">模考·报考</button>
@@ -135,6 +136,7 @@ dialog::backdrop{background:rgba(20,40,28,.35);}
 <section class="view" id="v-vocab"></section>
 <section class="view" id="v-reading"></section>
 <section class="view" id="v-listening"></section>
+<section class="view" id="v-strategy"></section>
 <section class="view" id="v-review"></section>
 <section class="view" id="v-progress"></section>
 <section class="view" id="v-mock"></section>
@@ -781,11 +783,11 @@ function getToday(){
 }
 
 /* ================= 视图切换 ================= */
-const VIEWS=["home","vocab","reading","listening","review","progress","mock"];
+const VIEWS=["home","vocab","reading","listening","strategy","review","progress","mock"];
 function show(v){
   document.querySelectorAll("#mainTabs button").forEach(b=>b.classList.toggle("active",b.dataset.v===v));
   VIEWS.forEach(x=>document.getElementById("v-"+x).classList.toggle("active",x===v));
-  ({home:renderHome,vocab:renderVocab,reading:renderReading,listening:renderListening,review:renderReview,progress:renderProgress,mock:renderMock})[v]();
+  ({home:renderHome,vocab:renderVocab,reading:renderReading,listening:renderListening,strategy:renderStrategy,review:renderReview,progress:renderProgress,mock:renderMock})[v]();
   window.scrollTo(0,0);
 }
 document.getElementById("mainTabs").addEventListener("click",e=>{if(e.target.dataset.v)show(e.target.dataset.v);});
@@ -1063,6 +1065,7 @@ function renderP5Item(){
   st.innerHTML=`<div class="card">
     <div style="display:flex;justify-content:space-between"><h3>Part 5 · ${qState.i+1}/${qState.list.length}</h3><span class="timerbox" id="tmr">0:00</span></div>
     <p style="margin:10px 0;font-size:15px">${esc(q.q)}</p>
+    ${tipBlock("P5",q.tag)}
     <div id="optBox"></div>
     <div class="conf-btns hidden" id="confBox"><span class="muted">信心：</span>
       <button class="btn small gray" data-c="sure">很确定</button><button class="btn small gray" data-c="unsure">不太确定</button><button class="btn small gray" data-c="guess">蒙的</button></div>
@@ -1116,6 +1119,7 @@ function renderPassageItem(){
     <div style="display:flex;justify-content:space-between"><h3>${qState.part} ${p.type?("· "+p.type):""} · 第 ${qState.i+1}/${p.qs.length} 题</h3><span class="timerbox" id="tmr">0:00</span></div>
     <div class="passage">${esc(p.passage)}</div>
     <p style="margin:8px 0;font-weight:600">${esc(q.q)}</p>
+    ${tipBlock(qState.part,q.tag)}
     <div id="optBox"></div>
     <div class="conf-btns hidden" id="confBox"><span class="muted">信心：</span>
       <button class="btn small gray" data-c="sure">很确定</button><button class="btn small gray" data-c="unsure">不太确定</button><button class="btn small gray" data-c="guess">蒙的</button></div>
@@ -1208,6 +1212,7 @@ function renderListenItem(){
   if(item.part==="P2"){
     st.innerHTML=`<div class="card"><h3>Part 2 应答问题 · ${qState.i+1}/${qState.list.length}</h3>
       <p class="muted">听问题，选择最合适的应答。</p>
+      ${tipBlock("P2",item.tag)}
       <button class="btn ghost" id="playBtn">🔊 播放问题</button>
       <div id="optBox" style="margin-top:12px"></div><div id="fbBox"></div></div>`;
     document.getElementById("playBtn").onclick=()=>speak(item.script,0.9);
@@ -1229,6 +1234,7 @@ function renderListenItem(){
     st.innerHTML=`<div class="card"><h3>Part ${item.part==="P3"?"3 对话":"4 短文"} · 第 ${qState.sub+1}/${item.qs.length} 题</h3>
       <button class="btn ghost" id="playBtn">🔊 播放音频</button>
       <p style="margin:10px 0;font-weight:600">${esc(q.q)}</p>
+      ${tipBlock(item.part,q.tag)}
       <div id="optBox"></div><div id="fbBox"></div></div>`;
     document.getElementById("playBtn").onclick=()=>speak(item.script,0.95);
     if(qState.sub===0)speak(item.script,0.95);
@@ -1378,6 +1384,105 @@ function nextWeekPlan(){
   if(w.key==="做题太慢")return "下周重点：限时训练。P5 每题 30 秒、P7 每题 60 秒计时练习，每天至少一组计时套题。";
   if(w.key==="定位关键信息")return "下周重点：Part 7 定位。每天 1 篇 P7 精读：先读题干划关键词 → 回文定位 → 核对选项换说法。";
   return "下周保持当前节奏。"+base;
+}
+
+/* ================= 解题思路（框架：一本攻克新制多益850+） ================= */
+const STRATEGY={
+P1:{name:"Part 1 照片描述",time:"6 题 · 每题约 5 秒判断",
+quick:["音频前先看照片：人物？动作？物品位置关系？","主语和动词逐词验证，任何一个词与照片不符即排除","含照片中不存在的事物的选项直接排除"],
+units:[
+{t:"人物照片",r:"单人或多人为画面主体",s:["预判动作（动词）与状态（姿势、穿着、手持物）","进行时 is doing = 正在做，是正确答案最常见形式","多人照片区分共同动作与个别动作"],x:"动作对但对象错（reading a book vs a newspaper）；相似发音词混淆（lamp/ramp）"},
+{t:"事物照与风景照",r:"画面无人或人物不是重点",s:["预判位置关系词：on / under / beside / be lined up / be stacked","被动完成态 have been placed / are displayed 是高频正解","区分状态与动作：无人照片里「正在被做」多为错"],x:"is being displayed 表示有人正在摆放——无人照片选它必错"}]},
+P2:{name:"Part 2 应答问题",time:"25 题 · 只听不看，专注第一个词",
+quick:["抓住第一个词：疑问词决定答案类型","疑问词问句不能用 Yes/No 回答，先排除","重复题干单词、相似发音的选项多为陷阱"],
+units:[
+{t:"Who / What / Which 问句",s:["Who→人名、职位、部门；Which→通常含 the one 或具体名词","注意复合疑问：What time / What kind of","高分答案常是间接说法：问 Who 答 Ask the manager"],x:"重复题干单词的选项八成是陷阱"},
+{t:"When / Where 问句",s:["When→时间点或频率；Where→地点或来源","注意介词开头的答案：in the drawer / at noon","When 可用相对时间回答：after the meeting"],x:"When 与 Where 发音相近，听清第一个词；用地点回答 When 是经典陷阱"},
+{t:"How / Why 问句",s:["How+形容词/副词决定维度：How long 时长 / How often 频率 / How many 数量","Why→because / to do 不定式，也可直接给理由","How about... 是提议，回应接受或拒绝"],x:"How long 和 How often 答非所问是高频错误选项"},
+{t:"Yes / No 问句",s:["Do / Have / Be 开头，可以 Yes/No 也可间接回答","否定疑问 Don't you...? 回答仍按事实：去就 Yes","模糊回答 I haven't decided yet 常是正解"],x:"高分题的正确答案往往不含 Yes/No"},
+{t:"建议·要求·选择疑问句",s:["Would you / Could you / Why don't we → 接受或婉拒","A or B 选择疑问：选其一、都行、或提出第三方案","记住 Either is fine / Neither, thanks 类回答"],x:"选择疑问句（A or B?）用 Yes/No 回答必错"},
+{t:"直述句",s:["考「合理接话」：认同、追问、提供帮助","先判断说话意图：抱怨？告知？暗示请求？","想象同事间自然对话该怎么接"],x:"P2 最难题型：不要找『答案』，要找『自然的回应』"}]},
+P3:{name:"Part 3 简短对话",time:"39 题 · 音频前抢读题干",
+quick:["音频播放前先读 3 个题干（来不及就不读选项），预判要抓的信息","三个问题基本按顺序对应对话的前 / 中 / 后","听到题干关键词的同义替换立即锁定答案"],
+units:[
+{t:"说话者职业或对话地点",s:["开头几句抓场景词汇群：prescription→药房，shipment→物流","职业地点不会直说，靠 2-3 个相关词推断","此类题答案多在对话开头"],x:"个别单词像 A 场景、整体是 B 场景的干扰设计"},
+{t:"对话目的或主旨",s:["I'm calling about... / I wanted to ask... 直接给答案","主旨看前两轮对话即可判断","选概括性选项，过于具体的多是细节干扰"]},
+{t:"建议或要求",s:["抓 Why don't you / You should / Could you 后的内容","看清题干问的是谁向谁建议","答案常同义改写：check → review"]},
+{t:"疑难问题或担忧",s:["转折词 but / unfortunately / I'm afraid 后面是考点","问题通常在对话中段出现","注意 concern / issue / problem 的同义替换"]},
+{t:"特定时间",s:["出现的日期、时间随手记下","注意改期情节：原时间是陷阱，新时间是答案","区分 by Friday（期限）与 on Friday（时间点）"],x:"对话里出现两个时间，先说的那个通常是干扰项"},
+{t:"下一步的行动",s:["What will X do next → 答案在对话结尾","信号词：I'll... / Let me... / I'm going to...","答案是结尾动作的名词化改写"]},
+{t:"掌握意图",s:["题干引用原句，先想象说话的前后语境","答案是言外之意，不是字面意思","结合上一句话判断：附和？拒绝？惊讶？"],x:"选字面意思的选项几乎都是陷阱"},
+{t:"三人对话",s:["先看题干中的名字，区分两位同性说话人","注意点名：Tom, can you...? 后面是 Tom 的任务","按立场分组：谁和谁意见一致"]},
+{t:"图表题",s:["音频前必须先看图表，明确行列含义","听到的信息要与图表交叉对照才能得出答案","音频通常说图表的另一列：听到价格→答案选对应商品名"],x:"能直接听到的选项往往是陷阱，答案需经图表转换一步"}]},
+P4:{name:"Part 4 简短独白",time:"30 题 · 开头 10 秒定乾坤",
+quick:["独白开头 10 秒判断场景和主旨","题目顺序 = 信息出现顺序","留意 now / today / next 引导的下一步信息"],
+units:[
+{t:"会议摘录",s:["开头点明议题：I'd like to discuss...","中段听细节：变化、数据、分工","结尾常布置任务，对应最后一题"]},
+{t:"电话留言",s:["开头：谁打给谁、为什么打","中后段：要求对方做什么（please / could you）","结尾：回电方式或期限常是考点"]},
+{t:"广播通知与公告",s:["听众判断场所：passengers→车站机场，shoppers→商场","重点抓变更：延误、关闭、改道、新规定","We apologize for... 后面是原因考点"]},
+{t:"电视·广播节目",s:["开头判断节目类型：天气、新闻、访谈","嘉宾身份和成就是高频考点","After the break... 提示下一环节，常考最后一题"]},
+{t:"广告",s:["开头：广告的产品或服务是什么","中段卖点：耐用、免费送货、限时折扣","结尾行动号召：visit our website / call now 常考"]},
+{t:"演说·介绍·导览",s:["判断场合：颁奖、欢迎新人、参观导览","人物介绍题抓身份和成就","行程顺序信号：First we'll... and then..."]}]},
+P5:{name:"Part 5 句子填空",time:"30 题 · 目标 10 分钟",
+quick:["先看选项定题型：同根词=语法题，不同词=词汇题","语法题找句子缺什么成分，30 秒内解决","词汇题靠搭配和语义；超时果断选最顺搭配并标记"],
+units:[
+{t:"词性题（名词·形容词·副词）",r:"选项是同一词根的不同词性",s:["看空格前后：冠词/所有格后接名词，名词前用形容词，修饰动词用副词","后缀判词性：-tion/-ment/-ness 名词，-ive/-ous/-ful 形容词，-ly 副词","两个名词选项（人 vs 物）时靠语义选"],x:"名词空格误选动名词；-ly 结尾的形容词（friendly）"},
+{t:"代词",s:["先找指代对象，确认单复数和性别","看句中位置定格：主格/宾格/所有格","主语宾语同一人时用反身代词"]},
+{t:"动词形态（一致·语态·时态）",s:["主谓一致：跳过介词短语找真正主语","缺宾语的及物动词多用被动语态","时间线索定时态：since+完成时，by the time+过去完成"],x:"插入语隔开主语和动词，导致单复数误判"},
+{t:"不定式·动名词·分词",s:["固定搭配优先：decide to do / consider doing / look forward to doing","分词作定语：-ing 表主动、-ed 表被动","分词构句先找逻辑主语"]},
+{t:"介词",s:["时间三兄弟：by（之前完成）/ until（持续到）/ within（期限内）","despite + 名词 vs although + 从句","复合介词整块记：in response to / prior to / on behalf of"]},
+{t:"连接词与关系词",s:["空格后是完整从句→连词；名词短语→介词","先行词是人用 who、物用 which、地点用 where","配对连词：both...and / either...or / not only...but also"],x:"during（介词）和 while（连词）互为陷阱"},
+{t:"词汇题",s:["代入空格读整句，检验搭配是否自然","形近词靠词根区分：comparable 可比较 / compatible 兼容","平时记搭配不记孤词"]},
+{t:"限时策略",s:["每题超过 40 秒：选最常见搭配，标记后前进","错题必须归因：语法规则漏洞还是词汇量不足","P5 省下的时间全部留给 P7"]}]},
+P6:{name:"Part 6 段落填空",time:"16 题 · 目标 8 分钟",
+quick:["先通读空格所在句的前后句，不要只看本句","连接副词题看前后句逻辑关系","句子插入题留到最后做，用代词和连接词做线索"],
+units:[
+{t:"语法与词性",s:["方法同 P5，但时态要看全文时间线","注意文中日期与动作先后的对应关系"]},
+{t:"词汇",s:["答案线索常在前后句而非本句","指代一致：选项名词要能对应前文具体事物"]},
+{t:"连接副词",s:["判断前后句逻辑：因果 therefore / 转折 however / 补充 in addition / 举例 for instance","把候选词代入通读，逻辑通顺才是答案"]},
+{t:"句子插入题",s:["看空格前后句的话题如何衔接","选项中的 this / they / such 必须有先行对象","首选能承上启下的句子"],x:"内容正确但与上下文无衔接的句子是主要陷阱"},
+{t:"整体节奏",s:["每篇 4 题控制在 2 分钟","先做词性语法题，最后做插入题"]}]},
+P7:{name:"Part 7 阅读理解",time:"54 题 · 目标 55 分钟",
+quick:["先读题干（暂不读选项）→ 带着问题回原文扫读定位","答案 90% 是原文的同义改写，找『换说法』","单篇题号顺序≈信息顺序；多篇先判断题目属于哪一篇"],
+units:[
+{t:"主旨或目的",s:["看标题、首段、末段","邮件类：I'm writing to... 直接给目的","选概括性选项，不选局部细节"]},
+{t:"事实与否（NOT 题）",s:["NOT 题：三个选项都能在原文找到，剩下的即答案","逐项回原文验证，不凭印象","费时题型，时间紧张时留到最后"]},
+{t:"推论或暗示",s:["suggest / imply / most likely：答案不直说但必有依据","逐个选项与原文对照，只选『必然成立』的","过度推理、常识合理但原文没提的选项是陷阱"],x:"你练习中最常见的错因就是这类题——先定位再推断，不要凭感觉"},
+{t:"相关细节",s:["用题干关键词（数字、人名、日期）回原文定位","注意同义替换：purchase→buy，attend→participate in","定位后精读前后各一句"]},
+{t:"句子插入题",s:["把插入句在 [1]-[4] 逐个试放","插入句的代词和连接词必须与前文呼应","放入后通读，检查连贯性"]},
+{t:"找出同义词",s:["回原文看该词所在句的语境","一词多义：选文中含义，不选最常见含义","把候选词代入原句验证"]},
+{t:"双篇阅读",s:["先读题判断：单篇题还是联动题","联动题需要交叉两篇信息：A 篇条件 + B 篇实际情况","典型分布：每篇各 2 题单篇题 + 1 题联动题"]},
+{t:"多篇阅读",s:["三篇先各自定位功能：通知 + 邮件 + 表格","联动题多发生在表格与正文之间","先做单篇细节题，攒时间再攻联动题"]}]}
+};
+let stPart="P5";
+function renderStrategy(){
+  const el=document.getElementById("v-strategy");
+  const p=STRATEGY[stPart];
+  el.innerHTML=`
+  <div class="card"><h2>解题思路 · 按题型逐个击破</h2>
+    <p class="muted">框架取自《一本攻克新制多益 850+》：识别题型 → 套用固定步骤 → 避开高频陷阱。做题时点 💡 可随时调出对应思路。</p>
+    <div class="book-tabs">${Object.keys(STRATEGY).map(k=>`<button class="${k===stPart?"active":""}" data-p="${k}">${k}</button>`).join("")}</div>
+    <h3>${esc(p.name)} <span class="pill b">${esc(p.time)}</span></h3>
+    <div class="callout" style="margin:8px 0"><div>⚡</div><div><b>核心三步</b><br>${p.quick.map((q,i)=>(i+1)+". "+esc(q)).join("<br>")}</div></div>
+    ${p.units.map(u=>`<details style="border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:8px">
+      <summary style="font-weight:600;cursor:pointer">${esc(u.t)}</summary>
+      ${u.r?`<div class="muted" style="margin-top:6px">识别：${esc(u.r)}</div>`:""}
+      <ol style="padding-left:20px;margin-top:6px;font-size:14px">${u.s.map(s=>`<li>${esc(s)}</li>`).join("")}</ol>
+      ${u.x?`<div class="callout warn" style="margin-top:6px;font-size:13px">⚠️ 陷阱：${esc(u.x)}</div>`:""}
+    </details>`).join("")}
+  </div>`;
+  el.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{stPart=b.dataset.p;renderStrategy();});
+}
+function tipHtml(part,tag){
+  const p=STRATEGY[part];if(!p)return"";
+  let unit=null;
+  if(part==="P5")unit=tag==="词汇"?p.units.find(u=>u.t.includes("词汇")):null;
+  if(part==="P7"&&tag==="词汇")unit=p.units.find(u=>u.t.includes("同义词"));
+  const steps=(unit?unit.s:p.quick);
+  return `<div class="callout" style="margin-top:8px;font-size:13px"><div>💡</div><div>${steps.map((s,i)=>(i+1)+". "+esc(s)).join("<br>")}<br><span class="muted">完整题型拆解见「解题思路」页</span></div></div>`;
+}
+function tipBlock(part,tag){
+  return `<div style="margin:6px 0"><button class="btn small gray" onclick="const b=this.nextElementSibling;if(!b.innerHTML)b.innerHTML=tipHtml('${part}','${tag||""}');b.classList.toggle('hidden')">💡 解题思路</button><div class="hidden"></div></div>`;
 }
 
 /* ================= 模考与报考判断 ================= */
