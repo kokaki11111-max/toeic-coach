@@ -102,6 +102,13 @@ canvas.chart{width:100%;height:200px;}
 .footer-note{text-align:center;color:var(--gray);font-size:12px;padding:20px 0;}
 dialog{border:none;border-radius:14px;padding:22px;max-width:420px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,.25);}
 dialog::backdrop{background:rgba(20,40,28,.35);}
+ruby{ruby-position:over;ruby-align:center;margin:0 2px;}
+rt{font-size:10px;color:#9aa8a0;font-weight:400;letter-spacing:0;}
+ruby.rst{font-weight:600;}
+ruby.rst rt{color:#1e7a3c;font-weight:600;}
+ruby.rwk{color:#6b7a70;font-weight:400;}
+.withipa{line-height:2.7;}
+.vocab-card .phrase.withipa{line-height:2.2;}
 @media(max-width:600px){
   .app{padding:10px;}
   .scores .num{font-size:28px;}
@@ -865,7 +872,17 @@ function bookUnlocked(book){
   const need=BOOKS[book].need;if(!need)return true;
   return masteredCount(need)/bookTotal(need)>=0.6;
 }
-function dueWords(){const t=todayStr();return VOCAB.filter(v=>S.srs[v.id]&&S.srs[v.id].due<=t);}
+function dueWords(){const t=todayStr();return VOCAB.filter(v=>S.srs[v.id]&&S.srs[v.id].due<=t)
+  .sort((a,b)=>(S.srs[b.id].w||0)-(S.srs[a.id].w||0));}
+function wrongCount(id){return (S.srs[id]&&S.srs[id].w)||0;}
+function isStubborn(id){return wrongCount(id)>=3;}
+function stubbornWords(){return VOCAB.filter(v=>isStubborn(v.id)).sort((a,b)=>wrongCount(b.id)-wrongCount(a.id));}
+function srsMark(v,ok){
+  const r=S.srs[v.id]||{box:0,w:0,r:0};
+  if(ok){r.r=(r.r||0)+1;r.box=Math.min((r.box||0)+1,SRS_INT.length-1);r.due=addDays(todayStr(),SRS_INT[r.box]);}
+  else{r.w=(r.w||0)+1;r.box=0;r.due=addDays(todayStr(),1);}
+  S.srs[v.id]=r;save();
+}
 function newWords(book,n){return VOCAB.filter(v=>v.b===book&&!S.srs[v.id]).slice(0,n);}
 function renderVocab(){
   const el=document.getElementById("v-vocab");
@@ -880,23 +897,147 @@ function renderVocab(){
     <div class="stat-chips">
       <div class="chip"><b>${due}</b><span>今日待复习</span></div>
       <div class="chip"><b>${learned}</b><span>已学词条</span></div>
+      <div class="chip"><b style="${stubbornWords().length?"color:var(--red)":""}">${stubbornWords().length}</b><span>顽固词</span></div>
       <div class="chip"><b>${VOCAB.length}</b><span>词库总量</span></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
       <button class="btn" id="btnReview" ${due?"":"disabled"}>复习旧词（${due}）</button>
+      <button class="btn" id="btnFlash">⚡ 闪卡速刷</button>
       <button class="btn ghost" id="btnLearn">学习新短语</button>
       <button class="btn gray" id="btnQuiz">中译英自测</button>
+      <button class="btn gray" id="btnCurve">📉 遗忘曲线</button>
     </div>
   </div>
   <div id="vocabStage"></div>`;
   el.querySelectorAll("[data-book]").forEach(b=>b.addEventListener("click",()=>{vState.book=b.dataset.book;renderVocab();}));
   document.getElementById("btnReview").onclick=()=>{startCards(dueWords(),"review");};
+  document.getElementById("btnFlash").onclick=()=>startFlash();
+  document.getElementById("btnCurve").onclick=renderCurve;
   document.getElementById("btnLearn").onclick=()=>{
     const ws=newWords(vState.book,8);
     if(!ws.length){alert("本书新词已全部学完！");return;}
     startCards(ws,"new");
   };
   document.getElementById("btnQuiz").onclick=startQuiz;
+}
+/* ================= 闪卡速刷 ================= */
+let fState=null;
+function startFlash(deck){
+  if(!deck){
+    const due=dueWords();
+    const learned=VOCAB.filter(v=>S.srs[v.id]&&!due.includes(v));
+    deck=due.length?due:learned.sort(()=>Math.random()-0.5);
+    if(!deck.length)deck=VOCAB.filter(v=>v.b===vState.book).slice(0,15);
+    const stub=stubbornWords().filter(v=>!deck.slice(0,20).includes(v));
+    deck=stub.concat(deck).slice(0,20);
+  }
+  fState={deck,i:0,flipped:false,ok:0,ng:0};
+  renderFlash();
+}
+function renderFlash(){
+  const st=document.getElementById("vocabStage");
+  if(!fState||fState.i>=fState.deck.length){
+    st.innerHTML=`<div class="card" style="text-align:center"><h2>⚡ 闪卡完成</h2>
+      <div class="stat-chips" style="justify-content:center">
+        <div class="chip"><b>${fState?fState.ok:0}</b><span>认识</span></div>
+        <div class="chip"><b>${fState?fState.ng:0}</b><span>不认识</span></div>
+      </div>
+      <p class="muted">不认识的词已重置到明天复习，错满 3 次会标记为顽固词</p>
+      <button class="btn" id="flashAgain">再来一组</button> <button class="btn gray" onclick="renderVocab()">返回</button></div>`;
+    const fa=document.getElementById("flashAgain");if(fa)fa.onclick=()=>startFlash();
+    return;
+  }
+  const v=fState.deck[fState.i];
+  const showIpa=S.settings.showIPA!==false;
+  st.innerHTML=`
+  <div class="card vocab-card" id="flashCard" style="cursor:pointer;min-height:230px">
+    <div class="muted" style="text-align:right">${isStubborn(v.id)?'<span class="pill r">顽固词 ×'+wrongCount(v.id)+'</span> ':''}⚡ ${fState.i+1} / ${fState.deck.length}</div>
+    <div class="phrase ${showIpa?"withipa":""}" style="margin-top:12px">${showIpa?ipaRuby(v.p):esc(v.p)}</div>
+    <div id="flashBack" class="${fState.flipped?"":"hidden"}">
+      <div class="cn">${esc(v.c)}</div>
+      <div class="ex" style="text-align:left">${esc(v.e)}<div class="t">${esc(transOf(v))}</div></div>
+    </div>
+    ${fState.flipped?"":'<div class="muted" style="margin-top:14px">点击卡片翻面</div>'}
+  </div>
+  <div style="display:flex;gap:10px;justify-content:center;margin-top:4px">
+    ${fState.flipped
+      ?`<button class="btn" id="fOk" style="min-width:120px">✅ 认识</button>
+        <button class="btn" id="fNg" style="min-width:120px;background:var(--red)">❌ 不认识</button>`
+      :`<button class="btn ghost" id="fFlip" style="min-width:160px">翻面（空格键）</button>`}
+    <button class="btn gray" id="fSay">🔊</button>
+  </div>`;
+  const flip=()=>{fState.flipped=!fState.flipped;renderFlash();};
+  document.getElementById("flashCard").onclick=flip;
+  const ff=document.getElementById("fFlip");if(ff)ff.onclick=e=>{e.stopPropagation();flip();};
+  document.getElementById("fSay").onclick=e=>{e.stopPropagation();speak(v.p);};
+  const fo=document.getElementById("fOk");if(fo)fo.onclick=()=>{srsMark(v,true);fState.ok++;fState.i++;fState.flipped=false;renderFlash();};
+  const fn=document.getElementById("fNg");if(fn)fn.onclick=()=>{srsMark(v,false);fState.ng++;fState.i++;fState.flipped=false;renderFlash();};
+  if(!fState.flipped)speak(v.p);
+  document.onkeydown=e=>{
+    if(!document.getElementById("flashCard"))return;
+    if(e.key===" "){e.preventDefault();flip();}
+    if(fState.flipped&&(e.key==="ArrowRight"||e.key==="1")){srsMark(v,true);fState.ok++;fState.i++;fState.flipped=false;renderFlash();}
+    if(fState.flipped&&(e.key==="ArrowLeft"||e.key==="2")){srsMark(v,false);fState.ng++;fState.i++;fState.flipped=false;renderFlash();}
+  };
+}
+/* ================= 遗忘曲线 ================= */
+function renderCurve(){
+  const st=document.getElementById("vocabStage");
+  const load=[];
+  for(let i=0;i<14;i++){
+    const d=addDays(todayStr(),i);
+    load.push({d:d.slice(5),n:VOCAB.filter(v=>S.srs[v.id]&&(i===0?S.srs[v.id].due<=d:S.srs[v.id].due===d)).length});
+  }
+  const maxN=Math.max(1,...load.map(x=>x.n));
+  const stub=stubbornWords();
+  st.innerHTML=`
+  <div class="card"><h3>📉 遗忘曲线与复习安排</h3>
+    <p class="muted">按艾宾浩斯遗忘曲线，答对后在记忆下降前的 1 / 3 / 7 / 14 / 30 天复习；答错则回到明天重来。绿点 = 本站的复习节点。</p>
+    <canvas class="chart" id="ebbChart" width="900" height="200"></canvas>
+    <h3 style="margin-top:14px">未来 14 天复习负载</h3>
+    ${load.map(x=>`<div class="bar-row"><div class="bl">${x.d}${x.d===todayStr().slice(5)?" (今天)":""}</div><div class="track"><div class="fill" style="width:${Math.round(100*x.n/maxN)}%"></div></div><div class="val">${x.n} 词</div></div>`).join("")}
+  </div>
+  <div class="card"><h3>🔴 顽固词（错 ≥3 次，共 ${stub.length}）</h3>
+    ${stub.length?`
+    <div style="margin-bottom:10px"><button class="btn" id="stubFlash">⚡ 只刷顽固词</button></div>
+    <table class="tbl"><tr><th>短语</th><th>释义</th><th>错误次数</th><th>下次复习</th></tr>
+    ${stub.map(v=>`<tr><td><b>${esc(v.p)}</b></td><td>${esc(v.c)}</td><td><span class="pill r">×${wrongCount(v.id)}</span></td><td>${S.srs[v.id].due}</td></tr>`).join("")}</table>`
+    :`<p class="muted">暂无顽固词。同一个词累计错 3 次会出现在这里，并在复习和闪卡中优先出现。</p>`}
+    <div style="margin-top:10px"><button class="btn gray" onclick="renderVocab()">返回</button></div>
+  </div>`;
+  const sf=document.getElementById("stubFlash");if(sf)sf.onclick=()=>startFlash(stub.slice(0,20));
+  drawEbb();
+}
+function drawEbb(){
+  const cv=document.getElementById("ebbChart");if(!cv)return;
+  const ctx=cv.getContext("2d");const W=cv.width,H=cv.height,pad=34;
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle="#e3ece6";ctx.beginPath();
+  [0,50,100].forEach(p=>{const y=H-pad-(H-2*pad)*p/100;ctx.moveTo(pad,y);ctx.lineTo(W-10,y);});ctx.stroke();
+  ctx.fillStyle="#6b7a70";ctx.font="11px sans-serif";
+  [0,50,100].forEach(p=>{const y=H-pad-(H-2*pad)*p/100;ctx.fillText(p+"%",4,y+4);});
+  const days=30,x0=pad,x1=W-14;
+  const X=t=>x0+(x1-x0)*t/days;
+  const Y=r=>H-pad-(H-2*pad)*r/100;
+  function seg(t0,strength){
+    ctx.beginPath();let first=true;
+    for(let t=t0;t<=Math.min(days,t0+30);t+=0.25){
+      const r=100*Math.exp(-(t-t0)/strength);
+      if(r<12&&t>t0+1)break;
+      first?ctx.moveTo(X(t),Y(r)):ctx.lineTo(X(t),Y(r));first=false;
+    }
+    ctx.stroke();
+  }
+  ctx.strokeStyle="#d97706";ctx.lineWidth=2;seg(0,3);
+  ctx.strokeStyle="#1e7a3c";ctx.lineWidth=2;
+  const marks=[1,3,7,14,30];let strength=3;
+  marks.forEach((m,i)=>{strength=strength*2.2;seg(m,strength);});
+  ctx.fillStyle="#1e7a3c";
+  marks.forEach(m=>{ctx.beginPath();ctx.arc(X(m),Y(100),4,0,7);ctx.fill();
+    ctx.fillText(m+"天",X(m)-8,Y(100)-8);});
+  ctx.fillStyle="#d97706";ctx.fillText("不复习 → 快速遗忘",X(2),Y(30));
+  ctx.fillStyle="#1e7a3c";ctx.fillText("每次复习后遗忘变慢",X(12),Y(80)+26);
+  ctx.fillStyle="#6b7a70";ctx.fillText("天数 →",W-56,H-8);
 }
 function startCards(list,mode){
   if(!list.length)return;
@@ -910,15 +1051,19 @@ function renderCard(){
   }
   const v=vState.queue[vState.i];
   const isNew=vState.mode==="new";
+  const showIpa=S.settings.showIPA!==false;
   st.innerHTML=`
   <div class="card vocab-card">
-    <div class="muted" style="text-align:right">${vState.i+1} / ${vState.queue.length} · ${BOOKS[v.b].name}</div>
-    <div class="phrase">${esc(v.p)}</div>
-    <div class="word">${esc(v.w)} <button class="btn small ghost" id="sayBtn">🔊 发音</button></div>
+    <div class="muted" style="text-align:right">${isStubborn(v.id)?'<span class="pill r">顽固词 ×'+wrongCount(v.id)+'</span> ':''}${vState.i+1} / ${vState.queue.length} · ${BOOKS[v.b].name}</div>
+    <div class="phrase ${showIpa?"withipa":""}">${showIpa?ipaRuby(v.p):esc(v.p)}</div>
+    <div class="word">${esc(v.w)} <button class="btn small ghost" id="sayBtn">🔊 发音</button> <button class="btn small gray" id="ipaTgl">${showIpa?"隐藏音标":"显示音标"}</button></div>
     <div id="answerArea" class="${vState.revealed||isNew?"":"hidden"}">
       <div class="cn">${esc(v.c)}</div>
-      <div class="ex">${esc(v.e)}<div class="t">${esc(v.t)}</div>
-      <button class="btn small ghost" id="sayEx">🔊 例句</button></div>
+      <div class="ex"><div class="${showIpa?"withipa":""}">${showIpa?ipaRuby(v.e):esc(v.e)}</div>
+      <div class="t hidden" id="transBox" style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--line)"></div>
+      <div style="margin-top:8px"><button class="btn small ghost" id="sayEx">🔊 例句</button>
+      <button class="btn small ghost" id="transBtn">${(S.settings.transLang||"ja")==="ja"?"訳 显示翻译":"译 显示翻译"}</button>
+      <button class="btn small gray" id="langTgl">${(S.settings.transLang||"ja")==="ja"?"日→中":"中→日"}</button></div></div>
     </div>
     <div style="margin-top:16px">
       ${vState.revealed||isNew
@@ -928,12 +1073,25 @@ function renderCard(){
     </div>
   </div>`;
   document.getElementById("sayBtn").onclick=()=>speak(v.p);
+  document.getElementById("ipaTgl").onclick=()=>{S.settings.showIPA=!(S.settings.showIPA!==false);save();renderCard();};
   const se=document.getElementById("sayEx");if(se)se.onclick=()=>speak(v.e);
+  const tb=document.getElementById("transBtn");
+  if(tb)tb.onclick=()=>{
+    const box=document.getElementById("transBox");
+    if(box.classList.contains("hidden")){box.innerHTML=esc(transOf(v));box.classList.remove("hidden");tb.textContent="收起翻译";}
+    else{box.classList.add("hidden");tb.textContent=(S.settings.transLang||"ja")==="ja"?"訳 显示翻译":"译 显示翻译";}
+  };
+  const lt=document.getElementById("langTgl");
+  if(lt)lt.onclick=()=>{
+    S.settings.transLang=(S.settings.transLang||"ja")==="ja"?"zh":"ja";save();
+    const box=document.getElementById("transBox");
+    if(!box.classList.contains("hidden"))box.innerHTML=esc(transOf(v));
+    lt.textContent=(S.settings.transLang||"ja")==="ja"?"日→中":"中→日";
+  };
   const rb=document.getElementById("revealBtn");if(rb)rb.onclick=()=>{vState.revealed=true;renderCard();};
-  const gi=document.getElementById("gotIt");if(gi)gi.onclick=()=>{S.srs[v.id]={box:0,due:addDays(todayStr(),1)};save();next();};
-  const kb=document.getElementById("knowBtn");if(kb)kb.onclick=()=>{
-    const r=S.srs[v.id]||{box:0};r.box=Math.min(r.box+1,SRS_INT.length-1);r.due=addDays(todayStr(),SRS_INT[r.box]);S.srs[v.id]=r;save();next();};
-  const fb=document.getElementById("forgotBtn");if(fb)fb.onclick=()=>{S.srs[v.id]={box:0,due:addDays(todayStr(),1)};save();next();};
+  const gi=document.getElementById("gotIt");if(gi)gi.onclick=()=>{S.srs[v.id]={box:0,due:addDays(todayStr(),1),w:0,r:0};save();next();};
+  const kb=document.getElementById("knowBtn");if(kb)kb.onclick=()=>{srsMark(v,true);next();};
+  const fb=document.getElementById("forgotBtn");if(fb)fb.onclick=()=>{srsMark(v,false);next();};
   function next(){vState.i++;vState.revealed=false;renderCard();speechSynthesis.cancel();}
   if(!isNew&&!vState.revealed)speak(v.p);
 }
@@ -968,12 +1126,11 @@ function renderQuizItem(){
   const check=()=>{
     const ok=inp.value.trim().toLowerCase()===v.w.toLowerCase();
     const fb=document.getElementById("quizFb");
-    const r=S.srs[v.id]||{box:0};
-    if(ok){vState.quizRight++;r.box=Math.min((r.box||0)+1,SRS_INT.length-1);r.due=addDays(todayStr(),SRS_INT[r.box]);
+    srsMark(v,ok);
+    if(ok){vState.quizRight++;
       fb.innerHTML=`<div class="callout" style="margin-top:10px">✅ 正确！${esc(v.p)}（${esc(v.c)}）</div>`;}
-    else{vState.quizWrong++;r.box=0;r.due=addDays(todayStr(),1);
-      fb.innerHTML=`<div class="callout danger" style="margin-top:10px">❌ 正确答案：<b>${esc(v.w)}</b> — ${esc(v.p)}（${esc(v.c)}）</div>`;}
-    S.srs[v.id]=r;save();
+    else{vState.quizWrong++;
+      fb.innerHTML=`<div class="callout danger" style="margin-top:10px">❌ 正确答案：<b>${esc(v.w)}</b> — ${esc(v.p)}（${esc(v.c)}）${isStubborn(v.id)?' <span class="pill r">顽固词 ×'+wrongCount(v.id)+'</span>':''}</div>`;}
     fb.innerHTML+=`<div style="margin-top:10px"><button class="btn" id="quizNext">下一题</button></div>`;
     document.getElementById("quizCheck").disabled=true;
     document.getElementById("quizNext").onclick=()=>{vState.i++;renderQuizItem();};
@@ -1223,7 +1380,7 @@ function renderListenItem(){
       const ok=i===item.a;const t=Math.floor((Date.now()-t0)/1000);
       markOpts(c,i,item.a);
       const fb=document.getElementById("fbBox");
-      fb.innerHTML=`<div class="callout ${ok?"":"danger"}" style="margin-top:10px">${ok?"✅ 正确":"❌ 错误"}<br>原文：${esc(item.script)}<br>${esc(item.exp)}</div>`;
+      fb.innerHTML=`<div class="callout ${ok?"":"danger"}" style="margin-top:10px">${ok?"✅ 正确":"❌ 错误"}<br>原文：<span class="withipa">${ipaRuby(item.script)}</span><br>${esc(item.exp)}</div>`;
       recordAttempt({qid:item.id,type:"listening",part:"P2",correct:ok,time:t,conf:"n",
         reasons:ok?undefined:[item.tag.includes("应答")?"定位关键信息":item.tag],q:item.script,ans:item.o[item.a],exp:item.exp,tag:item.tag});
       const d=document.createElement("div");d.style.marginTop="10px";d.innerHTML=`<button class="btn">下一题</button>`;
@@ -1244,7 +1401,7 @@ function renderListenItem(){
       const ok=i===q.a;const t=Math.floor((Date.now()-t0)/1000);
       markOpts(c,i,q.a);
       const fb=document.getElementById("fbBox");
-      fb.innerHTML=`<div class="callout ${ok?"":"danger"}" style="margin-top:10px">${ok?"✅ 正确":"❌ 错误"}<br>${esc(q.exp)}${qState.sub===item.qs.length-1?`<details style="margin-top:6px"><summary>查看听力原文</summary><div class="muted">${esc(item.script)}</div></details>`:""}</div>`;
+      fb.innerHTML=`<div class="callout ${ok?"":"danger"}" style="margin-top:10px">${ok?"✅ 正确":"❌ 错误"}<br>${esc(q.exp)}${qState.sub===item.qs.length-1?`<details style="margin-top:6px"><summary>查看听力原文（带音标）</summary><div class="muted withipa">${ipaRuby(item.script)}</div></details>`:""}</div>`;
       recordAttempt({qid:item.id+"-"+q.q,type:"listening",part:item.part,correct:ok,time:t,conf:"n",
         reasons:ok?undefined:["定位关键信息"],q:q.q,ans:q.o[q.a],exp:q.exp,tag:q.tag});
       const d=document.createElement("div");d.style.marginTop="10px";d.innerHTML=`<button class="btn">下一题</button>`;
@@ -1629,6 +1786,471 @@ document.getElementById("sySave").onclick=async()=>{
 if(syncUrl()){pullAndMerge().then(ok=>{renderHome();});}
 
 renderHome();
+window.IPA={"a":"ə","about":"əˈbaʊt","above":"əˈbʌv","academic":"æ·kəˈdɛ·mɪk","accepted":"ækˈsɛp·tɪd","access":"ˈæk·sɛs","acclaimed":"əˈkleɪmd","accommodate":"əˈkɑː·mə·deɪt","accommodation":"ə·kɑː·məˈdeɪ·ʃən","accomplish":"əˈkɑːm·plɪʃ","accomplished":"əˈkɑːm·plɪʃt","account":"əˈkaʊnt","accountant":"əˈkaʊn·tənt","accounts":"əˈkaʊnts","achieve":"əˈtʃiːv","achieved":"əˈtʃiːvd","acknowledge":"ækˈnɑː·lɪdʒ","acquire":"əˈkwaɪ·ər","acquired":"əˈkwaɪ·ərd","across":"əˈkrɔːs","added":"ˈæ·dəd","addition":"əˈdɪ·ʃən","additional":"əˈdɪ·ʃə·nəl","adequate":"ˈæ·də·kwət","adhere":"ədˈhɪr","adjacent":"əˈdʒeɪ·sənt","admission":"ædˈmɪ·ʃən","advance":"ədˈvæns","advertise":"ˈæd·vər·taɪz","advertised":"ˈæd·vər·taɪzd","advertising":"ˈæd·vər·taɪ·zɪŋ","advised":"ædˈvaɪzd","after":"ˈæf·tər","afternoon":"æf·tərˈnuːn","again":"əˈɡɛn","agenda":"əˈdʒɛn·də","agent":"ˈeɪ·dʒənt","ago":"əˈɡoʊ","agree":"əˈɡriː","agreed":"əˈɡriːd","agreement":"əˈɡriː·mənt","ahead":"əˈhɛd","airport":"ˈɛr·pɔːrt","aisle":"ˈaɪl","all":"ˈɔːl","allocate":"ˈæ·lə·keɪt","allocated":"ˈæ·lə·keɪ·tɪd","allow":"əˈlaʊ","allowed":"əˈlaʊd","also":"ˈɔːl·soʊ","alternative":"ɔːlˈtɜːr·nə·tɪv","although":"ɔːlˈðoʊ","alvarez":"ˈæl·vər·ɛz","amendment":"əˈmɛnd·mənt","amenities":"əˈmɛ·nə·tiz","an":"ən","analyze":"ˈæ·nə·laɪz","analyzed":"ˈæ·nə·laɪzd","and":"ənd","anniversary":"æ·nəˈvɜːr·sər·i","announce":"əˈnaʊns","announced":"əˈnaʊnst","announcement":"əˈnaʊn·smənt","annual":"ˈæ·nju·əl","anonymous":"əˈnɑː·nə·məs","anticipate":"ænˈtɪ·sə·peɪt","any":"ˈɛ·ni","anyone":"ˈɛ·ni·wʌn","anything":"ˈɛ·ni·θɪŋ","apologize":"əˈpɑː·lə·dʒaɪz","apology":"əˈpɑː·lə·dʒiː","apparel":"əˈpæ·rəl","appliances":"əˈplaɪ·ən·səz","applicants":"ˈæ·plɪ·kənts","application":"æ·pləˈkeɪ·ʃən","applied":"əˈplaɪd","apply":"əˈplaɪ","appointment":"əˈpɔɪnt·mənt","appraisal":"əˈpreɪ·zəl","appraisals":"əˈpreɪ·zəlz","appreciate":"əˈpriː·ʃi·eɪt","apprentice":"əˈprɛn·təs","appropriate":"əˈproʊ·pri·ət","approval":"əˈpruː·vəl","approved":"əˈpruːvd","approximately":"əˈprɑːk·sə·mət·li","april":"ˈeɪ·prəl","architect":"ˈɑːr·kə·tɛkt","archives":"ˈɑːr·kaɪvz","are":"ər","area":"ˈɛ·ri·ə","areas":"ˈɛ·ri·əz","arrange":"ərˈeɪndʒ","array":"ərˈeɪ","arrival":"ərˈaɪ·vəl","arrive":"ərˈaɪv","arrived":"ərˈaɪvd","art":"ˈɑːrt","articles":"ˈɑːr·tə·kəlz","artists":"ˈɑːr·tɪsts","as":"əz","asia":"ˈeɪ·ʒə","ask":"ˈæsk","asked":"ˈæskt","aspects":"ˈæ·spɛkts","aspiring":"əˈspaɪ·rɪŋ","assembly":"əˈsɛm·bli","assess":"əˈsɛs","asset":"ˈæ·sɛt","assigned":"əˈsaɪnd","assignment":"əˈsaɪn·mənt","at":"ət","atm":"ˈeɪ·tiːˈɛm","attached":"əˈtætʃt","attend":"əˈtɛnd","attendance":"əˈtɛn·dəns","attended":"əˈtɛn·dɪd","attendees":"əˈtɛnˈdiːz","attention":"əˈtɛn·ʃən","attentive":"əˈtɛn·tɪv","attracted":"əˈtræk·tɪd","attributes":"ˈæ·trə·bjuːts","audience":"ˈɑː·di·əns","audit":"ˈɔː·dɪt","authentic":"əˈθɛn·tɪk","authorize":"ˈɔː·θər·aɪz","authors":"ˈɔː·θərz","automatically":"ɔː·təˈmæ·tɪ·kli","available":"əˈveɪ·lə·bəl","avoid":"əˈvɔɪd","award":"əˈwɔːrd","awards":"əˈwɔːrdz","b":"ˈbiː","back":"ˈbæk","bad":"ˈbæd","bakery":"ˈbeɪ·kər·i","balance":"ˈbæ·ləns","bank":"ˈbæŋk","banquet":"ˈbæŋ·kwət","bans":"ˈbænz","battery":"ˈbæ·tər·i","be":"bi","because":"bɪˈkɔːz","become":"bɪˈkʌm","been":"bɪn","before":"bɪˈfɔːr","began":"bɪˈɡæn","beginning":"bɪˈɡɪ·nɪŋ","begins":"bɪˈɡɪnz","being":"ˈbiː·ɪŋ","below":"bɪˈloʊ","belts":"ˈbɛlts","benefits":"ˈbɛ·nə·fɪts","beverages":"ˈbɛv·rɪ·dʒɪz","bill":"ˈbɪl","board":"ˈbɔːrd","boarding":"ˈbɔːr·dɪŋ","bonuses":"ˈboʊ·nə·sɪz","book":"ˈbʊk","booked":"ˈbʊkt","booking":"ˈbʊ·kɪŋ","boost":"ˈbuːst","boosted":"ˈbuː·stɪd","both":"ˈboʊθ","branch":"ˈbræntʃ","brand":"ˈbrænd","breach":"ˈbriːtʃ","break":"ˈbreɪk","breakfast":"ˈbrɛk·fəst","bridge":"ˈbrɪdʒ","brief":"ˈbriːf","bright":"ˈbraɪt","brochure":"broʊˈʃʊr","budget":"ˈbʌ·dʒɪt","building":"ˈbɪl·dɪŋ","bulk":"ˈbʌlk","bus":"ˈbʌs","buses":"ˈbʌ·sɪz","business":"ˈbɪz·nəs","businesses":"ˈbɪz·nə·səz","but":"bət","buy":"ˈbaɪ","buyers":"ˈbaɪ·ərz","by":"baɪ","c":"ˈsiː","cafeteria":"kæ·fəˈtɪ·ri·ə","call":"ˈkɔːl","calling":"ˈkɔː·lɪŋ","came":"ˈkeɪm","campaign":"kæmˈpeɪn","can":"kən","cancel":"ˈkæn·səl","canceled":"ˈkæn·səld","canceling":"ˈkæn·sə·lɪŋ","cancellations":"kæn·səˈleɪ·ʃənz","candidate":"ˈkæn·də·deɪt","capacity":"kəˈpæ·sə·ti","capital":"ˈkæ·pə·təl","car":"ˈkɑːr","card":"ˈkɑːrd","care":"ˈkɛr","career":"kərˈɪr","carefully":"ˈkɛr·fə·li","carry":"ˈkæ·ri","case":"ˈkeɪs","cases":"ˈkeɪ·səz","cash":"ˈkæʃ","catering":"ˈkeɪ·tər·ɪŋ","cause":"ˈkɑːz","center":"ˈsɛn·tər","ceo":"ˈsiː·iːˈoʊ","ceramic":"sərˈæ·mɪk","ceremony":"ˈsɛ·rə·moʊ·ni","certificate":"sərˈtɪ·fɪ·kət","change":"ˈtʃeɪndʒ","changed":"ˈtʃeɪndʒd","changes":"ˈtʃeɪn·dʒəz","charge":"ˈtʃɑːrdʒ","charges":"ˈtʃɑːr·dʒəz","charities":"ˈtʃɛ·rə·tiz","charity":"ˈtʃɛ·rɪ·ti","cheaper":"ˈtʃiː·pər","check":"ˈtʃɛk","checkout":"ˈtʃɛ·kaʊt","children":"ˈtʃɪl·drən","choose":"ˈtʃuːz","circulate":"ˈsɜːr·kjə·leɪt","circulation":"ˈsɜːr·kjə·leɪ·ʃən","city":"ˈsɪ·ti","civic":"ˈsɪ·vɪk","claim":"ˈkleɪm","classes":"ˈklæ·səz","clause":"ˈklɔːz","client":"ˈklaɪ·ənt","clients":"ˈklaɪ·ənts","clinic":"ˈklɪ·nɪk","close":"ˈkloʊs","closed":"ˈkloʊzd","closes":"ˈkloʊ·zɪz","closing":"ˈkloʊ·zɪŋ","closure":"ˈkloʊ·ʒər","club":"ˈklʌb","collaborate":"kəˈlæ·bər·eɪt","colleague":"ˈkɑː·liɡ","com":"ˈkɑːm","come":"ˈkʌm","commemorate":"kəˈmɛ·mər·eɪt","commercial":"kəˈmɜːr·ʃəl","commission":"kəˈmɪ·ʃən","communication":"kə·mjuː·nəˈkeɪ·ʃən","commute":"kəˈmjuːt","companies":"ˈkʌm·pə·niːz","company":"ˈkʌm·pə·niː","comparable":"ˈkɑːm·pər·ə·bəl","compatible":"kəmˈpæ·tə·bəl","compensation":"kɑːm·pənˈseɪ·ʃən","competitive":"kəmˈpɛ·tə·tɪv","competitor":"kəmˈpɛ·tə·tər","compile":"kəmˈpaɪl","compiled":"kəmˈpaɪld","complaints":"kəmˈpleɪnts","complementary":"kɑːm·pləˈmɛn·tri","complete":"kəmˈpliːt","completed":"kəmˈpliː·təd","completion":"kəmˈpliː·ʃən","complies":"kəmˈplaɪz","complimentary":"kɑːm·pləˈmɛn·tər·i","comply":"kəmˈplaɪ","components":"kəmˈpoʊ·nənts","comprehensive":"kɑːm·priˈhɛn·sɪv","conclusion":"kənˈkluː·ʒən","conduct":"ˈkɑːn·dəkt","conducted":"kənˈdʌk·təd","conference":"ˈkɑːn·fər·əns","confidentiality":"kɑːn·fə·dɛn·ʃiˈæ·lə·ti","confirm":"kənˈfɜːrm","confirmed":"kənˈfɜːrmd","congestion":"kənˈdʒɛs·tʃən","connected":"kəˈnɛk·tɪd","consecutive":"kənˈsɛ·kjə·tɪv","consider":"kənˈsɪ·dər","considerable":"kənˈsɪ·dər·ə·bəl","considerate":"kənˈsɪ·dər·ət","consist":"kənˈsɪst","consolidate":"kənˈsɑː·lɪ·deɪt","consolidated":"kənˈsɑː·lə·deɪ·təd","constituted":"ˈkɑːn·stə·tuː·təd","construction":"kənˈstrʌk·ʃən","consumer":"kənˈsuː·mər","contact":"ˈkɑːn·tækt","contingent":"kənˈtɪn·dʒənt","continued":"kənˈtɪ·njud","contract":"ˈkɑːn·trækt","contracts":"ˈkɑːn·trækts","conveniently":"kənˈviː·njənt·li","coordinate":"koʊˈɔːr·də·nət","coordinated":"koʊˈɔːr·də·neɪ·tɪd","copier":"ˈkɑː·pi·ər","corporate":"ˈkɔːr·pər·ət","correspondence":"kɔː·rəˈspɑːn·dəns","cost":"ˈkɑːst","costs":"ˈkɑːsts","could":"kəd","country":"ˈkʌn·tri","coupon":"ˈkuː·pɔːn","course":"ˈkɔːrs","courteous":"ˈkɜːr·ti·əs","cover":"ˈkʌ·vər","covers":"ˈkʌ·vərz","create":"kriˈeɪt","credit":"ˈkrɛ·dət","critically":"ˈkrɪ·tɪ·kə·li","crossing":"ˈkrɔː·sɪŋ","crowded":"ˈkraʊ·dəd","cuisine":"kwɪˈziːn","culinary":"ˈkjuː·lɪ·nɛ·ri","currency":"ˈkɜːr·ən·si","current":"ˈkɜːr·ənt","currently":"ˈkɜːr·ənt·li","customer":"ˈkʌ·stə·mər","customers":"ˈkʌ·stə·mərz","customs":"ˈkʌ·stəmz","cut":"ˈkʌt","cutting":"ˈkʌ·tɪŋ","daily":"ˈdeɪ·li","daniel":"ˈdæ·njəl","dark":"ˈdɑːrk","data":"ˈdeɪ·tə","date":"ˈdeɪt","day":"ˈdeɪ","days":"ˈdeɪz","deadline":"ˈdɛd·laɪn","deal":"ˈdiːl","dear":"ˈdɪr","decision":"dɪˈsɪ·ʒən","declare":"dɪˈklɛr","decline":"dɪˈklaɪn","declined":"dɪˈklaɪnd","decrease":"dɪˈkriːs","dedicated":"ˈdɛ·də·keɪ·təd","defect":"ˈdiː·fɛkt","defective":"dɪˈfɛk·tɪv","deficit":"ˈdɛ·fə·sət","delay":"dɪˈleɪ","delegate":"ˈdɛ·lə·ɡeɪt","deliver":"dɪˈlɪ·vər","delivery":"dɪˈlɪ·vər·i","demand":"dɪˈmænd","dental":"ˈdɛn·təl","depart":"dɪˈpɑːrt","department":"dɪˈpɑːrt·mənt","departs":"dɪˈpɑːrts","deposit":"dəˈpɑː·zɪt","deposited":"dəˈpɑː·zɪ·tɪd","described":"dɪˈskraɪbd","design":"dɪˈzaɪn","designated":"ˈdɛ·zɪɡ·neɪ·tɪd","designed":"dɪˈzaɪnd","desk":"ˈdɛsk","despite":"dɪˈspaɪt","destination":"dɛ·stəˈneɪ·ʃən","detail":"dɪˈteɪl","details":"dɪˈteɪlz","determine":"dəˈtɜːr·mən","determined":"dɪˈtɜːr·mənd","detour":"dɪˈtʊr","develops":"dɪˈvɛ·ləps","devices":"dɪˈvaɪ·səz","digit":"ˈdɪ·dʒət","directions":"dərˈɛk·ʃənz","director":"dərˈɛk·tər","directors":"dərˈɛk·tərz","disclose":"dɪsˈkloʊz","discount":"dɪˈskaʊnt","discuss":"dɪˈskʌs","display":"dɪˈspleɪ","displayed":"dɪˈspleɪd","distribute":"dɪˈstrɪ·bjut","distributed":"dɪˈstrɪ·bjə·təd","diversify":"daɪˈvɜːr·sə·faɪ","do":"də","document":"ˈdɑː·kjə·mɛnt","does":"dəz","doing":"ˈduː·ɪŋ","dollars":"ˈdɑː·lərz","don't":"ˈdoʊnt","done":"ˈdʌn","donor":"ˈdoʊ·nər","double":"ˈdʌ·bəl","doubled":"ˈdʌ·bəld","downtown":"ˈdaʊnˈtaʊn","dr":"ˈdraɪv","draft":"ˈdræft","dramatically":"drəˈmæ·tɪ·kli","drivers":"ˈdraɪ·vərz","dropped":"ˈdrɑːpt","due":"ˈduː","durable":"ˈdʊ·rə·bəl","duration":"ˈdʊˈreɪ·ʃən","during":"ˈdʊ·rɪŋ","duties":"ˈduː·tiz","e":"ˈiː","each":"ˈiːtʃ","earlier":"ˈɜːr·li·ər","early":"ˈɜːr·li","economist":"ɪˈkɑː·nə·mɪst","edge":"ˈɛdʒ","editorial":"ɛ·dəˈtɔː·ri·əl","effect":"ɪˈfɛkt","effectively":"ɪˈfɛk·tɪv·li","efficiency":"ɪˈfɪ·ʃən·si","efficient":"ɪˈfɪ·ʃənt","efficiently":"ɪˈfɪ·ʃənt·li","eight":"ˈeɪt","either":"ˈiː·ðər","elevator":"ˈɛ·lə·veɪ·tər","elevators":"ˈɛ·lə·veɪ·tərz","eligible":"ˈɛ·lə·dʒə·bəl","email":"iˈmeɪl","emails":"iˈmeɪlz","embark":"ɛmˈbɑːrk","embarked":"ɛmˈbɑːrkt","emergencies":"ɪˈmɜːr·dʒən·siz","employee":"ɛmˈplɔɪ·i","employees":"ɛmˈplɔɪ·iz","employs":"ɛmˈplɔɪz","enclosed":"ɛnˈkloʊzd","encouraged":"ɛnˈkɜːr·ɪdʒd","encouraging":"ɛnˈkɜːr·ɪ·dʒɪŋ","end":"ˈɛnd","endeavor":"ɪnˈdɛ·vər","ends":"ˈɛndz","engineers":"ˈɛn·dʒəˈnɪrz","english":"ˈɪŋ·ɡlɪʃ","enjoy":"ɛnˈdʒɔɪ","enjoys":"ɛnˈdʒɔɪz","enroll":"ɛnˈroʊl","enrolled":"ɛnˈroʊld","ensure":"ɛnˈʃʊr","enter":"ˈɛn·tər","entitled":"ɛnˈtaɪ·təld","entrance":"ˈɛn·trəns","equipment":"ɪˈkwɪp·mənt","error":"ˈɛ·rər","errors":"ˈɛ·rərz","essential":"ɛˈsɛn·ʃəl","estate":"ɪˈsteɪt","estimate":"ˈɛ·stə·mət","estimated":"ˈɛ·stə·meɪ·təd","european":"jʊ·rəˈpiː·ən","evaluate":"ɪˈvæ·lju·eɪt","evening":"ˈiːv·nɪŋ","event":"ɪˈvɛnt","every":"ˈɛ·vər·i","everyone":"ˈɛv·ri·wʌn","everything":"ˈɛv·ri·θɪŋ","exceed":"ɪkˈsiːd","exceeded":"ɪkˈsiː·dəd","excellent":"ˈɛk·sə·lənt","exceptional":"ɪkˈsɛp·ʃə·nəl","exchange":"ɪksˈtʃeɪndʒ","exclusive":"ɪksˈkluː·sɪv","excuse":"ɪksˈkjuːs","executive":"ɪɡˈzɛ·kjə·tɪv","executives":"ɪɡˈzɛ·kjə·tɪvz","exhibit":"ɪɡˈzɪ·bɪt","expand":"ɪkˈspænd","expect":"ɪkˈspɛkt","expectations":"ɛk·spɛkˈteɪ·ʃənz","expected":"ɪkˈspɛk·təd","expenditure":"ɪkˈspɛn·də·tʃər","expenses":"ɪkˈspɛn·səz","expensive":"ɪkˈspɛn·sɪv","experience":"ɪkˈspɪ·ri·əns","expert":"ˈɛk·spərt","expertise":"ɛk·spərˈtiːz","expires":"ɪkˈspaɪ·ərz","explained":"ɪkˈspleɪnd","express":"ɪkˈsprɛs","extend":"ɪkˈstɛnd","extended":"ɪkˈstɛn·dəd","extending":"ɪkˈstɛn·dɪŋ","extension":"ɪkˈstɛn·ʃən","extra":"ˈɛk·strə","faces":"ˈfeɪ·səz","facilitate":"fəˈsɪ·lə·teɪt","facilitates":"fəˈsɪ·lə·teɪts","facilities":"fəˈsɪ·lə·tiz","facility":"fəˈsɪ·lɪ·ti","factories":"ˈfæk·tər·iz","factory":"ˈfæk·tər·i","fair":"ˈfɛr","fame":"ˈfeɪm","famous":"ˈfeɪ·məs","fare":"ˈfɛr","farm":"ˈfɑːrm","farmers":"ˈfɑːr·mərz","fasten":"ˈfæ·sən","fastest":"ˈfæ·stəst","feasible":"ˈfiː·zə·bəl","features":"ˈfiː·tʃərz","fee":"ˈfiː","feedback":"ˈfiːd·bæk","fees":"ˈfiːz","figures":"ˈfɪɡ·jərz","file":"ˈfaɪl","fill":"ˈfɪl","film":"ˈfɪlm","finalize":"ˈfaɪ·nə·laɪz","finally":"ˈfaɪ·nə·li","finance":"fəˈnæns","financial":"fəˈnæn·ʃəl","find":"ˈfaɪnd","fine":"ˈfaɪn","finished":"ˈfɪ·nɪʃt","firm":"ˈfɜːrm","firms":"ˈfɜːrmz","first":"ˈfɜːrst","fiscal":"ˈfɪ·skəl","fit":"ˈfɪt","fitness":"ˈfɪt·nəs","five":"ˈfaɪv","flexible":"ˈflɛk·sə·bəl","flight":"ˈflaɪt","floor":"ˈflɔːr","floors":"ˈflɔːrz","flour":"ˈflaʊ·ər","fluctuate":"ˈflʌk·tʃə·weɪt","focus":"ˈfoʊ·kəs","follow":"ˈfɑː·loʊ","following":"ˈfɑː·loʊ·ɪŋ","food":"ˈfuːd","for":"fər","forecast":"ˈfɔːr·kæst","foreign":"ˈfɔː·rən","forget":"fərˈɡɛt","form":"ˈfɔːrm","formed":"ˈfɔːrmd","former":"ˈfɔːr·mər","found":"ˈfaʊnd","founded":"ˈfaʊn·dɪd","four":"ˈfɔːr","fragile":"ˈfræ·dʒəl","free":"ˈfriː","frequently":"ˈfriː·kwənt·li","fresh":"ˈfrɛʃ","friday":"ˈfraɪ·di","from":"frəm","front":"ˈfrʌnt","fuel":"ˈfjuː·əl","full":"ˈfʊl","funding":"ˈfʌn·dɪŋ","fundraiser":"ˈfʌn·dreɪ·zər","funds":"ˈfʌndz","further":"ˈfɜːr·ðər","future":"ˈfjuː·tʃər","gala":"ˈɡæ·lə","gallery":"ˈɡæ·lər·i","gate":"ˈɡeɪt","gave":"ˈɡeɪv","get":"ˈɡɛt","gift":"ˈɡɪft","give":"ˈɡɪv","given":"ˈɡɪ·vən","go":"ˈɡoʊ","goal":"ˈɡoʊl","good":"ˈɡʊd","goods":"ˈɡʊdz","got":"ˈɡɑːt","government":"ˈɡʌ·vər·mənt","gradually":"ˈɡræ·dʒu·ə·li","graduates":"ˈɡræ·dʒə·wəts","grandview":"ˈɡrænd·vjuː","great":"ˈɡreɪt","group":"ˈɡruːp","grow":"ˈɡroʊ","growing":"ˈɡroʊ·ɪŋ","grown":"ˈɡroʊn","growth":"ˈɡroʊθ","guarantee":"ɡɛ·rənˈtiː","guests":"ˈɡɛsts","gym":"ˈdʒɪm","had":"həd","hall":"ˈhɔːl","hana":"ˈhæ·nə","handle":"ˈhæn·dəl","handles":"ˈhæn·dəlz","handouts":"ˈhæn·daʊts","harbor":"ˈhɑːr·bər","has":"həz","have":"həv","haven't":"ˈhæ·vənt","he":"hi","headcount":"ˈhɛd·kaʊnt","headquarters":"ˈhɛd·kwɔːr·tərz","health":"ˈhɛlθ","heard":"ˈhɜːrd","heavily":"ˈhɛ·və·li","heavy":"ˈhɛ·vi","held":"ˈhɛld","help":"ˈhɛlp","helpful":"ˈhɛlp·fəl","her":"hər","here":"hɪr","hi":"ˈhaɪ","high":"ˈhaɪ","higher":"ˈhaɪ·ər","highly":"ˈhaɪ·li","him":"hɪm","hire":"ˈhaɪ·ər","hired":"ˈhaɪ·ərd","hires":"ˈhaɪ·ərz","his":"hɪz","historic":"hɪˈstɔː·rɪk","hmm":"hm","hold":"ˈhoʊld","holding":"ˈhoʊl·dɪŋ","horticulture":"ˈhɔːr·tɪ·kʌl·tʃər","hospitality":"hɑː·spəˈtæ·lə·ti","hotel":"hoʊˈtɛl","hour":"ˈaʊ·ər","hours":"ˈaʊ·ərz","household":"ˈhaʊs·hoʊld","how":"haʊ","however":"haʊˈɛ·vər","hr":"ˈeɪˈtʃɑːr","hub":"ˈhʌb","i":"aɪ","i'd":"ˈaɪd","i'm":"ˈaɪm","i've":"ˈaɪv","if":"ɪf","immediately":"ɪˈmiː·diː·ət·li","impact":"ɪmˈpækt","implement":"ˈɪm·plə·mənt","implemented":"ˈɪm·plə·mɛn·təd","improve":"ɪmˈpruːv","improved":"ɪmˈpruːvd","in":"ɪn","inaugural":"ɪˈnɔː·ɡər·əl","incentives":"ɪnˈsɛn·tɪvz","include":"ɪnˈkluːd","included":"ɪnˈkluː·dəd","includes":"ɪnˈkluːdz","including":"ɪnˈkluː·dɪŋ","inconvenience":"ɪn·kənˈviː·njəns","increase":"ɪnˈkriːs","increased":"ɪnˈkriːst","indicate":"ˈɪn·də·keɪt","indoor":"ˈɪn·dɔːr","industry":"ˈɪn·də·stri","info":"ˈɪn·foʊ","inform":"ɪnˈfɔːrm","information":"ɪn·fərˈmeɪ·ʃən","informed":"ɪnˈfɔːrmd","ingredients":"ɪnˈɡriː·di·ənts","initiative":"ɪˈnɪ·ʃə·tɪv","innovation":"ɪ·nəˈveɪ·ʃən","innovative":"ˈɪ·nə·veɪ·tɪv","inquiries":"ɪnˈkwaɪ·ər·iz","inquiry":"ɪnˈkwaɪ·riː","inspection":"ɪnˈspɛk·ʃən","inspectors":"ɪnˈspɛk·tərz","install":"ɪnˈstɔːl","installed":"ɪnˈstɔːld","installments":"ɪnˈstɔːl·mənts","instinct":"ˈɪn·stɪŋkt","instructions":"ɪnˈstrʌk·ʃənz","insurance":"ɪnˈʃʊ·rəns","interested":"ˈɪn·trə·stɪd","internship":"ˈɪn·tərn·ʃɪp","intervals":"ˈɪn·tər·vəlz","interview":"ˈɪn·tər·vjuː","into":"ˈɪn·tu","intuition":"ɪn·tuˈɪ·ʃən","invaluable":"ɪnˈvæ·ljə·bəl","inventory":"ɪn·vənˈtɔː·ri","invest":"ɪnˈvɛst","invested":"ɪnˈvɛ·stəd","investors":"ɪnˈvɛ·stərz","invite":"ɪnˈvaɪt","invited":"ɪnˈvaɪ·təd","invoice":"ˈɪn·vɔɪs","invoices":"ˈɪn·vɔɪ·sɪz","irrigation":"ɪ·rəˈɡeɪ·ʃən","is":"ɪz","issue":"ˈɪ·ʃu","it":"ɪt","it's":"ˈɪts","item":"ˈaɪ·təm","items":"ˈaɪ·təmz","itinerary":"aɪˈtɪ·nər·ɛ·ri","ito":"ˈiː·toʊ","its":"ɪts","job":"ˈdʒɑːb","jobs":"ˈdʒɑːbz","joint":"ˈdʒɔɪnt","journey":"ˈdʒɜːr·ni","july":"dʒuːˈlaɪ","june":"ˈdʒuːn","just":"ˈdʒʌst","kato":"ˈkeɪ·toʊ","keep":"ˈkiːp","kept":"ˈkɛpt","keynote":"ˈkiː·noʊt","kitchen":"ˈkɪ·tʃən","known":"ˈnoʊn","lab":"ˈlæb","label":"ˈleɪ·bəl","lacks":"ˈlæks","lakeview":"ˈleɪk·vjuː","landmark":"ˈlænd·mɑːrk","lands":"ˈlændz","landscaping":"ˈlænd·skeɪ·pɪŋ","laptop":"ˈlæp·tɑːp","large":"ˈlɑːrdʒ","largest":"ˈlɑːr·dʒəst","last":"ˈlæst","lasts":"ˈlæsts","late":"ˈleɪt","launch":"ˈlɔːntʃ","launched":"ˈlɔːntʃt","layover":"ˈleɪ·oʊ·vər","leadership":"ˈliː·dər·ʃɪp","learn":"ˈlɜːrn","lease":"ˈliːs","least":"ˈliːst","leave":"ˈliːv","lecture":"ˈlɛk·tʃər","lee":"ˈliː","let":"ˈlɛt","let's":"ˈlɛts","letter":"ˈlɛ·tər","leverage":"ˈlɛ·vər·ɪdʒ","liability":"laɪ·əˈbɪ·lɪ·ti","library":"ˈlaɪ·brɛ·riː","lighting":"ˈlaɪ·tɪŋ","like":"ˈlaɪk","limit":"ˈlɪ·mət","limited":"ˈlɪ·mə·təd","limits":"ˈlɪ·məts","listening":"ˈlɪ·sə·nɪŋ","lobby":"ˈlɑː·bi","local":"ˈloʊ·kəl","locally":"ˈloʊ·kə·li","located":"ˈloʊ·keɪ·təd","location":"loʊˈkeɪ·ʃən","locations":"loʊˈkeɪ·ʃənz","logo":"ˈloʊ·ɡoʊ","look":"ˈlʊk","looks":"ˈlʊks","lost":"ˈlɔːst","lounge":"ˈlaʊndʒ","loyal":"ˈlɔɪ·əl","lucrative":"ˈluː·krə·tɪv","luggage":"ˈlʌ·ɡədʒ","lunch":"ˈlʌntʃ","luxury":"ˈlʌɡ·ʒər·i","m":"ˈɛm","machine":"məˈʃiːn","made":"ˈmeɪd","magazine":"ˈmæ·ɡə·ziːn","mail":"ˈmeɪl","main":"ˈmeɪn","maintain":"meɪnˈteɪn","maintains":"meɪnˈteɪnz","maintenance":"ˈmeɪn·tə·nəns","major":"ˈmeɪ·dʒər","make":"ˈmeɪk","malfunctioned":"mælˈfʌŋk·ʃənd","management":"ˈmæ·nədʒ·mənt","manager":"ˈmæ·nə·dʒər","managers":"ˈmæ·nə·dʒərz","managing":"ˈmæ·nə·dʒɪŋ","mandatory":"ˈmæn·də·tɔː·ri","manual":"ˈmæ·nju·əl","manufacturing":"mæ·njəˈfæk·tʃər·ɪŋ","manuscript":"ˈmæ·njə·skrɪpt","manuscripts":"ˈmæ·njə·skrɪpts","many":"ˈmɛ·ni","maps":"ˈmæps","march":"ˈmɑːrtʃ","margin":"ˈmɑːr·dʒən","market":"ˈmɑːr·kət","marketing":"ˈmɑːr·kə·tɪŋ","materials":"məˈtɪ·ri·əlz","may":"ˈmeɪ","me":"mi","meal":"ˈmiːl","meals":"ˈmiːlz","mean":"ˈmiːn","means":"ˈmiːnz","measures":"ˈmɛ·ʒərz","meet":"ˈmiːt","meeting":"ˈmiː·tɪŋ","meetings":"ˈmiː·tɪŋz","meets":"ˈmiːts","members":"ˈmɛm·bərz","membership":"ˈmɛm·bər·ʃɪp","memo":"ˈmɛ·moʊ","mentioned":"ˈmɛn·ʃənd","merchandise":"ˈmɜːr·tʃən·daɪz","merge":"ˈmɜːrdʒ","merged":"ˈmɜːrdʒd","merger":"ˈmɜːr·dʒər","meridian":"mərˈɪ·di·ən","message":"ˈmɛ·sədʒ","met":"ˈmɛt","meticulous":"məˈtɪ·kjə·ləs","mia":"ˈmiː·ə","microphones":"ˈmaɪ·kroʊ·foʊnz","million":"ˈmɪ·ljən","millions":"ˈmɪ·ljənz","minutes":"ˈmɪ·nəts","model":"ˈmɑː·dəl","monday":"ˈmʌn·di","money":"ˈmʌ·ni","month":"ˈmʌnθ","monthly":"ˈmʌnθ·li","months":"ˈmʌnθs","more":"ˈmɔːr","morning":"ˈmɔːr·nɪŋ","most":"ˈmoʊst","moves":"ˈmuːvz","mr":"ˈmɪ·stər","ms":"ˈmɪz","municipal":"mjuˈnɪ·sə·pəl","museum":"mjuˈziː·əm","must":"ˈmʌst","my":"maɪ","name":"ˈneɪm","named":"ˈneɪmd","national":"ˈnæ·ʃə·nəl","nationwide":"ˈneɪ·ʃənˈwaɪd","near":"ˈnɪr","necessarily":"nɛ·səˈsɛ·rə·li","need":"ˈniːd","needing":"ˈniː·dɪŋ","needs":"ˈniːdz","negotiate":"nəˈɡoʊ·ʃi·eɪt","negotiates":"nɪˈɡoʊ·ʃi·eɪts","neither":"ˈniː·ðər","new":"ˈnuː","newsletter":"ˈnuːz·lɛ·tər","newspaper":"ˈnuːz·peɪ·pər","next":"ˈnɛkst","nine":"ˈnaɪn","no":"noʊ","noise":"ˈnɔɪz","noon":"ˈnuːn","nor":"ˈnɔːr","not":"nɑːt","note":"ˈnoʊt","notice":"ˈnoʊ·təs","now":"ˈnaʊ","number":"ˈnʌm·bər","nutritious":"nuˈtrɪ·ʃəs","oak":"ˈoʊk","objective":"əbˈdʒɛk·tɪv","occupancy":"ˈɑː·kjə·pən·si","of":"əv","off":"ˈɔːf","offer":"ˈɔː·fər","offered":"ˈɔː·fərd","offers":"ˈɔː·fərz","office":"ˈɔː·fɪs","old":"ˈoʊld","on":"ɑːn","one":"ˈwʌn","online":"ˈɔːn·laɪn","only":"ˈoʊn·li","open":"ˈoʊ·pən","opened":"ˈoʊ·pənd","opens":"ˈoʊ·pənz","operates":"ˈɑː·pər·eɪts","operating":"ˈɑː·pər·eɪ·tɪŋ","operation":"ɑː·pərˈeɪ·ʃən","operations":"ɑː·pərˈeɪ·ʃənz","opportunity":"ɑː·pərˈtuː·nə·ti","opposed":"əˈpoʊzd","option":"ˈɑːp·ʃən","optional":"ˈɑːp·ʃə·nəl","options":"ˈɑːp·ʃənz","or":"ər","order":"ˈɔːr·dər","orders":"ˈɔːr·dərz","ordinance":"ˈɔːr·də·nəns","orientation":"ɔː·ri·ɛnˈteɪ·ʃən","osaka":"oʊˈsɑː·kə","other":"ˈʌ·ðər","our":"ˈaʊ·ər","out":"ˈaʊt","outlet":"ˈaʊt·lɛt","outlets":"ˈaʊt·lɛts","output":"ˈaʊt·pʊt","outsource":"aʊtˈsɔːrs","outsourced":"aʊtˈsɔːrst","outstanding":"aʊtˈstæn·dɪŋ","over":"ˈoʊ·vər","overdue":"ˈoʊ·vərˈduː","overhead":"ˈoʊ·vərˈhɛd","overnight":"ˈoʊ·vərˈnaɪt","overseas":"ˈoʊ·vərˈsiːz","oversee":"ˈoʊ·vər·siː","oversees":"ˈoʊ·vər·siːz","overtime":"ˈoʊ·vər·taɪm","owing":"ˈoʊ·ɪŋ","p":"ˈpiː","package":"ˈpæ·kədʒ","page":"ˈpeɪdʒ","paper":"ˈpeɪ·pər","paris":"ˈpɛ·rɪs","park":"ˈpɑːrk","parking":"ˈpɑːr·kɪŋ","part":"ˈpɑːrt","participants":"pɑːrˈtɪ·sə·pənts","parties":"ˈpɑːr·tiz","partner":"ˈpɑːrt·nər","partners":"ˈpɑːrt·nərz","parts":"ˈpɑːrts","party":"ˈpɑːr·ti","pass":"ˈpæs","passed":"ˈpæst","passengers":"ˈpæ·sən·dʒərz","patronage":"ˈpæ·trə·nɪdʒ","pavement":"ˈpeɪv·mənt","pay":"ˈpeɪ","paycheck":"ˈpeɪ·tʃɛk","payment":"ˈpeɪ·mənt","payroll":"ˈpeɪ·roʊl","pedestrian":"pəˈdɛ·stri·ən","pending":"ˈpɛn·dɪŋ","people":"ˈpiː·pəl","percent":"pərˈsɛnt","performance":"pərˈfɔːr·məns","perhaps":"pərˈhæps","period":"ˈpɪ·ri·əd","periodicals":"pɪ·riˈɑː·dɪ·kəlz","perishable":"ˈpɛ·rɪ·ʃə·bəl","permission":"pərˈmɪ·ʃən","permitting":"pərˈmɪ·tɪŋ","personnel":"pɜːr·səˈnɛl","philanthropy":"fɪˈlæn·θrə·pi","phone":"ˈfoʊn","photography":"fəˈtɑː·ɡrə·fi","pick":"ˈpɪk","pickup":"ˈpɪ·kʌp","picnic":"ˈpɪk·nɪk","place":"ˈpleɪs","placed":"ˈpleɪst","plan":"ˈplæn","plane":"ˈpleɪn","plant":"ˈplænt","plaza":"ˈplɑː·zə","please":"ˈpliːz","policy":"ˈpɑː·lə·si","politely":"pəˈlaɪt·li","pool":"ˈpuːl","portfolio":"pɔːrtˈfoʊ·li·oʊ","portfolios":"pɔːrtˈfoʊ·li·oʊz","position":"pəˈzɪ·ʃən","positions":"pəˈzɪ·ʃənz","postpone":"poʊstˈpoʊn","postponed":"poʊstˈpoʊnd","power":"ˈpaʊ·ər","predecessor":"ˈprɛ·də·sɛ·sər","predecessor's":"ˈprɛ·də·sɛ·sərz","prefer":"prəˈfɜːr","preferred":"prəˈfɜːrd","preliminary":"prɪˈlɪ·mə·nɛ·ri","prepared":"priˈpɛrd","preparing":"priˈpɛ·rɪŋ","present":"ˈprɛ·zənt","presentation":"prɛ·zənˈteɪ·ʃən","presented":"priˈzɛn·tɪd","press":"ˈprɛs","prestigious":"prɛˈstɪ·dʒəs","prevent":"prɪˈvɛnt","previous":"ˈpriː·vi·əs","price":"ˈpraɪs","prices":"ˈpraɪ·səz","printer":"ˈprɪn·tər","prior":"ˈpraɪ·ər","probation":"proʊˈbeɪ·ʃən","procedures":"prəˈsiː·dʒərz","proceeds":"prəˈsiːdz","process":"ˈprɑː·sɛs","procurement":"proʊˈkjʊr·mənt","product":"ˈprɑː·dəkt","production":"prəˈdʌk·ʃən","productivity":"proʊ·dəkˈtɪ·və·ti","products":"ˈprɑː·dəkts","professional":"prəˈfɛ·ʃə·nəl","proficient":"prɑːˈfɪ·ʃənt","profit":"ˈprɑː·fət","profits":"ˈprɑː·fɪts","program":"ˈproʊ·ɡræm","prohibit":"proʊˈhɪ·bət","prohibited":"proʊˈhɪ·bə·təd","project":"ˈprɑː·dʒɛkt","projections":"prəˈdʒɛk·ʃənz","projector":"prəˈdʒɛk·tər","promising":"ˈprɑː·mə·sɪŋ","promoted":"prəˈmoʊ·tɪd","promotional":"prəˈmoʊ·ʃə·nəl","promptly":"ˈprɑːmpt·li","proofread":"ˈpruː·friːd","properly":"ˈprɑː·pər·li","property":"ˈprɑː·pər·ti","proposal":"prəˈpoʊ·zəl","proposed":"prəˈpoʊzd","prorated":"ˈproʊ·reɪ·tɪd","prospective":"prəˈspɛk·tɪv","proud":"ˈpraʊd","provide":"prəˈvaɪd","provides":"prəˈvaɪdz","provisional":"prəˈvɪ·ʒə·nəl","proximity":"prɑːkˈsɪ·mə·ti","publication":"pʌ·blɪˈkeɪ·ʃən","punctual":"ˈpʌŋk·tʃu·əl","purchase":"ˈpɜːr·tʃəs","purchased":"ˈpɜːr·tʃəst","qualified":"ˈkwɑː·lə·faɪd","quality":"ˈkwɑː·lə·ti","quarter":"ˈkwɔːr·tər","quarterly":"ˈkwɔːr·tər·li","questionnaire":"kwɛs·tʃəˈnɛr","questions":"ˈkwɛs·tʃənz","quick":"ˈkwɪk","quote":"ˈkwoʊt","r":"ˈɑːr","rain":"ˈreɪn","raise":"ˈreɪz","raised":"ˈreɪzd","rarely":"ˈrɛr·li","rate":"ˈreɪt","re":"ˈreɪ","reach":"ˈriːtʃ","reached":"ˈriːtʃt","reading":"ˈriː·dɪŋ","ready":"ˈrɛ·di","real":"ˈriːl","really":"ˈrɪ·li","rear":"ˈrɪr","receipt":"rɪˈsiːt","receipts":"rɪˈsiːts","receive":"rəˈsiːv","received":"rəˈsiːvd","receives":"rəˈsiːvz","recent":"ˈriː·sənt","recently":"ˈriː·sənt·li","reception":"rɪˈsɛp·ʃən","recommend":"rɛ·kəˈmɛnd","record":"rəˈkɔːrd","recorded":"rəˈkɔːr·dɪd","redeem":"rɪˈdiːm","reduce":"rəˈduːs","reduced":"rəˈduːst","reduces":"rəˈduː·səz","reed":"ˈriːd","refer":"rəˈfɜːr","referral":"rɪˈfɜːr·əl","referrals":"rɪˈfɜːr·əlz","reforms":"rəˈfɔːrmz","refrain":"rɪˈfreɪn","refreshments":"rəˈfrɛʃ·mənts","refrigerate":"rɪˈfrɪ·dʒər·eɪt","refund":"rɪˈfʌnd","regarding":"rɪˈɡɑːr·dɪŋ","region":"ˈriː·dʒən","register":"ˈrɛ·dʒɪ·stər","registered":"ˈrɛ·dʒɪ·stərd","registration":"rɛ·dʒɪˈstreɪ·ʃən","regular":"ˈrɛɡ·jə·lər","regulations":"rɛɡ·jəˈleɪ·ʃənz","reimburse":"riː·ɪmˈbɜːrs","reliable":"rɪˈlaɪ·ə·bəl","relocate":"riːˈloʊ·keɪt","remain":"rɪˈmeɪn","remind":"riˈmaɪnd","remit":"riˈmɪt","remote":"rɪˈmoʊt","renew":"rɪˈnuː","renovated":"ˈrɛ·nə·veɪ·tɪd","renovation":"rɛ·nəˈveɪ·ʃən","renowned":"rɪˈnaʊnd","rent":"ˈrɛnt","rental":"ˈrɛn·təl","repair":"rɪˈpɛr","repairs":"rɪˈpɛrz","replaced":"riːˈpleɪst","replacement":"rɪˈpleɪ·smənt","report":"riˈpɔːrt","request":"rɪˈkwɛst","requested":"rɪˈkwɛ·stɪd","require":"riːˈkwaɪ·ər","required":"riˈkwaɪ·ərd","requires":"riˈkwaɪ·ərz","reservation":"rɛ·zərˈveɪ·ʃən","reserve":"rɪˈzɜːrv","reserved":"rɪˈzɜːrvd","residents":"ˈrɛ·zɪ·dənts","resign":"rɪˈzaɪn","resigned":"rɪˈzaɪnd","respond":"rɪˈspɑːnd","response":"rɪˈspɑːns","responsible":"riˈspɑːn·sə·bəl","restaurant":"ˈrɛ·stər·ɑːnt","restricted":"riˈstrɪk·təd","result":"rɪˈzʌlt","results":"rɪˈzʌlts","resume":"rɪˈzuːm","retail":"ˈriː·teɪl","retailers":"ˈriː·teɪ·lərz","retire":"rɪˈtaɪr","return":"rɪˈtɜːrn","revenue":"ˈrɛ·və·nuː","review":"riːˈvjuː","reviewed":"riˈvjuːd","reviews":"riˈvjuːz","revise":"rɪˈvaɪz","revised":"rɪˈvaɪzd","risen":"ˈrɪ·zən","rises":"ˈraɪ·zəz","rival":"ˈraɪ·vəl","riverside":"ˈrɪ·vər·saɪd","road":"ˈroʊd","room":"ˈruːm","rose":"ˈroʊz","rules":"ˈruːlz","run":"ˈrʌn","running":"ˈrʌ·nɪŋ","runs":"ˈrʌnz","safety":"ˈseɪf·ti","salary":"ˈsæ·lər·i","sale":"ˈseɪl","sales":"ˈseɪlz","same":"ˈseɪm","satisfaction":"sæ·təsˈfæk·ʃən","sato":"ˈsɑː·toʊ","saturday":"ˈsæ·tər·di","saturdays":"ˈsæ·tər·diz","sauna":"ˈsɔː·nə","save":"ˈseɪv","saved":"ˈseɪvd","says":"ˈsɛz","schedule":"ˈskɛ·dʒʊl","scheduled":"ˈskɛ·dʒʊld","screen":"ˈskriːn","seasonal":"ˈsiː·zə·nəl","seasonally":"ˈsiː·zə·nə·li","seasoned":"ˈsiː·zənd","seat":"ˈsiːt","second":"ˈsɛ·kənd","security":"sɪˈkjʊ·rə·ti","see":"ˈsiː","seller's":"ˈsɛ·lərz","sells":"ˈsɛlz","seminar":"ˈsɛ·mə·nɑːr","send":"ˈsɛnd","senior":"ˈsiː·njər","seoul":"ˈsoʊl","september":"sɛpˈtɛm·bər","served":"ˈsɜːrvd","serves":"ˈsɜːrvz","service":"ˈsɜːr·vəs","services":"ˈsɜːr·və·səz","session":"ˈsɛ·ʃən","settle":"ˈsɛ·təl","setup":"ˈsɛ·tʌp","seven":"ˈsɛ·vən","several":"ˈsɛv·rəl","share":"ˈʃɛr","shareholder":"ˈʃɛr·hoʊl·dər","sharply":"ˈʃɑːr·pli","she":"ʃi","sheet":"ˈʃiːt","shelf":"ˈʃɛlf","shift":"ˈʃɪft","ship":"ˈʃɪp","shipment":"ˈʃɪp·mənt","shipped":"ˈʃɪpt","shipping":"ˈʃɪ·pɪŋ","shop":"ˈʃɑːp","should":"ʃəd","showcase":"ˈʃoʊ·keɪs","showcases":"ˈʃoʊ·keɪ·sɪz","showed":"ˈʃoʊd","shows":"ˈʃoʊz","sign":"ˈsaɪn","signed":"ˈsaɪnd","significant":"səɡˈnɪ·fɪ·kənt","significantly":"sɪɡˈnɪ·fɪ·kənt·li","signs":"ˈsaɪnz","similar":"ˈsɪ·mə·lər","simply":"ˈsɪm·pli","since":"ˈsɪns","sincerely":"sɪnˈsɪr·li","site":"ˈsaɪt","six":"ˈsɪks","sixty":"ˈsɪk·sti","skills":"ˈskɪlz","slides":"ˈslaɪdz","smoking":"ˈsmoʊ·kɪŋ","so":"ˈsoʊ","software":"ˈsɔːf·twɛr","solar":"ˈsoʊ·lər","sold":"ˈsoʊld","solicit":"səˈlɪ·sɪt","solution":"səˈluː·ʃən","space":"ˈspeɪs","spacious":"ˈspeɪ·ʃəs","speak":"ˈspiːk","speaker":"ˈspiː·kər","speakers":"ˈspiː·kərz","specializes":"ˈspɛ·ʃə·laɪ·zəz","specialty":"ˈspɛ·ʃəl·ti","specifications":"spɛ·sə·fəˈkeɪ·ʃənz","speech":"ˈspiːtʃ","speed":"ˈspiːd","spend":"ˈspɛnd","spending":"ˈspɛn·dɪŋ","sports":"ˈspɔːrts","staff":"ˈstæf","stairways":"ˈstɛr·weɪz","stall":"ˈstɔːl","standards":"ˈstæn·dərdz","starting":"ˈstɑːr·tɪŋ","startups":"ˈstɑːr·tʌps","state":"ˈsteɪt","station":"ˈsteɪ·ʃən","steadily":"ˈstɛ·də·li","steady":"ˈstɛ·di","steel":"ˈstiːl","still":"ˈstɪl","stipulate":"ˈstɪ·pjə·leɪt","stipulated":"ˈstɪ·pjə·leɪ·tɪd","stock":"ˈstɑːk","stone":"ˈstoʊn","stop":"ˈstɑːp","store":"ˈstɔːr","stored":"ˈstɔːrd","stores":"ˈstɔːrz","strategy":"ˈstræ·tə·dʒi","streamline":"ˈstriːm·laɪn","streamlined":"ˈstriːm·laɪnd","street":"ˈstriːt","strengths":"ˈstrɛŋkθs","strong":"ˈstrɔːŋ","students":"ˈstuː·dənts","studied":"ˈstʌ·did","sturdy":"ˈstɜːr·di","subject":"səbˈdʒɛkt","submit":"səbˈmɪt","subscribe":"səbˈskraɪb","subscribers":"səbˈskraɪ·bərz","subscribes":"səbˈskraɪbz","subscription":"səbˈskrɪp·ʃən","subsequent":"ˈsʌb·sə·kwənt","substantial":"səbˈstæn·ʃəl","success":"səkˈsɛs","successor":"səkˈsɛ·sər","sufficient":"səˈfɪ·ʃənt","suggest":"səˈdʒɛst","summary":"ˈsʌ·mər·i","summer":"ˈsʌ·mər","sunday":"ˈsʌn·deɪ","supervise":"ˈsuː·pər·vaɪz","supervises":"ˈsuː·pər·vaɪ·zɪz","supplier":"səˈplaɪ·ər","suppliers":"səˈplaɪ·ərz","supplies":"səˈplaɪz","support":"səˈpɔːrt","sure":"ˈʃʊr","surpass":"sərˈpæs","surpassed":"sərˈpæst","surplus":"ˈsɜːr·pləs","survey":"sərˈveɪ","swimming":"ˈswɪ·mɪŋ","switch":"ˈswɪtʃ","system":"ˈsɪ·stəm","table":"ˈteɪ·bəl","take":"ˈteɪk","takes":"ˈteɪks","talk":"ˈtɔːk","tanaka":"tɑːˈnɑː·kə","task":"ˈtæsk","tasks":"ˈtæsks","tax":"ˈtæks","team":"ˈtiːm","teams":"ˈtiːmz","teas":"ˈtiːz","technical":"ˈtɛk·nɪ·kəl","technician":"tɛkˈnɪ·ʃən","technology":"tɛkˈnɑː·lə·dʒi","temporarily":"tɛm·pərˈɛ·rə·li","ten":"ˈtɛn","tenant":"ˈtɛ·nənt","tentative":"ˈtɛn·tə·tɪv","tenure":"ˈtɛ·njər","terminate":"ˈtɜːr·mə·neɪt","terms":"ˈtɜːrmz","test":"ˈtɛst","testimonials":"tɛ·stəˈmoʊ·ni·əlz","th":"ˈtiːˈeɪtʃ","than":"ðən","thank":"ˈθæŋk","that":"ðət","the":"ðə","their":"ðər","there":"ðɛr","there's":"ˈðɛrz","therefore":"ˈðɛr·fɔːr","they":"ðeɪ","things":"ˈθɪŋz","third":"ˈθɜːrd","thirty":"ˈθɜːr·diː","this":"ðɪs","thorough":"ˈθɜːr·oʊ","three":"ˈθriː","through":"ˈθruː","thursday":"ˈθɜːrz·deɪ","ticket":"ˈtɪ·kət","tickets":"ˈtɪ·kəts","tight":"ˈtaɪt","time":"ˈtaɪm","timeline":"ˈtaɪm·laɪn","times":"ˈtaɪmz","to":"tə","today":"təˈdeɪ","together":"təˈɡɛ·ðər","tokyo":"ˈtoʊ·ki·oʊ","tomorrow":"təˈmɑː·roʊ","tomorrow's":"təˈmɑː·roʊz","took":"ˈtʊk","tool":"ˈtuːl","torres":"ˈtɔː·rɛz","tour":"ˈtʊr","tower":"ˈtaʊ·ər","track":"ˈtræk","trade":"ˈtreɪd","traffic":"ˈtræ·fɪk","train":"ˈtreɪn","training":"ˈtreɪ·nɪŋ","transfer":"trænsˈfɜːr","travel":"ˈtræ·vəl","trip":"ˈtrɪp","tripled":"ˈtrɪ·pəld","troubleshoot":"ˈtrʌ·bəl·ʃuːt","tuesday":"ˈtuːz·di","tuition":"tjuˈɪ·ʃən","twelve":"ˈtwɛlv","twenty":"ˈtwɛn·ti","twice":"ˈtwaɪs","two":"ˈtuː","unavailable":"ʌ·nəˈveɪ·lə·bəl","under":"ˈʌn·dər","undertake":"ˈʌn·dər·teɪk","undertook":"ʌn·dərˈtʊk","unfortunately":"ənˈfɔːr·tʃə·nət·li","unit":"ˈjuː·nət","until":"ənˈtɪl","unveil":"ənˈveɪl","unveiled":"ənˈveɪld","up":"ˈʌp","upcoming":"ˈʌp·kʌ·mɪŋ","updated":"əpˈdeɪ·tɪd","upgraded":"əpˈɡreɪ·dɪd","upon":"əˈpɑːn","upper":"ˈʌ·pər","upward":"ˈʌp·wərd","urged":"ˈɜːrdʒd","us":"əs","use":"ˈjuːs","user":"ˈjuː·zər","usual":"ˈjuː·ʒə·wəl","utensils":"juˈtɛn·səlz","utility":"juˈtɪ·lə·ti","utilize":"ˈjuː·tə·laɪz","vacant":"ˈveɪ·kənt","valid":"ˈvæ·lɪd","valuable":"ˈvæ·ljə·bəl","value":"ˈvæ·lju","vase":"ˈveɪs","vegetarian":"vɛ·dʒəˈtɛ·riː·ən","vehicle":"ˈviː·hɪ·kəl","vendors":"ˈvɛn·dərz","ventilation":"vɛn·təˈleɪ·ʃən","venture":"ˈvɛn·tʃər","venue":"ˈvɛ·nju","verify":"ˈvɛ·rə·faɪ","versatile":"ˈvɜːr·sə·təl","via":"ˈvaɪ·ə","viable":"ˈvaɪ·ə·bəl","vip":"viː·aɪˈpiː","visit":"ˈvɪ·zɪt","volunteers":"vɑː·lənˈtɪrz","voucher":"ˈvaʊ·tʃər","w":"ˈdʌ·bə·lju","wait":"ˈweɪt","waiters":"ˈweɪ·tərz","waiting":"ˈweɪ·tɪŋ","warehouse":"ˈwɛr·haʊs","warranty":"ˈwɔː·rən·ti","was":"wəz","way":"ˈweɪ","we":"wi","we'll":"ˈwiːl","we're":"ˈwiːr","weather":"ˈwɛ·ðər","website":"ˈwɛb·saɪt","week":"ˈwiːk","weekday":"ˈwiːk·deɪ","weekdays":"ˈwiːk·deɪz","weekend":"ˈwiː·kɛnd","weekends":"ˈwiː·kɛndz","weeks":"ˈwiːks","well":"ˈwɛl","were":"wər","what":"wʌt","when":"wɛn","where":"wɛr","whichever":"wɪˈtʃɛ·vər","while":"ˈwaɪl","who":"huː","wholesale":"ˈhoʊl·seɪl","why":"waɪ","wide":"ˈwaɪd","will":"wəl","winners":"ˈwɪ·nərz","wire":"ˈwaɪ·ər","wish":"ˈwɪʃ","with":"wɪð","withdraw":"wɪðˈdrɔː","withdrew":"wɪθˈdruː","within":"wɪˈðɪn","without":"wɪˈθaʊt","won":"ˈwʌn","work":"ˈwɜːrk","worked":"ˈwɜːrkt","workers":"ˈwɜːr·kərz","working":"ˈwɜːr·kɪŋ","works":"ˈwɜːrks","workshop":"ˈwɜːrk·ʃɑːp","would":"wəd","writers":"ˈraɪ·tərz","year":"ˈjɪr","year's":"ˈjɪrz","yearly":"ˈjɪr·li","years":"ˈjɪrz","yes":"ˈjɛs","yesterday":"ˈjɛ·stər·deɪ","you":"ju","you'll":"ˈjuːl","your":"jər","zoning":"ˈzoʊ·nɪŋ","café":"kæˈfeɪ"};
+window.FUNCW=new Set(["a", "all", "am", "an", "and", "any", "are", "as", "at", "be", "been", "both", "but", "by", "can", "could", "did", "do", "does", "each", "every", "for", "from", "had", "has", "have", "he", "her", "here", "him", "his", "how", "i", "if", "in", "into", "is", "it", "its", "may", "me", "might", "must", "my", "no", "not", "o'clock", "of", "on", "or", "out", "she", "should", "so", "some", "than", "that", "the", "their", "them", "there", "these", "they", "this", "those", "to", "up", "us", "was", "we", "were", "what", "when", "where", "which", "who", "why", "will", "with", "would", "you", "your"]);
+
+window.JA=Object.assign(window.JA||{},{
+"get a full refund":"30日以内なら全額返金を受けられます。",
+"keep the receipt":"交換のためにレシートを保管してください。",
+"make an appointment":"リー先生の予約を取りたいのですが。",
+"be available on Monday":"会議室は月曜日に利用できます。",
+"a tight schedule":"今週はスケジュールが詰まっています。",
+"meet the deadline":"締め切りに間に合わせるため残業しました。",
+"attend the meeting":"全社員が会議に出席しなければなりません。",
+"a regular customer":"彼女は当店の常連客です。",
+"place an order":"事務用品を注文しました。",
+"deliver the package":"金曜日までに荷物をお届けできます。",
+"free of charge":"配送は無料です。",
+"repair the copier":"技術者がコピー機を修理しに来ました。",
+"office equipment":"オフィス機器の買い替えが必要です。",
+"office supplies":"事務用品が切れかけています。",
+"a conference room":"会議室は3階にあります。",
+"sign the document":"書類に署名して返送してください。",
+"a former colleague":"元同僚と昼食をとりました。",
+"the sales manager":"営業部長がその計画を承認しました。",
+"a new employee":"新入社員は全員研修を受けます。",
+"hire additional staff":"来月、追加のスタッフを雇う予定です。",
+"a job interview":"彼は木曜日に採用面接があります。",
+"a higher salary":"彼女はより給料の高い職に就きました。",
+"be promoted to manager":"彼は昨年マネージャーに昇進しました。",
+"retire next year":"田中さんは来年退職します。",
+"open a new branch":"その銀行は中心街に新しい支店を開きました。",
+"the company headquarters":"本社は大阪にあります。",
+"the personnel department":"詳細は人事部にお問い合わせください。",
+"meet with a client":"彼女は今日の午後、顧客と面会します。",
+"sign a contract":"両社は契約を締結しました。",
+"reach an agreement":"彼らはついに合意に達しました。",
+"negotiate the price":"仕入先と価格交渉をする必要があります。",
+"within the budget":"プロジェクトは予算内で完了しました。",
+"send an invoice":"請求書を弊社までお送りください。",
+"payment is due":"支払期限は月末です。",
+"a 20% discount":"会員は2割引を受けられます。",
+"purchase a ticket":"チケットはオンラインで購入できます。",
+"travel expenses":"出張費は会社が全額負担します。",
+"submit receipts":"経費精算にはレシートを提出してください。",
+"under warranty":"このプリンターはまだ保証期間内です。",
+"be proud to announce":"新製品の発表を誇りに思います。",
+"reduce the noise":"新しい機械は騒音を大幅に減らします。",
+"perhaps we could":"よろしければ一緒に昼食でもいかがですか。",
+"launch a product":"当社は5月に新製品を発売します。",
+"invite him to speak":"加藤氏にスピーチをお願いしました。",
+"offer him a job":"当社は彼に仕事をオファーしました。",
+"provide A with B":"ホテルは宿泊客に無料の朝食を提供しています。",
+"including Sunday":"店は日曜日を含め毎日営業しています。",
+"reserve a table":"7時に2名席を予約しました。",
+"confirm the reservation":"メールで予約の確認をお願いします。",
+"cancel the flight":"悪天候のため便が欠航になりました。",
+"postpone the meeting":"会議は金曜日に延期されました。",
+"announce the results":"結果は明日発表されます。",
+"until further notice":"プールは追って通知があるまで閉鎖します。",
+"remind him of the meeting":"明日の会議のことを彼に念押ししてください。",
+"inform us of any changes":"日程に変更があればお知らせください。",
+"upon request":"ご要望に応じてベジタリアン食をご用意します。",
+"be required to attend":"全社員の出席が義務付けられています。",
+"complete the form":"用紙に記入して提出してください。",
+"submit an application":"3月1日までに応募書類を提出してください。",
+"apply for the position":"50人以上がその職に応募しました。",
+"a qualified candidate":"彼女は最も適任の候補者です。",
+"five years of experience":"この仕事には5年の経験が必要です。",
+"a training session":"来週、研修が開かれます。",
+"communication skills":"優れたコミュニケーション能力が不可欠です。",
+"improve efficiency":"新システムは効率を向上させました。",
+"increase sales":"前四半期の売上は15％増加しました。",
+"decrease in demand":"その製品の需要は減少しました。",
+"as a result of":"合併の結果、売上は倍増しました。",
+"due to the rain":"雨のためイベントは中止になりました。",
+"despite the delay":"遅延にもかかわらず、時間通りに到着しました。",
+"although it was late":"遅い時間でしたが、彼らは働き続けました。",
+"however, prices rose":"コストを削減しましたが、価格は上昇しました。",
+"therefore, we agreed":"提示額が妥当だったので、同意しました。",
+"be located near the station":"当社のオフィスは駅の近くにあります。",
+"directions to the hotel":"ホテルまでの道順を教えていただけますか。",
+"under construction":"新しい橋は建設中です。",
+"closed for renovation":"博物館は改装のため閉館しています。",
+"sports facilities":"ホテルには一流のスポーツ施設があります。",
+"park your vehicle":"車は指定の場所に駐車してください。",
+"passengers on board":"乗客は全員シートベルトを締めてください。",
+"carry-on luggage":"機内持ち込み荷物は座席の下に収まる必要があります。",
+"board the plane":"乗客は5番ゲートから搭乗します。",
+"depart at noon":"列車は正午に出発します。",
+"reach the destination":"暗くなる前に目的地に到着しました。",
+"the bus fare":"来月バス運賃が値上がりします。",
+"a crowded train":"今朝の電車は混んでいました。",
+"weather permitting":"天気が良ければピクニックは予定通り行われます。",
+"the weather forecast":"天気予報では明日は雨です。"
+});
+
+window.JA=Object.assign(window.JA||{},{
+"not necessarily":"高いからといって必ずしも良いとは限りません。",
+"local residents":"地元住民はその建設計画に反対しました。",
+"create new jobs":"その工場は200の新規雇用を生み出します。",
+"allow us to expand":"その資金のおかげで海外展開が可能になりました。",
+"as mentioned above":"上記の通り、方針が変更されました。",
+"appreciate your help":"報告書へのご協力に本当に感謝しています。",
+"find a replacement":"伊藤さんの後任を探す必要があります。",
+"attached file":"添付ファイルをご確認ください。",
+"enclosed brochure":"詳細は同封のパンフレットをご覧ください。",
+"regarding your inquiry":"お問い合わせの件につきましては、下記をご覧ください。",
+"respond to inquiries":"すべてのお問い合わせに24時間以内に回答します。",
+"in response to":"需要に応えて営業時間を延長しました。",
+"be currently unavailable":"このサービスは現在ご利用いただけません。",
+"recently renovated":"改装されたばかりのロビーはとても素敵です。",
+"previous experience":"営業経験のある方を優遇します。",
+"the following day":"注文品は翌日に届きました。",
+"approximately 30 minutes":"ツアーの所要時間は約30分です。",
+"take effect immediately":"新しい規則は直ちに施行されます。",
+"frequently asked questions":"よくある質問のページをご確認ください。",
+"rarely available":"この商品は店頭にはめったに置いていません。",
+"conveniently located":"ホテルは中心街にあり便利な立地です。",
+"temporarily closed":"道路は補修のため一時通行止めです。",
+"quarterly report":"四半期報告書は好調な成長を示しています。",
+"the annual conference":"年次総会は6月に開催されます。",
+"a monthly newsletter":"月刊ニュースレターをご購読ください。",
+"the upcoming event":"次回のイベントには早めにお申し込みください。",
+"the current issue":"今月号では地元アーティストを特集しています。",
+"in advance":"少なくとも2日前にご予約ください。",
+"advance notice":"キャンセルには事前の通知が必要です。",
+"make a reservation":"佐藤の名前で予約しました。",
+"registration form":"申込書はオンラインでご記入ください。",
+"participants in the seminar":"参加者全員に修了証が授与されます。",
+"a large audience":"講演は大勢の聴衆を集めました。",
+"give a presentation":"彼女はマーケティングについてプレゼンを行いました。",
+"on the agenda":"予算が議題の最初の項目です。",
+"take the minutes":"今日は誰が議事録を取りますか。",
+"distribute handouts":"講演の前に資料が配布されます。",
+"extend the deadline":"締め切りは5月10日まで延長されました。",
+"request an extension":"彼はプロジェクトの延長を申請しました。",
+"receive approval":"その計画は役員会の承認を得ました。",
+"without permission":"許可なく立ち入らないでください。",
+"company policy":"すべての請求書を確認するのが会社の規定です。",
+"safety procedures":"常に安全手順に従ってください。",
+"comply with regulations":"すべての工場は規制を遵守しなければなりません。",
+"follow the instructions":"ラベルの指示に従ってください。",
+"the user manual":"設置についてはユーザーマニュアルをご参照ください。",
+"as described below":"手順は以下の通りです。",
+"in detail":"変更点は詳しく説明されています。",
+"a brief summary":"これが会議の簡単な要約です。",
+"in conclusion":"結論として、プロジェクトは成功でした。",
+"suggest a change":"日程の変更を提案します。",
+"highly recommend":"このレストランを強くお勧めします。",
+"be encouraged to apply":"新卒者の応募を歓迎します。",
+"prefer A to B":"夜の便より朝の便のほうが好きです。",
+"make a decision":"金曜日までに決定する必要があります。",
+"consider other options":"まず他の選択肢を検討しましょう。",
+"a great opportunity":"これは学ぶ絶好の機会です。",
+"be responsible for":"彼女はカスタマーサービスを担当しています。",
+"daily duties":"彼の日常業務には在庫管理が含まれます。",
+"complete the task":"彼女は予定より早くその仕事を完了しました。",
+"be assigned to the project":"2名のエンジニアがプロジェクトに配属されました。",
+"transfer to the Tokyo office":"彼は4月に東京オフィスへ異動します。",
+"relocate the office":"会社はオフィスを中心街に移転します。",
+"expand the business":"彼らはアジアへの事業拡大を計画しています。",
+"merge with a rival":"その会社は最大のライバル企業と合併しました。",
+"founded in 1990":"その会社は1990年に設立されました。",
+"launch a campaign":"当社は広告キャンペーンを開始します。",
+"advertise the sale":"セールの広告が新聞に掲載されました。",
+"a promotional event":"店では販促イベントを開催しています。",
+"a major competitor":"彼らは主要な競合他社に市場シェアを奪われました。",
+"meet the demand":"需要を満たすため増産しました。",
+"consumer spending":"5月の消費者支出は急増しました。",
+"conduct a survey":"顧客500人を対象に調査を実施しました。",
+"fill out a questionnaire":"アンケートにご記入ください。",
+"customer feedback":"当社のサービスへのご意見をお待ちしています。",
+"handle complaints":"スタッフは苦情に丁寧に対応します。",
+"apologize for the delay":"発送の遅れをお詫びいたします。",
+"apologize for the inconvenience":"ご不便をおかけして申し訳ございません。",
+"issue a refund":"5日以内に返金いたします。",
+"exchange the item":"14日以内であれば商品を交換できます。",
+"a defective product":"不良品は返品・返金が可能です。",
+"ship the order":"ご注文品は明日発送されます。",
+"track the shipment":"荷物はオンラインで追跡できます。",
+"check the inventory":"毎週月曜日に在庫を確認します。",
+"store in the warehouse":"商品は倉庫に保管されています。",
+"manufacturing plant":"その製造工場は24時間稼働しています。",
+"a reliable supplier":"信頼できる部品の仕入先を見つけました。",
+"a cost estimate":"見積書をお送りください。",
+"request a quote":"見積もりは当社ウェブサイトから依頼できます。",
+"pay the bill":"お支払いはクレジットカードでも可能です。",
+"utility costs":"家賃には光熱費が含まれています。",
+"sign a lease":"彼らはオフィスの2年契約の賃貸借契約を結びました。",
+"the new tenant":"新しいテナントは来週入居します。",
+"commercial property":"彼らは商業用不動産に投資しています。",
+"a real estate agent":"不動産業者がオフィスを案内してくれました。"
+});
+
+window.JA=Object.assign(window.JA||{},{
+"implement a new policy":"会社は新しい在宅勤務制度を導入しました。",
+"a comprehensive report":"彼女は売上に関する包括的な報告書を作成しました。",
+"anticipate strong demand":"新モデルには高い需要が見込まれます。",
+"annual revenue":"年間売上高は1,000万ドルを超えました。",
+"profit margin":"今四半期は利益率が改善しました。",
+"invest in equipment":"その会社は新しい設備に多額の投資をしました。",
+"acquire a company":"彼らは昨年ソフトウェア会社を買収しました。",
+"a marketing strategy":"マーケティング戦略を見直しました。",
+"achieve the objective":"チームは販売目標を達成しました。",
+"evaluate the performance":"マネージャーは毎年社員の業績を評価します。",
+"assess the impact":"変更の影響を評価する必要があります。",
+"analyze the data":"チームは調査データを分析しました。",
+"indicate an increase":"数値は着実な増加を示しています。",
+"determine the cause":"検査官は欠陥の原因を特定しました。",
+"ensure quality":"品質保証のため全品を検査しています。",
+"guarantee satisfaction":"ご満足いただけない場合は返金を保証します。",
+"maintain high standards":"そのホテルは高水準のサービスを維持しています。",
+"an efficient system":"新システムはより効率的です。",
+"boost productivity":"フレックスタイム制で生産性が向上しました。",
+"a significant increase":"注文が大幅に増加しました。",
+"a substantial discount":"大量購入者には大幅な割引があります。",
+"considerable experience":"彼女は金融分野で豊富な経験があります。",
+"technical expertise":"彼の専門知識は非常に貴重です。",
+"highly qualified applicants":"非常に優秀な応募者が多数集まりました。",
+"proficient in English":"応募者は英語に堪能である必要があります。",
+"exceptional service":"そのレストランは卓越したサービスで知られています。",
+"outstanding performance":"彼女は優れた業績で表彰されました。",
+"exceed expectations":"結果は私たちの期待を上回りました。",
+"surpass the record":"売上は昨年の記録を上回りました。",
+"achieve growth":"その地域は2桁成長を達成しました。",
+"accomplish the goal":"予定より早く目標を達成しました。",
+"collaborate with partners":"当社は地元のパートナーと協力しています。",
+"coordinate the event":"彼女はチャリティーイベントを取り仕切りました。",
+"oversee the operation":"彼は日々の業務を統括しています。",
+"supervise the staff":"彼女は20名のスタッフを管理しています。",
+"delegate tasks":"優れた管理職は効果的に仕事を任せます。",
+"authorize the payment":"支払いを承認できるのは部長だけです。",
+"comply with the rules":"すべての業者は規則を守らなければなりません。",
+"adhere to the schedule":"プロジェクトの日程を厳守してください。",
+"be eligible for a discount":"会員は10％割引の対象です。",
+"be entitled to a refund":"お客様は全額返金を受ける権利があります。",
+"valid until March":"クーポンは3月31日まで有効です。",
+"the contract expires":"契約は6月末に満了します。",
+"renew the subscription":"購読の更新をお忘れなく。",
+"an annual subscription":"年間購読料は99ドルです。",
+"membership benefits":"会員特典には送料無料が含まれます。",
+"exclusive access":"会員はラウンジを専用利用できます。",
+"complimentary breakfast":"全宿泊客に無料の朝食が付きます。",
+"a gift voucher":"当選者には50ドルのギフト券が贈られます。",
+"redeem the coupon":"お会計時にクーポンをご利用ください。",
+"a travel itinerary":"ご旅行の旅程表を添付しました。",
+"arrange accommodation":"講演者の宿泊を手配します。",
+"the conference venue":"その会場は500人収容できます。",
+"a banquet hall":"宴会場はレセプション用に予約済みです。",
+"refreshments will be served":"講演後に軽食をご用意しています。",
+"conference attendees":"参加者は金曜日までに登録してください。",
+"the keynote speaker":"基調講演者は著名な経済学者です。",
+"attend a workshop":"彼女はリーダーシップ研修に参加しました。",
+"enroll in the course":"100人以上がそのコースに登録しました。",
+"tuition fees":"会社が社員の授業料を負担します。",
+"a certificate of completion":"参加者には修了証が授与されます。",
+"reimburse travel expenses":"会社が出張費を払い戻します。",
+"compensation package":"報酬にはボーナスが含まれます。",
+"employee benefits":"福利厚生には健康保険が含まれます。",
+"a monthly paycheck":"給与は毎月25日に振り込まれます。",
+"get a raise":"査定の後、彼女は昇給しました。",
+"the payroll department":"誤りがあれば給与課にご連絡ください。",
+"resign from the position":"彼は5月にその職を辞しました。",
+"name a successor":"取締役会はCEOの後任を指名しました。",
+"her predecessor":"彼女は前任者の改革を引き継ぎました。",
+"a senior executive":"幹部たちが合併について協議しました。",
+"the board of directors":"取締役会は予算を承認しました。",
+"shareholder meeting":"株主総会は4月に開かれます。",
+"stock prices rose":"発表後、株価は上昇しました。",
+"the fiscal quarter":"前四半期の利益は倍増しました。",
+"the fiscal year":"会計年度は3月に終わります。",
+"a sales forecast":"売上予測は有望です。",
+"revenue projections":"収益予測は上方修正されました。",
+"decline an offer":"彼女は丁重に申し出を断りました。",
+"prices fluctuate":"燃料価格は季節によって変動します。",
+"grow steadily":"会員数は2020年以来着実に増えています。",
+"gradually improve":"サービスの質は徐々に改善しました。",
+"increase dramatically":"オンライン売上は劇的に増加しました。",
+"approximately double":"生産量は昨年のおよそ2倍です。",
+"streamline the process":"承認プロセスを簡素化しました。",
+"facilitate communication":"新しいツールがコミュニケーションを円滑にします。",
+"leverage our strengths":"デザイン面の強みを活かすべきです。",
+"consolidate operations":"その会社は欧州事業を統合しました。",
+"diversify the portfolio":"投資家は投資先を分散すべきです。",
+"a cost-cutting initiative":"その取り組みで数百万ドルを節約できました。",
+"offer incentives":"市は新興企業に税制優遇を提供しています。",
+"prospective clients":"見込み客に当社のサービスを紹介しました。",
+"a lucrative market":"アジアは高級品にとって収益性の高い市場です。",
+"a joint venture":"両社は合弁会社を設立しました。",
+"a new endeavor":"彼女の新たな挑戦の成功を祈ります。",
+"undertake a project":"その会社は大規模な改修プロジェクトを請け負いました。",
+"outsource the work":"彼らはITサポート業務を外部委託しました。",
+"the procurement team":"調達チームが契約交渉を担当します。",
+"a tentative schedule":"こちらがツアーの仮日程です。",
+"pending approval":"提案は承認待ちです。",
+"a provisional agreement":"彼らは暫定合意に達しました。",
+"contingent on approval":"取引は取締役会の承認が条件です。",
+"a contract clause":"機密保持条項をよくお読みください。",
+"as stipulated in the contract":"支払条件は契約書に明記されています。",
+"an amendment to the contract":"両者は修正条項に署名しました。",
+"terminate the agreement":"いずれの当事者も契約を解除できます。",
+"a breach of contract":"その遅延は契約違反に当たります。",
+"limit the liability":"この条項は売主の責任を制限します。",
+"an annual audit":"年次監査は来月始まります。",
+"disclose the information":"企業は財務情報を開示しなければなりません。",
+"a budget deficit":"市は財政赤字に直面しています。",
+"a trade surplus":"その国は貿易黒字を記録しました。",
+"a valuable asset":"彼女の経験はチームの貴重な財産です。",
+"reduce overhead costs":"リモートワークで間接費が削減されました。",
+"capital expenditure":"今年の設備投資は8％増加しました。",
+"allocate the budget":"資金は各部署に配分されました。",
+"appropriate measures":"ミスを防ぐため適切な措置を取ってください。",
+"adequate funding":"そのプロジェクトは十分な資金がありません。",
+"sufficient notice":"キャンセルは十分前もってご連絡ください。",
+"surplus inventory":"余剰在庫を割引価格で販売しました。",
+"durable materials":"ケースは耐久性のある素材でできています。",
+"fragile items":"割れ物は丁寧に扱ってください。",
+"a sturdy design":"その棚は頑丈なスチール構造です。",
+"state-of-the-art equipment":"その研究室には最新鋭の設備があります。",
+"cutting-edge technology":"その会社は最先端技術を開発しています。",
+"an innovative solution":"彼らは革新的な解決策を提案しました。",
+"a feasible plan":"このスケジュールは実現可能ですか。",
+"a viable alternative":"太陽光発電は有力な代替手段です。",
+"compatible with the system":"このソフトはすべての機器に対応しています。",
+"the machine malfunctioned":"今朝もプリンターが故障しました。",
+"troubleshoot the issue":"IT担当者が問題を調査します。",
+"technical specifications":"技術仕様はオンラインでご確認ください。",
+"replacement components":"交換部品は在庫があります。",
+"assembly instructions":"組立説明書に注意深く従ってください。",
+"pass the inspection":"その建物は安全検査に合格しました。",
+"a thorough review":"帳簿を徹底的に精査しました。",
+"meticulous attention to detail":"彼女の仕事は細部まで行き届いています。",
+"respond promptly":"顧客のメールには迅速に返信してください。",
+"be punctual for meetings":"従業員は時間厳守が求められます。",
+"courteous staff":"スタッフは礼儀正しく親切でした。",
+"attentive service":"ウェイターは行き届いたサービスを提供します。",
+"the hospitality industry":"彼女はホスピタリティ業界で働いています。",
+"hotel amenities":"設備にはジムとプールがあります。",
+"in close proximity to":"ホテルは空港のすぐ近くにあります。",
+"adjacent to the lobby":"カフェはロビーに隣接しています。",
+"a spacious office":"新しいオフィスは明るく広々としています。",
+"a vacant position":"営業部に2つの欠員があります。",
+"a high occupancy rate":"そのホテルは稼働率が高いです。",
+"utilize the space":"スペースをもっと有効活用すべきです。",
+"accommodate 200 guests":"ホールは200名を収容できます。",
+"at full capacity":"工場はフル稼働しています。",
+"for the duration of":"イベント期間中は駐車場が無料です。",
+"at regular intervals":"バスは一定間隔で運行しています。",
+"three consecutive years":"売上は3年連続で増加しました。",
+"preliminary results":"初期の結果は期待が持てます。",
+"subsequent changes":"その後の変更には承認が必要です。",
+"prior to the meeting":"会議の前に質問を提出してください。",
+"the designated area":"喫煙は指定場所でのみ可能です。",
+"mandatory training":"安全研修は全社員必須です。",
+"an optional session":"午後の部は自由参加です。",
+"refrain from smoking":"この区域での喫煙はご遠慮ください。",
+"be prohibited":"館内での撮影は禁止されています。",
+"restricted access":"研究室への立ち入りは制限されています。",
+"compile a report":"彼女は調査データから報告書をまとめました。",
+"revise the proposal":"月曜日までに提案書を修正してください。",
+"proofread the document":"同僚に書類の校正を頼んでください。",
+"a first draft":"金曜日までに初稿を送ってください。",
+"finalize the details":"今日中に詳細を確定する必要があります。"
+});
+
+window.JA=Object.assign(window.JA||{},{
+"a wide array of":"当ギフトショップは幅広い品ぞろえの特選紅茶をご提供しています。",
+"estimated arrival":"到着予定は午後4時です。",
+"all aspects of":"この講座は会社経営のあらゆる側面を扱います。",
+"a job assignment":"現在の業務は木曜日までに終わらせなければなりません。",
+"thank you for your patronage":"日頃のご愛顧に感謝申し上げます。",
+"customer testimonials":"ウェブサイトにはお客様の声が掲載されています。",
+"a customer referral":"新規顧客のほとんどは紹介によるものです。",
+"solicit feedback":"すべての参加者からご意見を募っています。",
+"circulate the memo":"メモを全社員に回覧してください。",
+"business correspondence":"業務上の文書はすべて適切に保管してください。",
+"acknowledge receipt of":"本状の受領をご確認ください。",
+"the proceeds from the sale":"収益はすべて地元の慈善団体に寄付されます。",
+"an annual fundraiser":"年次募金活動で5万ドルが集まりました。",
+"corporate philanthropy":"その会社は慈善活動で知られています。",
+"commemorate the anniversary":"創立50周年を記念して祝賀会が開かれます。",
+"the inaugural ceremony":"初就航便は6月1日に出発します。",
+"unveil the new logo":"会社は昨日新しいロゴを発表しました。",
+"showcase local artists":"そのギャラリーは地元アーティストの作品を展示しています。",
+"a museum exhibit":"展示会は9月まで開催されます。",
+"free admission":"12歳未満のお子様は入場無料です。",
+"finalize the itinerary":"今週中に旅程を確定します。",
+"embark on a journey":"彼女はデザイン分野で新しいキャリアを歩み始めました。",
+"a two-hour layover":"その便はソウルで2時間の乗り継ぎがあります。",
+"an aisle seat":"通路側の席をお願いします。",
+"a boarding pass":"搭乗券をご用意ください。",
+"go through customs":"税関を通るのに1時間かかりました。",
+"declare the goods":"申告するものはありますか。",
+"foreign currency":"外貨は銀行で両替できます。",
+"withdraw cash":"ATMで現金を引き出しました。",
+"a security deposit":"賃貸には敷金が必要です。",
+"pay in installments":"月々の分割払いが可能です。",
+"an outstanding balance":"未払い残高を清算してください。",
+"an overdue payment":"お支払いが30日延滞しています。",
+"remit the payment":"お支払いは銀行振込でお願いします。",
+"buy in bulk":"まとめ買いのほうがお得です。",
+"wholesale prices":"小売業者には卸売価格でご提供します。",
+"a retail outlet":"そのブランドは全国に50の小売店があります。",
+"display the merchandise":"商品は入口付近に陳列されています。",
+"sports apparel":"その店はスポーツウェアを専門としています。",
+"household appliances":"その店は家電製品を販売しています。",
+"kitchen utensils":"調理器具は2階にあります。",
+"food and beverages":"ロビーで飲み物を販売しています。",
+"local cuisine":"そのレストランは本格的な郷土料理を出します。",
+"culinary skills":"彼はパリで料理の技術を学びました。",
+"perishable goods":"生鮮食品はすべて冷蔵してください。",
+"fresh ingredients":"新鮮な地元の食材だけを使っています。",
+"a nutritious meal":"食堂では栄養価の高い食事を提供しています。",
+"landscaping services":"造園会社に依頼しました。",
+"a horticulture expert":"園芸の専門家が講演を行います。",
+"an irrigation system":"農場は新しい灌漑設備を導入しました。",
+"repave the pavement":"作業員が舗装をやり直しています。",
+"take a detour":"ドライバーはオーク通り経由で迂回してください。",
+"traffic congestion":"新しい道路は交通渋滞を緩和します。",
+"a daily commute":"毎日の通勤に40分かかります。",
+"a pedestrian crossing":"横断歩道では停止してください。",
+"the municipal government":"市当局はその計画を承認しました。",
+"a city ordinance":"その条例は夜間駐車を禁止しています。",
+"zoning regulations":"その用地は区画規制に適合しています。",
+"a historic landmark":"その塔は歴史的建造物です。",
+"the city archives":"古地図は市の公文書館に保管されています。",
+"submit a manuscript":"原稿はオンラインで投稿できます。",
+"the editorial team":"編集チームがすべての記事を審査します。",
+"a monthly publication":"その雑誌は月刊誌です。",
+"academic periodicals":"図書館は200誌の定期刊行物を購読しています。",
+"newspaper circulation":"その新聞の発行部数は10万部です。",
+"loyal subscribers":"購読者は記事を先行して読めます。",
+"an anonymous donor":"匿名の寄付者が100万ドルを寄付しました。",
+"a prestigious award":"彼女は権威あるデザイン賞を受賞しました。",
+"a renowned architect":"そのホールは著名な建築家が設計しました。",
+"a critically acclaimed film":"その高く評価された映画は数々の賞を受賞しました。",
+"aspiring writers":"そのワークショップは作家志望者向けです。",
+"a seasoned professional":"彼女は人事のベテランです。",
+"a versatile employee":"彼は多才で、チームをまたいで働けます。",
+"a dedicated team":"専任チームがVIP顧客を担当します。",
+"during her tenure":"彼女の在任中に売上は3倍になりました。",
+"an apprentice program":"その会社は見習い制度を実施しています。",
+"a summer internship":"彼女は銀行で夏のインターンを終えました。",
+"new employee orientation":"新人研修は月曜午前9時に始まります。",
+"a probation period":"新入社員には3か月の試用期間があります。",
+"a performance appraisal":"人事評価は年2回行われます。"
+});
+
+/* ================= 音标标注与翻译 ================= */
+function ipaRuby(text){
+  return String(text).split(/(\s+)/).map(tok=>{
+    if(!tok||/^\s+$/.test(tok))return tok;
+    const m=tok.match(/^([A-Za-z][A-Za-z']*)([\s\S]*)$/);
+    if(!m)return esc(tok);
+    const w=m[1],rest=m[2]||"";
+    const ipa=window.IPA&&window.IPA[w.toLowerCase()];
+    if(!ipa)return esc(tok);
+    const weak=window.FUNCW&&window.FUNCW.has(w.toLowerCase());
+    return `<ruby class="${weak?"rwk":"rst"}">${esc(w)}<rt>${esc(ipa)}</rt></ruby>${esc(rest)}`;
+  }).join("");
+}
+function transOf(v){
+  const lang=S.settings.transLang||"ja";
+  if(lang==="ja")return (window.JA&&window.JA[v.p])||v.t;
+  return v.t;
+}
+
 </script>
 </body>
 </html>
