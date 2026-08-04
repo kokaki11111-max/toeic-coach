@@ -102,6 +102,18 @@ canvas.chart{width:100%;height:200px;}
 .footer-note{text-align:center;color:var(--gray);font-size:12px;padding:20px 0;}
 dialog{border:none;border-radius:14px;padding:22px;max-width:420px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,.25);}
 dialog::backdrop{background:rgba(20,40,28,.35);}
+.mm-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.mm-item{border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;font-size:14px;text-align:center;background:#fff;transition:.15s;}
+.mm-item.sel{border-color:var(--green);background:var(--green-light);font-weight:600;}
+.mm-item.done{opacity:.35;pointer-events:none;background:var(--green-light);border-color:var(--green-mid);}
+.mm-item.err{border-color:var(--red);background:var(--red-bg);}
+.seq-out,.seq-pool{display:flex;flex-wrap:wrap;gap:8px;min-height:46px;padding:10px;border:1px dashed var(--line);border-radius:10px;margin-bottom:10px;}
+.seq-out{border-style:solid;background:var(--bg);}
+.seq-w{border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;background:#fff;font-size:15px;transition:.12s;}
+.seq-w:hover{border-color:var(--green);}
+.seq-w.used{opacity:.2;pointer-events:none;}
+.seq-w.err{border-color:var(--red);background:var(--red-bg);}
+.seq-w.fixed{cursor:default;background:var(--green-light);border-color:var(--green-mid);}
 ruby{ruby-position:over;ruby-align:center;margin:0 2px;}
 rt{font-size:10px;color:#9aa8a0;font-weight:400;letter-spacing:0;}
 ruby.rst{font-weight:600;}
@@ -131,6 +143,7 @@ ruby.rwk{color:#6b7a70;font-weight:400;}
 <nav class="tabs" id="mainTabs">
   <button data-v="home" class="active">首页</button>
   <button data-v="vocab">词汇短语</button>
+  <button data-v="games">单词游戏</button>
   <button data-v="reading">阅读训练</button>
   <button data-v="listening">听力训练</button>
   <button data-v="strategy">解题思路</button>
@@ -141,6 +154,7 @@ ruby.rwk{color:#6b7a70;font-weight:400;}
 
 <section class="view active" id="v-home"></section>
 <section class="view" id="v-vocab"></section>
+<section class="view" id="v-games"></section>
 <section class="view" id="v-reading"></section>
 <section class="view" id="v-listening"></section>
 <section class="view" id="v-strategy"></section>
@@ -790,11 +804,11 @@ function getToday(){
 }
 
 /* ================= 视图切换 ================= */
-const VIEWS=["home","vocab","reading","listening","strategy","review","progress","mock"];
+const VIEWS=["home","vocab","games","reading","listening","strategy","review","progress","mock"];
 function show(v){
   document.querySelectorAll("#mainTabs button").forEach(b=>b.classList.toggle("active",b.dataset.v===v));
   VIEWS.forEach(x=>document.getElementById("v-"+x).classList.toggle("active",x===v));
-  ({home:renderHome,vocab:renderVocab,reading:renderReading,listening:renderListening,strategy:renderStrategy,review:renderReview,progress:renderProgress,mock:renderMock})[v]();
+  ({home:renderHome,vocab:renderVocab,games:renderGames,reading:renderReading,listening:renderListening,strategy:renderStrategy,review:renderReview,progress:renderProgress,mock:renderMock})[v]();
   window.scrollTo(0,0);
 }
 document.getElementById("mainTabs").addEventListener("click",e=>{if(e.target.dataset.v)show(e.target.dataset.v);});
@@ -934,8 +948,10 @@ function startFlash(deck){
   fState={deck,i:0,flipped:false,ok:0,ng:0};
   renderFlash();
 }
+function vStage(){return document.getElementById("gameStage")||document.getElementById("vocabStage");}
+function vBack(){document.getElementById("gameStage")?renderGames():renderVocab();}
 function renderFlash(){
-  const st=document.getElementById("vocabStage");
+  const st=vStage();
   if(!fState||fState.i>=fState.deck.length){
     st.innerHTML=`<div class="card" style="text-align:center"><h2>⚡ 闪卡完成</h2>
       <div class="stat-chips" style="justify-content:center">
@@ -943,7 +959,7 @@ function renderFlash(){
         <div class="chip"><b>${fState?fState.ng:0}</b><span>不认识</span></div>
       </div>
       <p class="muted">不认识的词已重置到明天复习，错满 3 次会标记为顽固词</p>
-      <button class="btn" id="flashAgain">再来一组</button> <button class="btn gray" onclick="renderVocab()">返回</button></div>`;
+      <button class="btn" id="flashAgain">再来一组</button> <button class="btn gray" onclick="vBack()">返回</button></div>`;
     const fa=document.getElementById("flashAgain");if(fa)fa.onclick=()=>startFlash();
     return;
   }
@@ -1138,6 +1154,163 @@ function renderQuizItem(){
   document.getElementById("quizCheck").onclick=check;
   inp.addEventListener("keydown",e=>{if(e.key==="Enter"&&!document.getElementById("quizCheck").disabled)check();});
 }
+/* ================= 单词游戏 ================= */
+function gamePool(n,needSentence){
+  let pool=VOCAB.filter(v=>S.srs[v.id]);
+  if(needSentence)pool=pool.filter(v=>{const c=v.e.split(/\s+/).length;return c>=6&&c<=12;});
+  if(pool.length<n){
+    let extra=VOCAB.filter(v=>!S.srs[v.id]&&(!needSentence||(v.e.split(/\s+/).length>=6&&v.e.split(/\s+/).length<=12)));
+    pool=pool.concat(extra);
+  }
+  return pool.sort(()=>Math.random()-0.5).slice(0,n);
+}
+function renderGames(){
+  const el=document.getElementById("v-games");
+  el.innerHTML=`
+  <div class="card"><h2>🎮 单词游戏</h2>
+    <p class="muted">换个方式记单词。听音拼写的对错会计入遗忘曲线；连连看和句子排序纯练反应，不扣分。</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+      <button class="btn" id="gFlash">⚡ 闪卡速刷</button>
+      <button class="btn" id="gMatch">🔗 单词连连看</button>
+      <button class="btn" id="gSpell">🎧 听音拼写</button>
+      <button class="btn" id="gOrder">🧩 句子排序</button>
+    </div>
+  </div>
+  <div id="gameStage"></div>`;
+  document.getElementById("gFlash").onclick=()=>startFlash();
+  document.getElementById("gMatch").onclick=startMatch;
+  document.getElementById("gSpell").onclick=startSpell;
+  document.getElementById("gOrder").onclick=startOrder;
+}
+/* ---- 连连看 ---- */
+let mState=null;
+function startMatch(){
+  const pool=gamePool(6);
+  mState={pool,sel:null,done:0,errs:0,t0:Date.now()};
+  const st=document.getElementById("gameStage");
+  const left=pool.slice().sort(()=>Math.random()-0.5);
+  const right=pool.slice().sort(()=>Math.random()-0.5);
+  st.innerHTML=`<div class="card"><h3>🔗 连连看 · 英文短语 ↔ 中文释义</h3>
+    <div class="muted" style="margin-bottom:10px">配对 ${pool.length} 组 · <span id="mmErr">失误 0</span></div>
+    <div class="mm-grid">
+      <div>${left.map(v=>`<div class="mm-item" data-side="L" data-id="${v.id}" style="margin-bottom:8px">${esc(v.p)}</div>`).join("")}</div>
+      <div>${right.map(v=>`<div class="mm-item" data-side="R" data-id="${v.id}" style="margin-bottom:8px">${esc(v.c)}</div>`).join("")}</div>
+    </div><div id="mmDone"></div></div>`;
+  st.querySelectorAll(".mm-item").forEach(it=>it.onclick=()=>mmPick(it));
+}
+function mmPick(it){
+  if(it.classList.contains("done"))return;
+  const sel=mState.sel;
+  if(sel&&sel.dataset.side===it.dataset.side){sel.classList.remove("sel");mState.sel=it;it.classList.add("sel");return;}
+  if(!sel){mState.sel=it;it.classList.add("sel");
+    if(it.dataset.side==="L"){const v=VOCAB.find(x=>x.id===it.dataset.id);if(v)speak(v.p);}
+    return;}
+  if(sel.dataset.id===it.dataset.id){
+    sel.classList.remove("sel");sel.classList.add("done");it.classList.add("done");
+    mState.sel=null;mState.done++;
+    if(mState.done>=mState.pool.length){
+      const sec=Math.round((Date.now()-mState.t0)/1000);
+      document.getElementById("mmDone").innerHTML=`<div class="callout" style="margin-top:12px">🎉 完成！用时 ${sec} 秒，失误 ${mState.errs} 次。<div style="margin-top:8px"><button class="btn small" onclick="startMatch()">再来一局</button></div></div>`;
+    }
+  }else{
+    mState.errs++;document.getElementById("mmErr").textContent="失误 "+mState.errs;
+    sel.classList.remove("sel");sel.classList.add("err");it.classList.add("err");
+    const a=sel,b=it;mState.sel=null;
+    setTimeout(()=>{a.classList.remove("err");b.classList.remove("err");},450);
+  }
+}
+/* ---- 听音拼写 ---- */
+let spState=null;
+function startSpell(){
+  spState={list:gamePool(8),i:0,ok:0,ng:0,wrong:[]};
+  renderSpell();
+}
+function renderSpell(){
+  const st=document.getElementById("gameStage");
+  if(spState.i>=spState.list.length){
+    st.innerHTML=`<div class="card" style="text-align:center"><h3>🎧 拼写完成</h3>
+      <div class="stat-chips" style="justify-content:center">
+        <div class="chip"><b>${spState.ok}</b><span>拼对</span></div>
+        <div class="chip"><b>${spState.ng}</b><span>拼错</span></div></div>
+      ${spState.wrong.length?`<p class="muted">错的词：${spState.wrong.map(esc).join("、")}（已重置到明天复习）</p>`:""}
+      <button class="btn" onclick="startSpell()">再来一组</button> <button class="btn gray" onclick="renderGames()">返回</button></div>`;
+    return;
+  }
+  const v=spState.list[spState.i];
+  st.innerHTML=`<div class="card" style="text-align:center">
+    <div class="muted" style="text-align:right">🎧 ${spState.i+1} / ${spState.list.length}${isStubborn(v.id)?' <span class="pill r">顽固词</span>':''}</div>
+    <h3>听发音，拼出这个单词</h3>
+    <div style="margin:12px 0"><button class="btn ghost" id="spPlay">🔊 再听一遍</button></div>
+    <div class="muted" style="margin-bottom:10px">提示：${esc(v.c)}</div>
+    <div class="formrow" style="justify-content:center">
+      <input type="text" id="spInp" autocomplete="off" autocapitalize="off" placeholder="输入单词" style="width:220px;text-align:center;font-size:18px">
+      <button class="btn" id="spGo">检查</button></div>
+    <div id="spFb"></div></div>`;
+  speak(v.w);
+  document.getElementById("spPlay").onclick=()=>speak(v.w);
+  const inp=document.getElementById("spInp");inp.focus();
+  const check=()=>{
+    const ok=inp.value.trim().toLowerCase()===v.w.toLowerCase();
+    srsMark(v,ok);
+    const fb=document.getElementById("spFb");
+    if(ok){spState.ok++;fb.innerHTML=`<div class="callout" style="margin-top:10px">✅ 正确！<b>${esc(v.w)}</b> ${window.IPA[v.w.toLowerCase()]?"/"+esc(window.IPA[v.w.toLowerCase()])+"/":""} — ${esc(v.p)}</div>`;}
+    else{spState.ng++;spState.wrong.push(v.w);
+      fb.innerHTML=`<div class="callout danger" style="margin-top:10px">❌ 正确拼写：<b>${esc(v.w)}</b> ${window.IPA[v.w.toLowerCase()]?"/"+esc(window.IPA[v.w.toLowerCase()])+"/":""} — ${esc(v.p)}（${esc(v.c)}）</div>`;}
+    fb.innerHTML+=`<div style="margin-top:10px"><button class="btn" id="spNext">下一个</button></div>`;
+    document.getElementById("spGo").disabled=true;
+    document.getElementById("spNext").onclick=()=>{spState.i++;renderSpell();};
+    document.getElementById("spNext").focus();
+  };
+  document.getElementById("spGo").onclick=check;
+  inp.addEventListener("keydown",e=>{if(e.key==="Enter"&&!document.getElementById("spGo").disabled)check();});
+}
+/* ---- 句子排序 ---- */
+let oState=null;
+function startOrder(){
+  oState={list:gamePool(5,true),i:0,errs:0};
+  renderOrder();
+}
+function renderOrder(){
+  const st=document.getElementById("gameStage");
+  if(oState.i>=oState.list.length){
+    st.innerHTML=`<div class="card" style="text-align:center"><h3>🧩 排序完成</h3>
+      <p class="muted">共 ${oState.list.length} 句，点错 ${oState.errs} 次</p>
+      <button class="btn" onclick="startOrder()">再来一组</button> <button class="btn gray" onclick="renderGames()">返回</button></div>`;
+    return;
+  }
+  const v=oState.list[oState.i];
+  const tokens=v.e.split(/\s+/);
+  const shuffled=tokens.map((t,i)=>({t,i})).sort(()=>Math.random()-0.5);
+  oState.cur={tokens,next:0};
+  st.innerHTML=`<div class="card">
+    <div class="muted" style="text-align:right">🧩 ${oState.i+1} / ${oState.list.length}</div>
+    <h3>按正确语序点击单词，组成句子</h3>
+    <div class="muted" style="margin:6px 0">中文：${esc(v.t)}</div>
+    <div class="seq-out" id="seqOut"></div>
+    <div class="seq-pool" id="seqPool">${shuffled.map(o=>`<span class="seq-w" data-i="${o.i}">${esc(o.t)}</span>`).join("")}</div>
+    <div id="seqFb"></div></div>`;
+  document.querySelectorAll("#seqPool .seq-w").forEach(ch=>{
+    ch.onclick=()=>{
+      const expected=oState.cur.tokens[oState.cur.next];
+      if(ch.textContent===expected){
+        ch.classList.add("used");
+        const out=document.getElementById("seqOut");
+        const s=document.createElement("span");s.className="seq-w fixed";s.textContent=expected;out.appendChild(s);
+        oState.cur.next++;
+        if(oState.cur.next>=oState.cur.tokens.length){
+          document.getElementById("seqFb").innerHTML=`<div class="callout">✅ ${esc(v.e)}<div class="t">${esc(transOf(v))}</div>
+          <div style="margin-top:8px"><button class="btn small ghost" id="seqSay">🔊 听整句</button> <button class="btn small" id="seqNext">下一句</button></div></div>`;
+          speak(v.e);
+          document.getElementById("seqSay").onclick=()=>speak(v.e);
+          document.getElementById("seqNext").onclick=()=>{oState.i++;renderOrder();};
+        }
+      }else{
+        oState.errs++;ch.classList.add("err");setTimeout(()=>ch.classList.remove("err"),400);
+      }
+    };
+  });
+}
+
 /* ================= 通用答题引擎 ================= */
 let qState=null;
 function recordAttempt(o){
