@@ -102,6 +102,12 @@ canvas.chart{width:100%;height:200px;}
 .footer-note{text-align:center;color:var(--gray);font-size:12px;padding:20px 0;}
 dialog{border:none;border-radius:14px;padding:22px;max-width:420px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,.25);}
 dialog::backdrop{background:rgba(20,40,28,.35);}
+.starbtn{border:none;background:none;cursor:pointer;font-size:20px;line-height:1;color:#c9d3cd;padding:2px 4px;transition:.15s;vertical-align:middle;}
+.starbtn:hover{color:#e0a900;transform:scale(1.15);}
+.starbtn.on{color:#f0b400;}
+.fav-row{display:flex;align-items:flex-start;gap:10px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff;}
+.fav-row .body{flex:1;min-width:0;}
+.fav-tabs{display:flex;gap:6px;margin-bottom:12px;}
 .mm-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .mm-item{border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;font-size:14px;text-align:center;background:#fff;transition:.15s;}
 .mm-item.sel{border-color:var(--green);background:var(--green-light);font-weight:600;}
@@ -144,6 +150,8 @@ ruby.rwk{color:#6b7a70;font-weight:400;}
   <button data-v="home" class="active">首页</button>
   <button data-v="vocab">词汇短语</button>
   <button data-v="games">单词游戏</button>
+  <button data-v="talk">Talk 跟读</button>
+  <button data-v="favs">⭐ 收藏</button>
   <button data-v="reading">阅读训练</button>
   <button data-v="listening">听力训练</button>
   <button data-v="strategy">解题思路</button>
@@ -155,6 +163,8 @@ ruby.rwk{color:#6b7a70;font-weight:400;}
 <section class="view active" id="v-home"></section>
 <section class="view" id="v-vocab"></section>
 <section class="view" id="v-games"></section>
+<section class="view" id="v-talk"></section>
+<section class="view" id="v-favs"></section>
 <section class="view" id="v-reading"></section>
 <section class="view" id="v-listening"></section>
 <section class="view" id="v-strategy"></section>
@@ -164,6 +174,26 @@ ruby.rwk{color:#6b7a70;font-weight:400;}
 
 <div class="footer-note">数据保存在本浏览器 · 配置云同步后手机电脑自动互通 · 词库：银之短语 → 金之短语 → 官方蓝皮书</div>
 </div>
+<dialog id="azDlg">
+  <h3 style="margin-bottom:8px">🎙️ Azure 语音设置</h3>
+  <p class="muted" style="margin-bottom:10px">密钥<b>只保存在这台设备的浏览器</b>，不会写进网站代码、也不会同步到云端。换设备需重新填写。</p>
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <input type="password" id="azKey" placeholder="Azure 语音服务密钥">
+    <input type="text" id="azRegion" placeholder="区域（如 eastus）">
+    <label class="muted" style="font-size:13px">朗读语音</label>
+    <select id="azVoice"></select>
+    <label style="font-size:13px;display:flex;align-items:center;gap:6px">
+      <input type="checkbox" id="azAll" style="width:auto"> 全站朗读都用 Azure 真人语音（关闭则只在 Talk 页使用）
+    </label>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+    <button class="btn" id="azSave">保存</button>
+    <button class="btn ghost" id="azTest">测试朗读</button>
+    <button class="btn gray" id="azClear">清除密钥</button>
+    <button class="btn gray" id="azClose">关闭</button>
+  </div>
+  <div id="azMsg" class="muted" style="margin-top:8px"></div>
+</dialog>
 <dialog id="syncDlg">
   <h3 style="margin-bottom:8px">☁️ 云同步设置</h3>
   <p class="muted" style="margin-bottom:10px">手机和电脑填<b>同一个</b>数据库地址与同步码，数据自动双向合并。配置方法见部署指南。</p>
@@ -2699,11 +2729,11 @@ function getToday(){
 }
 
 /* ================= 视图切换 ================= */
-const VIEWS=["home","vocab","games","reading","listening","strategy","review","progress","mock"];
+const VIEWS=["home","vocab","games","talk","favs","reading","listening","strategy","review","progress","mock"];
 function show(v){
   document.querySelectorAll("#mainTabs button").forEach(b=>b.classList.toggle("active",b.dataset.v===v));
   VIEWS.forEach(x=>document.getElementById("v-"+x).classList.toggle("active",x===v));
-  ({home:renderHome,vocab:renderVocab,games:renderGames,reading:renderReading,listening:renderListening,strategy:renderStrategy,review:renderReview,progress:renderProgress,mock:renderMock})[v]();
+  ({home:renderHome,vocab:renderVocab,games:renderGames,talk:renderTalk,favs:renderFavs,reading:renderReading,listening:renderListening,strategy:renderStrategy,review:renderReview,progress:renderProgress,mock:renderMock})[v]();
   window.scrollTo(0,0);
 }
 document.getElementById("mainTabs").addEventListener("click",e=>{if(e.target.dataset.v)show(e.target.dataset.v);});
@@ -2867,10 +2897,12 @@ function renderFlash(){
   st.innerHTML=`
   <div class="card vocab-card" id="flashCard" style="cursor:pointer;min-height:230px">
     <div class="muted" style="text-align:right">${isStubborn(v.id)?'<span class="pill r">顽固词 ×'+wrongCount(v.id)+'</span> ':''}⚡ ${fState.i+1} / ${fState.deck.length}</div>
-    <div class="phrase ${showIpa?"withipa":""}" style="margin-top:12px">${showIpa?ipaRuby(v.p):esc(v.p)}</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px">
+      <div class="phrase ${showIpa?"withipa":""}">${showIpa?ipaRuby(v.p):esc(v.p)}</div>${starW(v.id)}
+    </div>
     <div id="flashBack" class="${fState.flipped?"":"hidden"}">
       <div class="cn">${esc(v.c)}</div>
-      <div class="ex" style="text-align:left">${esc(v.e)}<div class="t">${esc(transOf(v))}</div></div>
+      <div class="ex" style="text-align:left">${esc(v.e)}${starS(v.e,transOf(v),v.p)}<div class="t">${esc(transOf(v))}</div></div>
     </div>
     ${fState.flipped?"":'<div class="muted" style="margin-top:14px">点击卡片翻面</div>'}
   </div>
@@ -2970,11 +3002,13 @@ function renderCard(){
   st.innerHTML=`
   <div class="card vocab-card">
     <div class="muted" style="text-align:right">${isStubborn(v.id)?'<span class="pill r">顽固词 ×'+wrongCount(v.id)+'</span> ':''}${vState.i+1} / ${vState.queue.length} · ${BOOKS[v.b].name}</div>
-    <div class="phrase ${showIpa?"withipa":""}">${showIpa?ipaRuby(v.p):esc(v.p)}</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:6px">
+      <div class="phrase ${showIpa?"withipa":""}">${showIpa?ipaRuby(v.p):esc(v.p)}</div>${starW(v.id)}
+    </div>
     <div class="word">${esc(v.w)} <button class="btn small ghost" id="sayBtn">🔊 发音</button> <button class="btn small gray" id="ipaTgl">${showIpa?"隐藏音标":"显示音标"}</button></div>
     <div id="answerArea" class="${vState.revealed||isNew?"":"hidden"}">
       <div class="cn">${esc(v.c)}</div>
-      <div class="ex"><div class="${showIpa?"withipa":""}">${showIpa?ipaRuby(v.e):esc(v.e)}</div>
+      <div class="ex"><div class="${showIpa?"withipa":""}">${showIpa?ipaRuby(v.e):esc(v.e)}${starS(v.e,transOf(v),v.p)}</div>
       <div class="t hidden" id="transBox" style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--line)"></div>
       <div style="margin-top:8px"><button class="btn small ghost" id="sayEx">🔊 例句</button>
       <button class="btn small ghost" id="transBtn">${(S.settings.transLang||"ja")==="ja"?"訳 显示翻译":"译 显示翻译"}</button>
@@ -3452,7 +3486,7 @@ function renderListenItem(){
       const ok=i===item.a;const t=Math.floor((Date.now()-t0)/1000);
       markOpts(c,i,item.a);
       const fb=document.getElementById("fbBox");
-      fb.innerHTML=`<div class="callout ${ok?"":"danger"}" style="margin-top:10px">${ok?"✅ 正确":"❌ 错误"}<br>原文：<span class="withipa">${ipaRuby(item.script)}</span><br>${esc(item.exp)}</div>`;
+      fb.innerHTML=`<div class="callout ${ok?"":"danger"}" style="margin-top:10px">${ok?"✅ 正确":"❌ 错误"}<br>原文：<span class="withipa">${ipaRuby(item.script)}</span>${starS(item.script,"",("听力 "+item.part))}<br>${esc(item.exp)}</div>`;
       recordAttempt({qid:item.id,type:"listening",part:"P2",correct:ok,time:t,conf:"n",
         reasons:ok?undefined:[item.tag.includes("应答")?"定位关键信息":item.tag],q:item.script,ans:item.o[item.a],exp:item.exp,tag:item.tag});
       const d=document.createElement("div");d.style.marginTop="10px";d.innerHTML=`<button class="btn">下一题</button>`;
@@ -3473,7 +3507,7 @@ function renderListenItem(){
       const ok=i===q.a;const t=Math.floor((Date.now()-t0)/1000);
       markOpts(c,i,q.a);
       const fb=document.getElementById("fbBox");
-      fb.innerHTML=`<div class="callout ${ok?"":"danger"}" style="margin-top:10px">${ok?"✅ 正确":"❌ 错误"}<br>${esc(q.exp)}${qState.sub===item.qs.length-1?`<details style="margin-top:6px"><summary>查看听力原文（带音标）</summary><div class="muted withipa">${ipaRuby(item.script)}</div></details>`:""}</div>`;
+      fb.innerHTML=`<div class="callout ${ok?"":"danger"}" style="margin-top:10px">${ok?"✅ 正确":"❌ 错误"}<br>${esc(q.exp)}${qState.sub===item.qs.length-1?`<details style="margin-top:6px"><summary>查看听力原文（带音标）</summary><div class="muted withipa">${ipaRuby(item.script)}${starS(item.script,"",("听力 "+item.part))}</div></details>`:""}</div>`;
       recordAttempt({qid:item.id+"-"+q.q,type:"listening",part:item.part,correct:ok,time:t,conf:"n",
         reasons:ok?undefined:["定位关键信息"],q:q.q,ans:q.o[q.a],exp:q.exp,tag:q.tag});
       const d=document.createElement("div");d.style.marginTop="10px";d.innerHTML=`<button class="btn">下一题</button>`;
@@ -3762,6 +3796,619 @@ function renderMock(){
 }
 
 /* ================= 启动 ================= */
+/* ================= 收藏（单词 / 句子） ================= */
+function favs(){
+  if(!S.favs)S.favs={w:{},s:{}};
+  if(!S.favs.w)S.favs.w={};
+  if(!S.favs.s)S.favs.s={};
+  return S.favs;
+}
+const sKey=t=>String(t).trim().replace(/\s+/g," ").toLowerCase();
+function isFavW(id){return !!favs().w[id];}
+function isFavS(text){return !!favs().s[sKey(text)];}
+function favWCount(){return Object.keys(favs().w).length;}
+function favSCount(){return Object.keys(favs().s).length;}
+function toggleFavW(id){
+  const f=favs();
+  if(f.w[id])delete f.w[id];
+  else{const v=VOCAB.find(x=>x.id===id);if(!v)return false;
+    f.w[id]={p:v.p,w:v.w,c:v.c,ts:Date.now()};}
+  save();return isFavW(id);
+}
+function toggleFavS(text,tr,src){
+  const f=favs(),k=sKey(text);
+  if(f.s[k])delete f.s[k];
+  else f.s[k]={text:String(text),tr:tr||"",src:src||"",ts:Date.now()};
+  save();return isFavS(text);
+}
+/* 星号按钮 */
+function starW(id){
+  return `<button class="starbtn ${isFavW(id)?"on":""}" data-favw="${esc(id)}" `+
+    `title="${isFavW(id)?"取消收藏单词":"收藏这个单词"}" aria-label="收藏单词">${isFavW(id)?"★":"☆"}</button>`;
+}
+function starS(text,tr,src){
+  return `<button class="starbtn ${isFavS(text)?"on":""}" data-favs="${esc(text)}" `+
+    `data-favtr="${esc(tr||"")}" data-favsrc="${esc(src||"")}" `+
+    `title="${isFavS(text)?"取消收藏句子":"收藏这个句子"}" aria-label="收藏句子">${isFavS(text)?"★":"☆"}</button>`;
+}
+/* 事件委托：任何位置的星号都能点 */
+document.addEventListener("click",e=>{
+  const b=e.target.closest&&e.target.closest("[data-favw],[data-favs]");
+  if(!b)return;
+  e.preventDefault();e.stopPropagation();
+  let on;
+  if(b.dataset.favw!==undefined)on=toggleFavW(b.dataset.favw);
+  else on=toggleFavS(b.dataset.favs,b.dataset.favtr,b.dataset.favsrc);
+  b.classList.toggle("on",on);
+  b.textContent=on?"★":"☆";
+  b.title=on?"取消收藏":"收藏";
+  const fv=document.getElementById("v-favs");
+  if(fv&&fv.classList.contains("active"))renderFavs();
+},true);
+
+/* ---- 收藏页 ---- */
+let favTab="w";
+function renderFavs(){
+  const el=document.getElementById("v-favs");
+  const f=favs();
+  const ws=Object.entries(f.w).sort((a,b)=>b[1].ts-a[1].ts);
+  const ss=Object.entries(f.s).sort((a,b)=>b[1].ts-a[1].ts);
+  const showIpa=S.settings.showIPA!==false;
+  el.innerHTML=`
+  <div class="card"><h2>⭐ 我的收藏</h2>
+    <p class="muted">在词卡、闪卡、Talk、听力原文旁点 ☆ 即可收藏；再点一次取消。</p>
+    <div class="fav-tabs">
+      <button class="btn small ${favTab==="w"?"":"gray"}" data-ft="w">单词 ${ws.length}</button>
+      <button class="btn small ${favTab==="s"?"":"gray"}" data-ft="s">句子 ${ss.length}</button>
+    </div>
+    ${favTab==="w"&&ws.length?`<div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn small" id="favFlash">⚡ 用收藏刷闪卡</button>
+      <button class="btn small ghost" id="favTalk">🎙️ 用收藏练跟读</button>
+      <button class="btn small gray" id="favClearW">清空单词收藏</button></div>`:""}
+    ${favTab==="s"&&ss.length?`<div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn small" id="favPlayAll">🔊 依次朗读全部</button>
+      <button class="btn small gray" id="favClearS">清空句子收藏</button></div>`:""}
+  </div>
+  <div class="card">
+  ${favTab==="w"
+    ? (ws.length?ws.map(([id,d])=>{
+        const v=VOCAB.find(x=>x.id===id);
+        return `<div class="fav-row">
+          ${starW(id)}
+          <div class="body">
+            <div class="${showIpa?"withipa":""}" style="font-size:17px;font-weight:600">${showIpa?ipaRuby(d.p):esc(d.p)}</div>
+            <div class="muted">${esc(d.c)}${v&&isStubborn(v.id)?' <span class="pill r">顽固词</span>':""}</div>
+            ${v?`<div class="muted" style="margin-top:4px;font-size:13px">${esc(v.e)}</div>`:""}
+          </div>
+          <button class="btn small ghost" data-say="${esc(d.p)}">🔊</button>
+        </div>`;}).join("")
+      :`<p class="muted">还没有收藏单词。在词卡或闪卡上点 ☆ 试试。</p>`)
+    : (ss.length?ss.map(([k,d])=>`<div class="fav-row">
+          ${starS(d.text,d.tr,d.src)}
+          <div class="body">
+            <div class="${showIpa?"withipa":""}" style="font-size:15px">${showIpa?ipaRuby(d.text):esc(d.text)}</div>
+            ${d.tr?`<div class="muted" style="margin-top:4px">${esc(d.tr)}</div>`:""}
+            ${d.src?`<div class="muted" style="font-size:12px;margin-top:2px">来源：${esc(d.src)}</div>`:""}
+          </div>
+          <button class="btn small ghost" data-say="${esc(d.text)}">🔊</button>
+        </div>`).join("")
+      :`<p class="muted">还没有收藏句子。在例句或听力原文旁点 ☆ 试试。</p>`)}
+  </div>`;
+  el.querySelectorAll("[data-ft]").forEach(b=>b.onclick=()=>{favTab=b.dataset.ft;renderFavs();});
+  el.querySelectorAll("[data-say]").forEach(b=>b.onclick=()=>speak(b.dataset.say));
+  const ff=document.getElementById("favFlash");
+  if(ff)ff.onclick=()=>{
+    const deck=ws.map(([id])=>VOCAB.find(x=>x.id===id)).filter(Boolean);
+    if(!deck.length)return;
+    show("games");startFlash(deck);
+  };
+  const ft=document.getElementById("favTalk");
+  if(ft)ft.onclick=()=>{
+    const deck=ws.map(([id])=>VOCAB.find(x=>x.id===id)).filter(Boolean);
+    if(!deck.length)return;
+    tState.list=deck;tState.i=0;tState.last=null;show("talk");
+  };
+  const cw=document.getElementById("favClearW");
+  if(cw)cw.onclick=()=>{if(confirm("清空全部收藏单词？")){favs().w={};save();renderFavs();}};
+  const cs=document.getElementById("favClearS");
+  if(cs)cs.onclick=()=>{if(confirm("清空全部收藏句子？")){favs().s={};save();renderFavs();}};
+  const pa=document.getElementById("favPlayAll");
+  if(pa)pa.onclick=()=>{
+    let i=0;
+    const next=()=>{if(i>=ss.length)return;speak(ss[i][1].text);i++;setTimeout(next,3200);};
+    next();
+  };
+}
+
+/* ================= audio-utils =================
+   浏览器端音频工具：直接采集 PCM → 重采样 → WAV(16kHz/mono/PCM16)
+   目的：绕开 MediaRecorder 的 webm/opus 编码，Azure 只认 WAV。
+   主路径 = Web Audio 直采原始采样（无编解码器参与）
+   备用路径 = MediaRecorder 录制后用 decodeAudioData 解码
+================================================= */
+window.AudioUtils=(function(){
+  const AC=window.AudioContext||window.webkitAudioContext;
+
+  function supported(){
+    return !!(AC&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia);
+  }
+
+  /* ---- 直采录音：从麦克风拿 Float32 原始采样 ---- */
+  async function record(){
+    if(!supported())throw new Error("此浏览器不支持录音（需要 Web Audio + getUserMedia）");
+    const stream=await navigator.mediaDevices.getUserMedia({
+      audio:{channelCount:1,echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+    const ctx=new AC();
+    if(ctx.state==="suspended"){try{await ctx.resume();}catch(e){}}
+    const src=ctx.createMediaStreamSource(stream);
+    const size=4096;
+    const proc=(ctx.createScriptProcessor||ctx.createJavaScriptNode).call(ctx,size,1,1);
+    const chunks=[];let total=0;
+    proc.onaudioprocess=e=>{
+      const d=e.inputBuffer.getChannelData(0);
+      chunks.push(new Float32Array(d));total+=d.length;
+    };
+    // 经零增益接到输出：让节点保持运转，同时不会把麦克风声音外放
+    const mute=ctx.createGain();mute.gain.value=0;
+    src.connect(proc);proc.connect(mute);mute.connect(ctx.destination);
+    const rate=ctx.sampleRate;
+    return {
+      sampleRate:rate,
+      stop(){
+        try{proc.disconnect();src.disconnect();mute.disconnect();}catch(e){}
+        try{stream.getTracks().forEach(t=>t.stop());}catch(e){}
+        try{ctx.close();}catch(e){}
+        const out=new Float32Array(total);let o=0;
+        for(const c of chunks){out.set(c,o);o+=c.length;}
+        return {data:out,sampleRate:rate};
+      }
+    };
+  }
+
+  /* ---- 备用：把已编码的 Blob 解码成 PCM ---- */
+  async function decodeBlob(blob){
+    if(!AC)throw new Error("浏览器不支持 Web Audio 解码");
+    const buf=await blob.arrayBuffer();
+    const ctx=new AC();
+    try{
+      const decoded=await new Promise((res,rej)=>{
+        const p=ctx.decodeAudioData(buf,res,rej); // 兼容老 Safari 的回调式写法
+        if(p&&p.then)p.then(res,rej);
+      });
+      return {data:decoded.getChannelData(0),sampleRate:decoded.sampleRate};
+    }finally{try{ctx.close();}catch(e){}}
+  }
+
+  /* ---- 线性插值重采样 ---- */
+  function resample(data,from,to){
+    if(from===to)return data;
+    const ratio=from/to,len=Math.floor(data.length/ratio);
+    const out=new Float32Array(len);
+    for(let i=0;i<len;i++){
+      const pos=i*ratio,i0=Math.floor(pos),frac=pos-i0;
+      const a=data[i0]||0,b=data[i0+1]!==undefined?data[i0+1]:a;
+      out[i]=a+(b-a)*frac;
+    }
+    return out;
+  }
+
+  /* ---- 音频体检：时长/峰值/有效音量 ---- */
+  function analyze(data,sampleRate){
+    let peak=0,sum=0;
+    for(let i=0;i<data.length;i++){
+      const v=Math.abs(data[i]);
+      if(v>peak)peak=v;
+      sum+=data[i]*data[i];
+    }
+    return {seconds:data.length/sampleRate,peak,rms:Math.sqrt(sum/(data.length||1)),samples:data.length};
+  }
+
+  /* ---- 编码成 WAV（16bit PCM，单声道） ---- */
+  function encodeWav(data,sampleRate){
+    const n=data.length,dataLen=n*2;
+    const ab=new ArrayBuffer(44+dataLen),dv=new DataView(ab);
+    const str=(o,s)=>{for(let i=0;i<s.length;i++)dv.setUint8(o+i,s.charCodeAt(i));};
+    str(0,"RIFF");dv.setUint32(4,36+dataLen,true);str(8,"WAVE");
+    str(12,"fmt ");dv.setUint32(16,16,true);
+    dv.setUint16(20,1,true);          // PCM
+    dv.setUint16(22,1,true);          // mono
+    dv.setUint32(24,sampleRate,true);
+    dv.setUint32(28,sampleRate*2,true);
+    dv.setUint16(32,2,true);dv.setUint16(34,16,true);
+    str(36,"data");dv.setUint32(40,dataLen,true);
+    let o=44;
+    for(let i=0;i<n;i++){
+      let s=data[i];
+      if(s>1)s=1;else if(s<-1)s=-1;
+      dv.setInt16(o,s<0?s*0x8000:s*0x7FFF,true);o+=2;
+    }
+    return new Blob([ab],{type:"audio/wav"});
+  }
+
+  /* ---- 一步到位：PCM 或 Blob → 16kHz WAV + 体检报告 ---- */
+  async function toWav16k(input){
+    let pcm;
+    if(input&&input.data instanceof Float32Array)pcm=input;
+    else if(input instanceof Blob)pcm=await decodeBlob(input);
+    else throw new Error("不支持的音频输入");
+    const data16=resample(pcm.data,pcm.sampleRate,16000);
+    const info=analyze(data16,16000);
+    const blob=encodeWav(data16,16000);
+    return {blob,info,sourceRate:pcm.sampleRate,pcm:data16};
+  }
+
+  /* ---- 回放自查：听听自己到底录到了什么 ---- */
+  function play(data,sampleRate){
+    if(!AC)return;
+    const ctx=new AC();
+    const buf=ctx.createBuffer(1,data.length,sampleRate);
+    buf.getChannelData(0).set(data);
+    const s=ctx.createBufferSource();
+    s.buffer=buf;s.connect(ctx.destination);s.start();
+    s.onended=()=>{try{ctx.close();}catch(e){}};
+  }
+
+  return {supported,record,decodeBlob,resample,analyze,encodeWav,toWav16k,play};
+})();
+
+/* ================= Talk 跟读（Azure 语音服务） ================= */
+const AZKEY="toeicCoach.azure";
+let AZ={};try{AZ=JSON.parse(localStorage.getItem(AZKEY))||{};}catch(e){}
+function saveAZ(){try{localStorage.setItem(AZKEY,JSON.stringify(AZ));}catch(e){}}
+const AZ_VOICES=[
+ {id:"en-US-JennyNeural",n:"Jenny（美音·女）"},
+ {id:"en-US-GuyNeural",n:"Guy（美音·男）"},
+ {id:"en-US-AriaNeural",n:"Aria（美音·女）"},
+ {id:"en-GB-SoniaNeural",n:"Sonia（英音·女）"},
+ {id:"en-GB-RyanNeural",n:"Ryan（英音·男）"},
+ {id:"en-AU-NatashaNeural",n:"Natasha（澳音·女）"}
+];
+function azReady(){return !!(AZ.key&&AZ.region);}
+function azHost(kind){return "https://"+(AZ.region||"eastus")+"."+kind+".speech.microsoft.com";}
+
+/* ---- 神经语音朗读 ---- */
+const azCache={};
+async function azSpeak(text,rate){
+  if(!azReady())throw new Error("no-key");
+  const voice=AZ.voice||"en-US-JennyNeural";
+  const key=voice+"|"+(rate||0)+"|"+text;
+  if(azCache[key]){playBlob(azCache[key]);return;}
+  const pct=Math.round(((rate||1)-1)*100);
+  const ssml=`<speak version='1.0' xml:lang='en-US'><voice name='${voice}'>`+
+    `<prosody rate='${pct>=0?"+":""}${pct}%'>${text.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]))}</prosody></voice></speak>`;
+  const res=await fetch(azHost("tts")+"/cognitiveservices/v1",{
+    method:"POST",
+    headers:{"Ocp-Apim-Subscription-Key":AZ.key,"Content-Type":"application/ssml+xml",
+      "X-Microsoft-OutputFormat":"audio-24khz-48kbitrate-mono-mp3"},
+    body:ssml});
+  if(!res.ok)throw new Error("tts-"+res.status);
+  const blob=await res.blob();
+  azCache[key]=blob;playBlob(blob);
+}
+let curAudio=null;
+function playBlob(blob){
+  try{if(curAudio){curAudio.pause();}}catch(e){}
+  curAudio=new Audio(URL.createObjectURL(blob));
+  curAudio.play();
+}
+// 覆盖全站 speak：有 Azure 且开启则用神经语音，失败自动退回浏览器
+const browserSpeak=speak;
+speak=function(text,rate){
+  if(azReady()&&AZ.useForAll!==false){
+    azSpeak(text,rate).catch(()=>browserSpeak(text,rate));
+  }else browserSpeak(text,rate);
+};
+
+/* ---- 录音 + 发音评测 ---- */
+let recHandle=null;
+async function startRec(){
+  recHandle=await AudioUtils.record();   // 直采原始 PCM，不经 webm 编码
+}
+function stopRec(){
+  if(!recHandle)return null;
+  const pcm=recHandle.stop();recHandle=null;
+  return pcm;   // {data:Float32Array, sampleRate}
+}
+function recActive(){return !!recHandle;}
+/* ---- 官方 Speech SDK（WebSocket 通道，浏览器端推荐路径） ---- */
+let sdkPromise=null,SDK_TIMEOUT=8000;
+function loadSpeechSDK(){
+  if(window.SpeechSDK)return Promise.resolve(window.SpeechSDK);
+  if(sdkPromise)return sdkPromise;
+  sdkPromise=new Promise((res,rej)=>{
+    const s=document.createElement("script");
+    let done=false;
+    const end=(ok,val)=>{
+      if(done)return;done=true;clearTimeout(tm);
+      if(!ok)sdkPromise=null;      // 失败后允许下次重试
+      (ok?res:rej)(val);
+    };
+    const tm=setTimeout(()=>end(false,new Error("语音 SDK 加载超时")),SDK_TIMEOUT);
+    s.src="https://cdn.jsdelivr.net/npm/microsoft-cognitiveservices-speech-sdk@1.40.0/distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle-min.js";
+    s.onload=()=>window.SpeechSDK?end(true,window.SpeechSDK):end(false,new Error("SDK 加载异常"));
+    s.onerror=()=>end(false,new Error("语音 SDK 下载失败（网络或 CDN 不可达）"));
+    document.head.appendChild(s);
+  });
+  return sdkPromise;
+}
+async function assessSDK(wavBlob,refText){
+  const SDK=await loadSpeechSDK();
+  const cfg=SDK.SpeechConfig.fromSubscription(AZ.key,AZ.region);
+  cfg.speechRecognitionLanguage="en-US";
+  const file=new File([await wavBlob.arrayBuffer()],"rec.wav",{type:"audio/wav"});
+  const audio=SDK.AudioConfig.fromWavFileInput(file);
+  const pcfg=new SDK.PronunciationAssessmentConfig(refText,
+    SDK.PronunciationAssessmentGradingSystem.HundredMark,
+    SDK.PronunciationAssessmentGranularity.Phoneme,true);
+  const reco=new SDK.SpeechRecognizer(cfg,audio);
+  pcfg.applyTo(reco);
+  return new Promise((res,rej)=>{
+    reco.recognizeOnceAsync(r=>{
+      try{
+        if(r.reason===SDK.ResultReason.NoMatch){reco.close();
+          return rej(new Error("没听清内容——请靠近麦克风、大声一些，并确认读的是屏幕上的英文"));}
+        if(r.reason===SDK.ResultReason.Canceled){
+          const d=SDK.CancellationDetails.fromResult(r);reco.close();
+          return rej(new Error("Azure 拒绝：" + d.errorDetails));}
+        const pr=SDK.PronunciationAssessmentResult.fromResult(r);
+        const raw=JSON.parse(r.properties.getProperty(SDK.PropertyId.SpeechServiceResponse_JsonResult)||"{}");
+        const nb=(raw.NBest&&raw.NBest[0])||{};
+        reco.close();
+        res({pa:{PronScore:pr.pronunciationScore,AccuracyScore:pr.accuracyScore,
+                 FluencyScore:pr.fluencyScore,CompletenessScore:pr.completenessScore},
+             words:nb.Words||[],text:r.text||"",detailed:true,via:"SDK",raw});
+      }catch(e){try{reco.close();}catch(_){}rej(e);}
+    },err=>{try{reco.close();}catch(_){}rej(new Error(String(err)));});
+  });
+}
+async function assess(blob,refText){
+  if(!azReady())throw new Error("no-key");
+  const cfg={ReferenceText:refText,GradingSystem:"HundredMark",Granularity:"Phoneme",
+    Dimension:"Comprehensive",EnableMiscue:true};
+  const b64=btoa(unescape(encodeURIComponent(JSON.stringify(cfg))));
+  const url=azHost("stt")+"/speech/recognition/conversation/cognitiveservices/v1?language=en-US&format=detailed";
+  const res=await fetch(url,{method:"POST",
+    headers:{"Ocp-Apim-Subscription-Key":AZ.key,
+      "Content-Type":"audio/wav; codecs=audio/pcm; samplerate=16000",
+      "Pronunciation-Assessment":b64,
+      "Accept":"application/json"},
+    body:blob});
+  if(!res.ok)throw new Error("HTTP "+res.status+"："+(await res.text()).slice(0,160));
+  const j=await res.json();
+  if(j.RecognitionStatus!=="Success"){
+    const tips={"NoMatch":"没听清内容——请靠近麦克风、大声一些，并确认读的是屏幕上的英文",
+      "InitialSilenceTimeout":"没有录到声音——检查麦克风是否被静音或选错设备",
+      "BabbleTimeout":"背景噪音过大","Error":"服务端错误，请稍后重试"};
+    throw new Error((tips[j.RecognitionStatus]||j.RecognitionStatus));
+  }
+  const nb=(j.NBest&&j.NBest[0])||{};
+  return {pa:nb.PronunciationAssessment||null,words:nb.Words||[],
+    text:nb.Display||j.DisplayText||"",detailed:!!(j.NBest&&j.NBest.length),via:"REST",raw:j};
+}
+/* SDK 优先，失败或无评分时退回 REST */
+async function assessAuto(wavBlob,refText){
+  let sdkErr=null;
+  try{
+    const r=await assessSDK(wavBlob,refText);
+    if(r.pa&&r.pa.PronScore!==undefined&&r.pa.PronScore!==null)return r;
+    sdkErr=new Error("SDK 未返回评分");
+  }catch(e){sdkErr=e;}
+  try{
+    const r=await assess(wavBlob,refText);
+    r.note="（SDK 不可用，已改用 REST："+sdkErr.message+"）";
+    return r;
+  }catch(e){
+    throw new Error(sdkErr.message+" ／ REST 亦失败："+e.message);
+  }
+}
+
+/* ---- Talk 页 ---- */
+let tState={mode:"phrase",i:0,list:[],busy:false,last:null};
+function talkPool(n){
+  const stub=stubbornWords();
+  let learned=VOCAB.filter(v=>S.srs[v.id]&&!stub.includes(v));
+  let pool=stub.concat(learned.sort(()=>Math.random()-0.5));
+  if(pool.length<n)pool=pool.concat(VOCAB.filter(v=>!S.srs[v.id]).slice(0,n));
+  return pool.slice(0,n);
+}
+function talkTarget(){
+  const v=tState.list[tState.i];
+  if(!v)return null;
+  return {v,text:tState.mode==="phrase"?v.p:v.e};
+}
+function scoreColor(n){return n>=80?"var(--green)":n>=60?"#d97706":"var(--red)";}
+function renderTalk(){
+  const el=document.getElementById("v-talk");
+  if(!tState.list.length)tState.list=talkPool(20);
+  const t=talkTarget();
+  const hist=(S.talk||[]).slice(-30);
+  const avg=hist.length?Math.round(hist.reduce((s,x)=>s+x.score,0)/hist.length):null;
+  el.innerHTML=`
+  <div class="card"><h2>🎙️ Talk 跟读训练</h2>
+    <p class="muted">听 Azure 真人语音 → 按住录音跟读 → 逐词打分。读错的词会标红，并自动加入顽固词优先复习。</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px">
+      <span class="pill ${azReady()?"g":"r"}">${azReady()?"Azure 已连接":"未配置 Azure"}</span>
+      <button class="btn small gray" id="azCfg">⚙️ 语音设置</button>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <button class="btn small ${tState.mode==="phrase"?"":"gray"}" data-mode="phrase">练短语</button>
+        <button class="btn small ${tState.mode==="sentence"?"":"gray"}" data-mode="sentence">练整句</button>
+      </div>
+    </div>
+    ${avg!==null?`<div class="stat-chips" style="margin-top:10px">
+      <div class="chip"><b style="color:${scoreColor(avg)}">${avg}</b><span>近30次平均分</span></div>
+      <div class="chip"><b>${hist.length}</b><span>已练句数</span></div>
+    </div>`:""}
+  </div>
+  ${!azReady()?`<div class="card"><div class="callout warn"><div>🔑</div><div>
+    请先点「⚙️ 语音设置」填入 Azure 语音服务的密钥和区域。密钥只保存在这台设备的浏览器里，不会写进网站代码。</div></div></div>`:""}
+  <div class="card" style="text-align:center">
+    <div class="muted" style="text-align:right">${tState.i+1} / ${tState.list.length}${t&&isStubborn(t.v.id)?' · <span class="pill r">顽固词</span>':""}</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin:14px 0">
+      <div class="phrase withipa" style="font-size:${tState.mode==="phrase"?"26":"19"}px">${t?ipaRuby(t.text):""}</div>
+      ${t?(tState.mode==="phrase"?starW(t.v.id):starS(t.text,transOf(t.v),t.v.p)):""}
+    </div>
+    <div class="muted">${t?esc(tState.mode==="phrase"?t.v.c:transOf(t.v)):""}</div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">
+      <button class="btn ghost" id="tPlay">🔊 听真人示范</button>
+      <button class="btn ghost" id="tSlow">🐢 慢速</button>
+      <button class="btn" id="tRec" style="min-width:150px" ${azReady()?"":"disabled"}>🎙️ 开始录音</button>
+    </div>
+    <div id="tResult" style="margin-top:14px"></div>
+    <div style="margin-top:14px;display:flex;gap:8px;justify-content:center">
+      <button class="btn gray small" id="tPrev">← 上一个</button>
+      <button class="btn gray small" id="tNext">下一个 →</button>
+    </div>
+  </div>`;
+  el.querySelectorAll("[data-mode]").forEach(b=>b.onclick=()=>{tState.mode=b.dataset.mode;tState.last=null;renderTalk();});
+  document.getElementById("azCfg").onclick=openAzDlg;
+  document.getElementById("tPlay").onclick=()=>{if(t)speak(t.text,1);};
+  document.getElementById("tSlow").onclick=()=>{if(t)speak(t.text,0.7);};
+  document.getElementById("tPrev").onclick=()=>{tState.i=(tState.i-1+tState.list.length)%tState.list.length;tState.last=null;renderTalk();};
+  document.getElementById("tNext").onclick=()=>{tState.i=(tState.i+1)%tState.list.length;tState.last=null;renderTalk();};
+  const rb=document.getElementById("tRec");
+  if(rb)rb.onclick=()=>toggleRec(rb);
+  if(tState.last)showResult(tState.last);
+}
+async function toggleRec(btn){
+  const t=talkTarget();if(!t)return;
+  if(tState.busy)return;
+  if(!recActive()){
+    try{await startRec();}catch(e){
+      document.getElementById("tResult").innerHTML=`<div class="callout danger">无法使用麦克风：${esc(e.message)}<br>请在浏览器地址栏允许麦克风权限（需 https 或 localhost）。</div>`;
+      return;}
+    btn.textContent="⏹️ 停止并评分";btn.style.background="var(--red)";
+    document.getElementById("tResult").innerHTML=`<div class="muted">🔴 录音中…请朗读上面的内容</div>`;
+  }else{
+    tState.busy=true;btn.disabled=true;btn.textContent="⏳ 评分中…";btn.style.background="";
+    const pcm=stopRec();
+    const box=document.getElementById("tResult");
+    try{
+      const conv=await AudioUtils.toWav16k(pcm);
+      tState.lastAudio=conv;   // 供“回放我的录音”自查
+      const info=conv.info;
+      if(info.seconds<0.4)throw new Error("录音太短（"+info.seconds.toFixed(1)+"秒），请读完整句再停止");
+      if(info.peak<0.02)throw new Error("几乎没有录到声音（峰值 "+info.peak.toFixed(3)+"）——检查麦克风权限、输入设备是否选错或被静音");
+      const r=await assessAuto(conv.blob,t.text);
+      tState.lastRaw=r;
+      if(!r.pa||r.pa.PronScore===undefined||r.pa.PronScore===null){
+        box.innerHTML=`<div class="callout warn" style="text-align:left">Azure 识别到「${esc(r.text||"（空）")}」，但未返回评分。
+        <div class="muted" style="margin-top:6px">通道：${esc(r.via||"?")}${esc(r.note||"")}</div>
+        <div style="margin-top:8px"><button class="btn small gray" onclick="dumpDiag()">🔧 查看原始响应</button></div></div>`;
+        tState.busy=false;btn.disabled=false;btn.textContent="🎙️ 开始录音";return;
+      }
+      const score=Math.round(r.pa.PronScore||0);
+      S.talk=(S.talk||[]).concat([{date:todayStr(),id:t.v.id,mode:tState.mode,score}]);
+      const bad=r.words.filter(w=>(w.PronunciationAssessment||{}).AccuracyScore<60);
+      if(bad.length&&tState.mode==="phrase"){
+        const rr=S.srs[t.v.id]||{box:0,w:0,r:0};rr.w=(rr.w||0)+1;S.srs[t.v.id]=rr;
+      }
+      save();
+      tState.last=r;showResult(r);
+    }catch(e){
+      const a=tState.lastAudio&&tState.lastAudio.info;
+      box.innerHTML=`<div class="callout danger" style="text-align:left">❌ ${esc(e.message)}
+      <div class="muted" style="margin-top:6px">对照排查：401=密钥错 · 403/404=区域填错 · 429=额度用尽 · NoMatch=没读清或与屏幕内容不符。</div>
+      ${a?`<div class="muted" style="margin-top:4px">本次录音：${a.seconds.toFixed(1)}秒 · 峰值 ${a.peak.toFixed(3)} · 16kHz WAV</div>
+      <div style="margin-top:8px"><button class="btn small gray" onclick="playMyRec()">▶️ 回放我的录音</button>
+      <button class="btn small gray" onclick="dumpDiag()">🔧 诊断信息</button></div>`:""}</div>`;
+    }
+    tState.busy=false;btn.disabled=false;btn.textContent="🎙️ 开始录音";
+  }
+}
+function showResult(r){
+  const box=document.getElementById("tResult");if(!box)return;
+  const pa=r.pa||{};
+  const s=n=>Math.round(n||0);
+  box.innerHTML=`
+  <div class="stat-chips" style="justify-content:center">
+    <div class="chip"><b style="color:${scoreColor(s(pa.PronScore))}">${s(pa.PronScore)}</b><span>总分</span></div>
+    <div class="chip"><b style="color:${scoreColor(s(pa.AccuracyScore))}">${s(pa.AccuracyScore)}</b><span>准确度</span></div>
+    <div class="chip"><b style="color:${scoreColor(s(pa.FluencyScore))}">${s(pa.FluencyScore)}</b><span>流利度</span></div>
+    <div class="chip"><b style="color:${scoreColor(s(pa.CompletenessScore))}">${s(pa.CompletenessScore)}</b><span>完整度</span></div>
+  </div>
+  <div style="margin-top:12px;font-size:18px;line-height:2">${r.words.map(w=>{
+    const a=(w.PronunciationAssessment||{});const sc=Math.round(a.AccuracyScore||0);
+    const err=a.ErrorType&&a.ErrorType!=="None";
+    return `<span title="${sc}分${err?" · "+a.ErrorType:""}" style="border-bottom:3px solid ${err?"var(--red)":scoreColor(sc)};margin:0 3px;color:${err?"var(--red)":"inherit"}">${esc(w.Word)}</span>`;
+  }).join(" ")}</div>
+  <div class="muted" style="margin-top:8px">下划线颜色 = 该词得分（绿=好 / 橙=一般 / 红=需重练）。鼠标悬停看具体分数。</div>
+  ${r.text?`<div class="muted" style="margin-top:6px">Azure 听到的是：「${esc(r.text)}」${r.via?" · 通道 "+esc(r.via):""}</div>`:""}
+  <div style="margin-top:8px"><button class="btn small gray" onclick="playMyRec()">▶️ 回放我的录音</button></div>
+  ${(()=>{
+    const scored=r.words.filter(w=>(w.PronunciationAssessment||{}).AccuracyScore!==undefined);
+    if(!scored.length)return `<div class="callout warn" style="margin-top:10px">本次未取得逐词评分，请重录一次。</div>`;
+    const bad=scored.filter(w=>w.PronunciationAssessment.AccuracyScore<60);
+    if(!bad.length)return `<div class="callout" style="margin-top:10px">✅ 发音清晰，继续保持！</div>`;
+    return `<div class="callout warn" style="margin-top:10px">重点重练：${bad.map(w=>
+      `<b>${esc(w.Word)}</b>${window.IPA[w.Word.toLowerCase()]?" /"+esc(window.IPA[w.Word.toLowerCase()])+"/":""}`).join("、")}</div>`;
+  })()}`;
+}
+function playMyRec(){
+  const a=tState.lastAudio;
+  if(!a)return;
+  AudioUtils.play(a.pcm,16000);
+}
+function dumpDiag(){
+  const box=document.getElementById("tResult");if(!box)return;
+  const a=tState.lastAudio&&tState.lastAudio.info;
+  const r=tState.lastRaw;
+  const d={
+    音频:a?{时长秒:+a.seconds.toFixed(2),峰值:+a.peak.toFixed(3),有效音量:+a.rms.toFixed(4),
+      采样点:a.samples,原始采样率:tState.lastAudio.sourceRate,输出:"16kHz mono PCM16 WAV"}:"无",
+    通道:r?r.via:"无",
+    识别文本:r?r.text:"无",
+    SDK已加载:!!window.SpeechSDK,
+    区域:AZ.region||"未设置",
+    密钥:AZ.key?AZ.key.slice(0,4)+"…"+AZ.key.slice(-4)+"（长度"+AZ.key.length+"）":"未设置",
+    原始响应:r?r.raw:"无"
+  };
+  const txt=JSON.stringify(d,null,1);
+  box.insertAdjacentHTML("beforeend",
+    `<div class="card" style="margin-top:10px;text-align:left">
+      <h3>🔧 诊断信息</h3>
+      <textarea readonly style="width:100%;height:200px;font-family:var(--font-mono,monospace);font-size:11px">${esc(txt)}</textarea>
+      <div class="muted" style="margin-top:6px">可全选复制这段内容反馈给我，用于定位问题（密钥已打码）。</div>
+    </div>`);
+}
+function openAzDlg(){
+  document.getElementById("azKey").value=AZ.key||"";
+  document.getElementById("azRegion").value=AZ.region||"eastus";
+  const sel=document.getElementById("azVoice");
+  sel.innerHTML=AZ_VOICES.map(v=>`<option value="${v.id}" ${AZ.voice===v.id?"selected":""}>${v.n}</option>`).join("");
+  document.getElementById("azAll").checked=AZ.useForAll!==false;
+  document.getElementById("azMsg").textContent="";
+  document.getElementById("azDlg").showModal();
+}
+document.getElementById("azClose").onclick=()=>document.getElementById("azDlg").close();
+document.getElementById("azSave").onclick=()=>{
+  AZ.key=document.getElementById("azKey").value.trim();
+  AZ.region=document.getElementById("azRegion").value.trim().toLowerCase()||"eastus";
+  AZ.voice=document.getElementById("azVoice").value;
+  AZ.useForAll=document.getElementById("azAll").checked;
+  saveAZ();
+  document.getElementById("azMsg").textContent=azReady()?"✅ 已保存":"请填写密钥";
+  renderTalk();
+};
+document.getElementById("azTest").onclick=async()=>{
+  const m=document.getElementById("azMsg");
+  AZ.key=document.getElementById("azKey").value.trim();
+  AZ.region=document.getElementById("azRegion").value.trim().toLowerCase()||"eastus";
+  AZ.voice=document.getElementById("azVoice").value;
+  if(!azReady()){m.textContent="请先填写密钥和区域";return;}
+  m.textContent="⏳ 正在请求 Azure…";
+  try{await azSpeak("Please keep the receipt for the exchange.",1);
+    m.textContent="✅ 连接成功，已用所选语音朗读。记得点「保存」。";
+  }catch(e){
+    m.textContent="❌ 失败："+e.message+"（401=密钥错，403/404=区域错，429=额度用尽）";
+  }
+};
+document.getElementById("azClear").onclick=()=>{
+  AZ={};saveAZ();
+  document.getElementById("azKey").value="";
+  document.getElementById("azMsg").textContent="已清除密钥";
+  renderTalk();
+};
+
 document.getElementById("todayDate").textContent=new Date().toLocaleDateString("zh-CN",{month:"long",day:"numeric",weekday:"long"});
 if(speechSynthesis)speechSynthesis.getVoices();
 
@@ -3813,6 +4460,16 @@ function mergeState(r){
     if(!a){S.days[d]=b;return;}
     if(b.done)Object.keys(b.done).forEach(k=>{if(b.done[k])a.done[k]=true;});
   });
+  if(r.favs){
+    const f=favs();
+    if(r.favs.w)Object.keys(r.favs.w).forEach(k=>{if(!f.w[k])f.w[k]=r.favs.w[k];});
+    if(r.favs.s)Object.keys(r.favs.s).forEach(k=>{if(!f.s[k])f.s[k]=r.favs.s[k];});
+  }
+  if(Array.isArray(r.talk)){
+    const ts=x=>[x.date,x.id,x.mode,x.score].join("|");
+    const have=new Set((S.talk||[]).map(ts));
+    S.talk=(S.talk||[]).concat(r.talk.filter(x=>!have.has(ts(x))));
+  }
   if(r.settings)S.settings=Object.assign({},r.settings,S.settings);
 }
 async function pullAndMerge(){
