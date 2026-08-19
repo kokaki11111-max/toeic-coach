@@ -4,27 +4,28 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TOEIC Coach · 800分教练</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap">
 <style>
 :root{
-  --green:#1e7a3c; --green-dark:#155c2c; --green-light:#e8f3ec; --green-mid:#cfe6d8;
-  --ink:#1a2b20; --gray:#6b7a70; --line:#e3ece6; --bg:#f7faf8; --card:#ffffff;
-  --amber:#b45309; --amber-bg:#fef3e2; --red:#b91c1c; --red-bg:#fdeaea; --blue:#1d4ed8;
-  --radius:14px;
+  --green:#0aa6b0; --green-dark:#088089; --green-light:#e3f6f7; --green-mid:#bdeaec;
+  --ink:#15181b; --gray:#5b636b; --line:#e7e9eb; --bg:#f5f6f7; --card:#ffffff;
+  --amber:#b8742e; --amber-bg:#fbeee2; --red:#c9585a; --red-bg:#fbeaea; --blue:#1d4ed8;
+  --radius:18px;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;}
+body{font-family:'Space Grotesk',-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;}
 .app{max-width:1080px;margin:0 auto;padding:16px;}
 header.top{display:flex;align-items:center;justify-content:space-between;padding:8px 4px 16px;}
 header.top h1{font-size:22px;letter-spacing:.2px;}
 header.top .sub{font-size:12px;color:var(--gray);}
 nav.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
-nav.tabs button{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:999px;font-size:14px;cursor:pointer;transition:.15s;}
+nav.tabs button{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:12px 16px;min-height:44px;border-radius:999px;font-size:14px;cursor:pointer;transition:.15s;box-shadow:0 1px 2px rgba(21,24,27,.04);}
 nav.tabs button.active{background:var(--green);border-color:var(--green);color:#fff;font-weight:600;}
 nav.tabs button:hover:not(.active){border-color:var(--green);color:var(--green);}
 .view{display:none;}
 .view.active{display:block;animation:fade .2s ease;}
 @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:14px;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:14px;box-shadow:0 1px 2px rgba(21,24,27,.04),0 18px 34px -26px rgba(21,24,27,.22);}
 .card h2{font-size:16px;margin-bottom:10px;}
 .card h3{font-size:14px;margin-bottom:8px;}
 .hero{background:var(--green-light);border-color:var(--green-mid);display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;}
@@ -33,7 +34,7 @@ nav.tabs button:hover:not(.active){border-color:var(--green);color:var(--green);
 .ring{position:relative;width:110px;height:110px;flex:none;}
 .ring svg{transform:rotate(-90deg);}
 .ring .txt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-.ring .txt b{font-size:22px;color:var(--green-dark);}
+.ring .txt b{font-size:22px;color:var(--ink);}
 .ring .txt span{font-size:11px;color:var(--gray);}
 .grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;}
 @media(max-width:760px){.grid2{grid-template-columns:1fr;}}
@@ -42,11 +43,12 @@ nav.tabs button:hover:not(.active){border-color:var(--green);color:var(--green);
 .tasklist .task.done{background:var(--green-light);border-color:var(--green-mid);}
 .tasklist .task.done .tname{text-decoration:line-through;color:var(--gray);}
 .tasklist .icon{width:38px;height:38px;border-radius:50%;background:var(--green-light);display:flex;align-items:center;justify-content:center;font-size:18px;flex:none;}
+.part-ic{width:32px;height:32px;border-radius:11px;background:var(--green-light);color:var(--green-dark);display:inline-flex;align-items:center;justify-content:center;flex:none;}
 .tasklist .tname{flex:1;font-weight:600;font-size:14px;}
 .tasklist .tmin{color:var(--green);font-weight:700;font-size:13px;}
 .tasklist .swap{border:none;background:none;color:var(--gray);cursor:pointer;font-size:12px;padding:4px;}
 .scores{display:flex;justify-content:space-around;text-align:center;}
-.scores .num{font-size:36px;font-weight:800;color:var(--green);}
+.scores .num{font-size:36px;font-weight:800;color:var(--ink);}
 .scores .cap{font-size:12px;color:var(--gray);}
 .divider{width:1px;background:var(--line);}
 .callout{display:flex;gap:12px;background:var(--green-light);border-left:4px solid var(--green);border-radius:10px;padding:14px;font-size:14px;}
@@ -64,16 +66,20 @@ nav.tabs button:hover:not(.active){border-color:var(--green);color:var(--green);
 .pill.r{background:var(--red-bg);color:var(--red);}
 .pill.b{background:#e7edfb;color:var(--blue);}
 .vocab-card{max-width:560px;margin:0 auto;text-align:center;padding:30px 20px;}
-.vocab-card .phrase{font-size:28px;font-weight:800;color:var(--green-dark);margin-bottom:6px;}
+.vocab-card .phrase{font-size:28px;font-weight:800;color:var(--ink);margin-bottom:6px;}
 .vocab-card .word{font-size:13px;color:var(--gray);}
 .vocab-card .cn{font-size:18px;margin:14px 0 6px;}
 .vocab-card .ex{font-size:14px;color:var(--ink);background:var(--bg);border-radius:10px;padding:10px;margin-top:12px;text-align:left;}
 .vocab-card .ex .t{color:var(--gray);font-size:13px;}
 .hidden{display:none!important;}
-.opt{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:10px;padding:12px 14px;margin-bottom:8px;font-size:14px;cursor:pointer;transition:.12s;}
+.opt{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:8px;font-size:14px;cursor:pointer;transition:.12s;}
 .opt:hover{border-color:var(--green);}
+.opt-ltr{width:24px;height:24px;flex:none;border-radius:50%;border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--gray);}
+.opt-txt{flex:1;}
 .opt.correct{background:var(--green-light);border-color:var(--green);font-weight:600;}
+.opt.correct .opt-ltr{background:var(--green);border-color:var(--green);color:#fff;}
 .opt.wrong{background:var(--red-bg);border-color:var(--red);}
+.opt.wrong .opt-ltr{background:var(--red);border-color:var(--red);color:#fff;}
 .passage{white-space:pre-wrap;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:14px;font-size:14px;margin-bottom:12px;max-height:340px;overflow:auto;}
 input[type=text],input[type=number],select,textarea{border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-size:14px;font-family:inherit;background:#fff;color:var(--ink);}
 input:focus,select:focus{outline:2px solid var(--green-mid);}
@@ -91,20 +97,20 @@ canvas.chart{width:100%;height:200px;}
 .muted{color:var(--gray);font-size:13px;}
 .stat-chips{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0;}
 .chip{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 14px;text-align:center;}
-.chip b{display:block;font-size:20px;color:var(--green-dark);}
+.chip b{display:block;font-size:20px;color:var(--ink);}
 .chip span{font-size:11px;color:var(--gray);}
 .conf-btns{display:flex;gap:8px;margin-top:10px;}
-.timerbox{font-variant-numeric:tabular-nums;font-weight:700;color:var(--green-dark);}
+.timerbox{font-variant-numeric:tabular-nums;font-weight:700;color:var(--ink);}
 .book-tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
 .book-tabs button{border:1px solid var(--line);background:#fff;padding:6px 12px;border-radius:8px;font-size:13px;cursor:pointer;}
 .book-tabs button.active{background:var(--green);color:#fff;border-color:var(--green);}
 .book-tabs button:disabled{opacity:.5;cursor:not-allowed;}
 .footer-note{text-align:center;color:var(--gray);font-size:12px;padding:20px 0;}
-dialog{border:none;border-radius:14px;padding:22px;max-width:420px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,.25);}
-dialog::backdrop{background:rgba(20,40,28,.35);}
-.starbtn{border:none;background:none;cursor:pointer;font-size:20px;line-height:1;color:#c9d3cd;padding:2px 4px;transition:.15s;vertical-align:middle;}
-.starbtn:hover{color:#e0a900;transform:scale(1.15);}
-.starbtn.on{color:#f0b400;}
+dialog{border:none;border-radius:18px;padding:22px;max-width:420px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+dialog::backdrop{background:rgba(21,24,27,.35);}
+.starbtn{border:none;background:none;cursor:pointer;font-size:20px;line-height:1;color:#c7ccd1;padding:2px 4px;transition:.15s;vertical-align:middle;}
+.starbtn:hover{color:var(--green-dark);transform:scale(1.15);}
+.starbtn.on{color:var(--green);}
 .fav-row{display:flex;align-items:flex-start;gap:10px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff;}
 .fav-row .body{flex:1;min-width:0;}
 .fav-tabs{display:flex;gap:6px;margin-bottom:12px;}
@@ -121,10 +127,10 @@ dialog::backdrop{background:rgba(20,40,28,.35);}
 .seq-w.err{border-color:var(--red);background:var(--red-bg);}
 .seq-w.fixed{cursor:default;background:var(--green-light);border-color:var(--green-mid);}
 ruby{ruby-position:over;ruby-align:center;margin:0 2px;}
-rt{font-size:10px;color:#9aa8a0;font-weight:400;letter-spacing:0;}
+rt{font-size:10px;color:#9aa1a8;font-weight:400;letter-spacing:0;}
 ruby.rst{font-weight:600;}
-ruby.rst rt{color:#1e7a3c;font-weight:600;}
-ruby.rwk{color:#6b7a70;font-weight:400;}
+ruby.rst rt{color:var(--green);font-weight:600;}
+ruby.rwk{color:var(--gray);font-weight:400;}
 .withipa{line-height:2.7;}
 .vocab-card .phrase.withipa{line-height:2.2;}
 @media(max-width:600px){
@@ -151,8 +157,8 @@ ruby.rwk{color:#6b7a70;font-weight:400;}
   <button data-v="vocab">词汇短语</button>
   <button data-v="listening">听力训练</button>
   <button data-v="reading">阅读训练</button>
-  <button data-v="speak">🎙️ 口语</button>
-  <button data-v="favs">⭐ 收藏</button>
+  <button data-v="speak"><svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;pointer-events:none"><rect x="7.4" y="2.4" width="5.2" height="8.6" rx="2.6"/><path d="M4.4 9.6a5.6 5.6 0 0 0 11.2 0"/><path d="M10 15.2v2.4M7 17.6h6"/></svg>口语</button>
+  <button data-v="favs"><svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;pointer-events:none"><path d="M10 2.6l2.2 4.5 4.9.6-3.6 3.5.9 4.9L10 13.8l-4.4 2.3.9-4.9-3.6-3.5 4.9-.6L10 2.6Z"/></svg>收藏</button>
   <button data-v="review">复盘与进度</button>
 </nav>
 
@@ -171,7 +177,7 @@ ruby.rwk{color:#6b7a70;font-weight:400;}
 <div class="footer-note">数据保存在本浏览器 · 配置云同步后手机电脑自动互通 · 词库：银之短语 → 金之短语 → 官方蓝皮书</div>
 </div>
 <dialog id="mmDlg">
-  <h3 style="margin-bottom:8px">💬 MiniMax 对话设置</h3>
+  <h3 style="margin-bottom:8px"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:4px'><path d='M3 5.5A2.5 2.5 0 0 1 5.5 3h9A2.5 2.5 0 0 1 17 5.5v5A2.5 2.5 0 0 1 14.5 13H8l-3.5 3v-3H5.5A2.5 2.5 0 0 1 3 10.5v-5Z'/></svg> MiniMax 对话设置</h3>
   <p class="muted" style="margin-bottom:10px">密钥<b>只保存在这台设备的浏览器</b>，不会写进网站代码，也不会同步到云端。<br>
   海外版在 platform.minimax.io、国内版在 platform.minimaxi.com → 账户管理 → 接口密钥 获取。</p>
   <div style="display:flex;flex-direction:column;gap:8px">
@@ -183,7 +189,7 @@ ruby.rwk{color:#6b7a70;font-weight:400;}
     </select>
     <label class="muted" style="font-size:13px">对话模型（默认 MiniMax-Text-01）</label>
     <input type="text" id="mmModel" placeholder="MiniMax-Text-01">
-    <label class="muted" style="font-size:13px">🔊 对话语音（MiniMax 语音合成）</label>
+    <label class="muted" style="font-size:13px"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M3 8v4h3l4.5 3.5v-11L6 7.5H3Z'/><path d='M13.6 7.3a3.6 3.6 0 0 1 0 5.4M16 5.4a7 7 0 0 1 0 9.2'/></svg> 对话语音（MiniMax 语音合成）</label>
     <select id="mmVoice"></select>
     <div style="display:flex;gap:8px;align-items:center">
       <span class="muted" style="font-size:13px">语速</span>
@@ -204,7 +210,7 @@ ruby.rwk{color:#6b7a70;font-weight:400;}
   <div id="mmMsg" class="muted" style="margin-top:8px"></div>
 </dialog>
 <dialog id="azDlg">
-  <h3 style="margin-bottom:8px">🎙️ Azure 语音设置</h3>
+  <h3 style="margin-bottom:8px"><svg viewBox='0 0 20 20' width='15' height='15' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:4px'><rect x='7.4' y='2.4' width='5.2' height='8.6' rx='2.6'/><path d='M4.4 9.6a5.6 5.6 0 0 0 11.2 0'/><path d='M10 15.2v2.4M7 17.6h6'/></svg>Azure 语音设置</h3>
   <p class="muted" style="margin-bottom:10px">密钥<b>只保存在这台设备的浏览器</b>，不会写进网站代码、也不会同步到云端。换设备需重新填写。</p>
   <div style="display:flex;flex-direction:column;gap:8px">
     <input type="password" id="azKey" placeholder="Azure 语音服务密钥">
@@ -2731,11 +2737,11 @@ function predictScore(){
 
 /* ================= 今日计划引擎 ================= */
 const TASK_DEFS={
-  vocabReview:{name:"复习旧词",icon:"📖",view:"vocab"},
-  vocabNew:{name:"新短语",icon:"📝",view:"vocab"},
-  reading:{name:"阅读主训练",icon:"🔍",view:"reading"},
-  listening:{name:"听力维持",icon:"🎧",view:"listening"},
-  review:{name:"错题复盘",icon:"📋",view:"review"}
+  vocabReview:{name:"复习旧词",icon:'<svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4.6c1.8-1 4-1 5.8 0v10.5c-1.8-1-4-1-5.8 0V4.6Z"/><path d="M18 4.6c-1.8-1-4-1-5.8 0v10.5c1.8-1 4-1 5.8 0V4.6Z"/></svg>',view:"vocab"},
+  vocabNew:{name:"新短语",icon:'<svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 3.5 16.5 6.5 7 16H4v-3L13.5 3.5Z"/></svg>',view:"vocab"},
+  reading:{name:"阅读主训练",icon:'<svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M16.5 16.5l-3.8-3.8"/></svg>',view:"reading"},
+  listening:{name:"听力维持",icon:'<svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v-1a7 7 0 0 1 14 0v1"/><rect x="2" y="11" width="4" height="6" rx="1.5"/><rect x="14" y="11" width="4" height="6" rx="1.5"/></svg>',view:"listening"},
+  review:{name:"错题复盘",icon:'<svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3.5" width="12" height="14" rx="1.5"/><rect x="7" y="2" width="6" height="3" rx="1"/><path d="M7 9h6M7 12h6M7 15h4"/></svg>',view:"review"}
 };
 function computePlan(){
   let plan={vocabReview:10,vocabNew:10,reading:25,listening:10,review:5};
@@ -2781,7 +2787,7 @@ function renderHome(){
     <div><div class="label">TODAY · 今日计划</div><div class="focus">${esc(focus)}</div>
       ${day.notes&&day.notes.length?`<div class="muted" style="margin-top:6px">自动调整：${day.notes.map(esc).join("；")}</div>`:""}
     </div>
-    <div class="ring"><svg width="110" height="110"><circle cx="55" cy="55" r="46" fill="none" stroke="#cfe6d8" stroke-width="9"/><circle cx="55" cy="55" r="46" fill="none" stroke="#1e7a3c" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-pct/100)}"/></svg>
+    <div class="ring"><svg width="110" height="110"><circle cx="55" cy="55" r="46" fill="none" style="stroke:var(--green-mid)" stroke-width="9"/><circle cx="55" cy="55" r="46" fill="none" style="stroke:var(--green)" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-pct/100)}"/></svg>
     <div class="txt"><b>${pct}%</b><span>计划完成</span></div></div>
   </div>
   <div class="grid2">
@@ -2799,7 +2805,7 @@ function renderHome(){
         <div class="divider"></div>
         <div><div class="num">800</div><div class="cap">目标</div></div>
       </div><div class="muted" style="text-align:center;margin-top:8px">${esc(pred.src)}</div></div>
-      <div class="card"><div class="callout"><div>🎯</div><div><b>${esc(w.text)}</b><br><span class="muted">${esc(w.detail)}</span></div></div></div>
+      <div class="card"><div class="callout"><div><svg viewBox='0 0 20 20' width='16' height='16' fill='none' stroke='currentColor' stroke-width='1.6'><circle cx='10' cy='10' r='7'/><circle cx='10' cy='10' r='3.5'/><circle cx='10' cy='10' r='0.8' fill='currentColor' stroke='none'/></svg></div><div><b>${esc(w.text)}</b><br><span class="muted">${esc(w.detail)}</span></div></div></div>
     </div>
   </div>`;
   document.querySelectorAll("#v-home .task").forEach(el=>{
@@ -2876,9 +2882,9 @@ function renderVocab(){
     </div>
     <div class="muted" style="margin-top:12px;font-size:13px">练习与游戏</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
-      <button class="btn" id="btnFlash">⚡ 闪卡速刷</button>
+      <button class="btn" id="btnFlash"><svg viewBox='0 0 20 20' width='14' height='14' fill='currentColor' stroke='none' style='vertical-align:-2px;margin-right:3px'><path d='M11 2 4 12h5l-1 6 8-11h-5l1-5Z'/></svg> 闪卡速刷</button>
       <button class="btn gray" id="btnQuiz">✍️ 中译英自测</button>
-      <button class="btn gray" id="gSpell">🎧 听音拼写</button>
+      <button class="btn gray" id="gSpell"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M3 11v-1a7 7 0 0 1 14 0v1'/><rect x='2' y='11' width='4' height='6' rx='1.5'/><rect x='14' y='11' width='4' height='6' rx='1.5'/></svg> 听音拼写</button>
       <button class="btn gray" id="gMatch">🔗 连连看</button>
       <button class="btn gray" id="gOrder">🧩 句子排序</button>
     </div>
@@ -2920,7 +2926,7 @@ function vBack(){renderVocab();}
 function renderFlash(){
   const st=vStage();
   if(!fState||fState.i>=fState.deck.length){
-    st.innerHTML=`<div class="card" style="text-align:center"><h2>⚡ 闪卡完成</h2>
+    st.innerHTML=`<div class="card" style="text-align:center"><h2><svg viewBox='0 0 20 20' width='14' height='14' fill='currentColor' stroke='none' style='vertical-align:-2px;margin-right:3px'><path d='M11 2 4 12h5l-1 6 8-11h-5l1-5Z'/></svg> 闪卡完成</h2>
       <div class="stat-chips" style="justify-content:center">
         <div class="chip"><b>${fState?fState.ok:0}</b><span>认识</span></div>
         <div class="chip"><b>${fState?fState.ng:0}</b><span>不认识</span></div>
@@ -2934,7 +2940,7 @@ function renderFlash(){
   const showIpa=S.settings.showIPA!==false;
   st.innerHTML=`
   <div class="card vocab-card" id="flashCard" style="cursor:pointer;min-height:230px">
-    <div class="muted" style="text-align:right">${isStubborn(v.id)?'<span class="pill r">顽固词 ×'+wrongCount(v.id)+'</span> ':''}⚡ ${fState.i+1} / ${fState.deck.length}</div>
+    <div class="muted" style="text-align:right">${isStubborn(v.id)?'<span class="pill r">顽固词 ×'+wrongCount(v.id)+'</span> ':''}<svg viewBox='0 0 20 20' width='14' height='14' fill='currentColor' stroke='none' style='vertical-align:-2px;margin-right:3px'><path d='M11 2 4 12h5l-1 6 8-11h-5l1-5Z'/></svg> ${fState.i+1} / ${fState.deck.length}</div>
     <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px">
       <div class="phrase ${showIpa?"withipa":""}">${showIpa?ipaRuby(v.p):esc(v.p)}</div>${starW(v.id)}
     </div>
@@ -2946,10 +2952,10 @@ function renderFlash(){
   </div>
   <div style="display:flex;gap:10px;justify-content:center;margin-top:4px">
     ${fState.flipped
-      ?`<button class="btn" id="fOk" style="min-width:120px">✅ 认识</button>
-        <button class="btn" id="fNg" style="min-width:120px;background:var(--red)">❌ 不认识</button>`
+      ?`<button class="btn" id="fOk" style="min-width:120px"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M4.5 10.3 8 13.8l7.5-7.5'/></svg> 认识</button>
+        <button class="btn" id="fNg" style="min-width:120px;background:var(--red)"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M5 5l10 10M15 5L5 15'/></svg> 不认识</button>`
       :`<button class="btn ghost" id="fFlip" style="min-width:160px">翻面（空格键）</button>`}
-    <button class="btn gray" id="fSay">🔊</button>
+    <button class="btn gray" id="fSay"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M3 8v4h3l4.5 3.5v-11L6 7.5H3Z'/><path d='M13.6 7.3a3.6 3.6 0 0 1 0 5.4M16 5.4a7 7 0 0 1 0 9.2'/></svg></button>
   </div>`;
   const flip=()=>{fState.flipped=!fState.flipped;renderFlash();};
   document.getElementById("flashCard").onclick=flip;
@@ -2966,6 +2972,7 @@ function renderFlash(){
   };
 }
 /* ================= 遗忘曲线 ================= */
+function cssVar(name){return getComputedStyle(document.documentElement).getPropertyValue(name).trim();}
 function renderCurve(){
   const st=document.getElementById("vocabStage");
   const load=[];
@@ -2984,7 +2991,7 @@ function renderCurve(){
   </div>
   <div class="card"><h3>🔴 顽固词（错 ≥3 次，共 ${stub.length}）</h3>
     ${stub.length?`
-    <div style="margin-bottom:10px"><button class="btn" id="stubFlash">⚡ 只刷顽固词</button></div>
+    <div style="margin-bottom:10px"><button class="btn" id="stubFlash"><svg viewBox='0 0 20 20' width='14' height='14' fill='currentColor' stroke='none' style='vertical-align:-2px;margin-right:3px'><path d='M11 2 4 12h5l-1 6 8-11h-5l1-5Z'/></svg> 只刷顽固词</button></div>
     <table class="tbl"><tr><th>短语</th><th>释义</th><th>错误次数</th><th>下次复习</th></tr>
     ${stub.map(v=>`<tr><td><b>${esc(v.p)}</b></td><td>${esc(v.c)}</td><td><span class="pill r">×${wrongCount(v.id)}</span></td><td>${S.srs[v.id].due}</td></tr>`).join("")}</table>`
     :`<p class="muted">暂无顽固词。同一个词累计错 3 次会出现在这里，并在复习和闪卡中优先出现。</p>`}
@@ -2997,9 +3004,9 @@ function drawEbb(){
   const cv=document.getElementById("ebbChart");if(!cv)return;
   const ctx=cv.getContext("2d");const W=cv.width,H=cv.height,pad=34;
   ctx.clearRect(0,0,W,H);
-  ctx.strokeStyle="#e3ece6";ctx.beginPath();
+  ctx.strokeStyle=cssVar("--line");ctx.beginPath();
   [0,50,100].forEach(p=>{const y=H-pad-(H-2*pad)*p/100;ctx.moveTo(pad,y);ctx.lineTo(W-10,y);});ctx.stroke();
-  ctx.fillStyle="#6b7a70";ctx.font="11px sans-serif";
+  ctx.fillStyle=cssVar("--gray");ctx.font="11px sans-serif";
   [0,50,100].forEach(p=>{const y=H-pad-(H-2*pad)*p/100;ctx.fillText(p+"%",4,y+4);});
   const days=30,x0=pad,x1=W-14;
   const X=t=>x0+(x1-x0)*t/days;
@@ -3013,16 +3020,16 @@ function drawEbb(){
     }
     ctx.stroke();
   }
-  ctx.strokeStyle="#d97706";ctx.lineWidth=2;seg(0,3);
-  ctx.strokeStyle="#1e7a3c";ctx.lineWidth=2;
+  ctx.strokeStyle=cssVar("--amber");ctx.lineWidth=2;seg(0,3);
+  ctx.strokeStyle=cssVar("--green");ctx.lineWidth=2;
   const marks=[1,3,7,14,30];let strength=3;
   marks.forEach((m,i)=>{strength=strength*2.2;seg(m,strength);});
-  ctx.fillStyle="#1e7a3c";
+  ctx.fillStyle=cssVar("--green");
   marks.forEach(m=>{ctx.beginPath();ctx.arc(X(m),Y(100),4,0,7);ctx.fill();
     ctx.fillText(m+"天",X(m)-8,Y(100)-8);});
-  ctx.fillStyle="#d97706";ctx.fillText("不复习 → 快速遗忘",X(2),Y(30));
-  ctx.fillStyle="#1e7a3c";ctx.fillText("每次复习后遗忘变慢",X(12),Y(80)+26);
-  ctx.fillStyle="#6b7a70";ctx.fillText("天数 →",W-56,H-8);
+  ctx.fillStyle=cssVar("--amber");ctx.fillText("不复习 → 快速遗忘",X(2),Y(30));
+  ctx.fillStyle=cssVar("--green");ctx.fillText("每次复习后遗忘变慢",X(12),Y(80)+26);
+  ctx.fillStyle=cssVar("--gray");ctx.fillText("天数 →",W-56,H-8);
 }
 function startCards(list,mode){
   if(!list.length)return;
@@ -3032,7 +3039,7 @@ function startCards(list,mode){
 function renderCard(){
   const st=document.getElementById("vocabStage");
   if(vState.i>=vState.queue.length){
-    st.innerHTML=`<div class="card" style="text-align:center"><h2>✅ 本组完成！</h2><p class="muted">共 ${vState.queue.length} 条</p><button class="btn" onclick="renderVocab()">返回</button></div>`;return;
+    st.innerHTML=`<div class="card" style="text-align:center"><h2><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M4.5 10.3 8 13.8l7.5-7.5'/></svg> 本组完成！</h2><p class="muted">共 ${vState.queue.length} 条</p><button class="btn" onclick="renderVocab()">返回</button></div>`;return;
   }
   const v=vState.queue[vState.i];
   const isNew=vState.mode==="new";
@@ -3043,12 +3050,12 @@ function renderCard(){
     <div style="display:flex;align-items:center;justify-content:center;gap:6px">
       <div class="phrase ${showIpa?"withipa":""}">${showIpa?ipaRuby(v.p):esc(v.p)}</div>${starW(v.id)}
     </div>
-    <div class="word">${esc(v.w)} <button class="btn small ghost" id="sayBtn">🔊 发音</button> <button class="btn small gray" id="ipaTgl">${showIpa?"隐藏音标":"显示音标"}</button></div>
+    <div class="word">${esc(v.w)} <button class="btn small ghost" id="sayBtn"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M3 8v4h3l4.5 3.5v-11L6 7.5H3Z'/><path d='M13.6 7.3a3.6 3.6 0 0 1 0 5.4M16 5.4a7 7 0 0 1 0 9.2'/></svg> 发音</button> <button class="btn small gray" id="ipaTgl">${showIpa?"隐藏音标":"显示音标"}</button></div>
     <div id="answerArea" class="${vState.revealed||isNew?"":"hidden"}">
       <div class="cn">${esc(v.c)}</div>
       <div class="ex"><div class="${showIpa?"withipa":""}">${showIpa?ipaRuby(v.e):esc(v.e)}${starS(v.e,transOf(v),v.p)}</div>
       <div class="t hidden" id="transBox" style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--line)"></div>
-      <div style="margin-top:8px"><button class="btn small ghost" id="sayEx">🔊 例句</button>
+      <div style="margin-top:8px"><button class="btn small ghost" id="sayEx"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M3 8v4h3l4.5 3.5v-11L6 7.5H3Z'/><path d='M13.6 7.3a3.6 3.6 0 0 1 0 5.4M16 5.4a7 7 0 0 1 0 9.2'/></svg> 例句</button>
       <button class="btn small ghost" id="transBtn">${(S.settings.transLang||"ja")==="ja"?"訳 显示翻译":"译 显示翻译"}</button>
       <button class="btn small gray" id="langTgl">${(S.settings.transLang||"ja")==="ja"?"日→中":"中→日"}</button></div></div>
     </div>
@@ -3115,9 +3122,9 @@ function renderQuizItem(){
     const fb=document.getElementById("quizFb");
     srsMark(v,ok);
     if(ok){vState.quizRight++;
-      fb.innerHTML=`<div class="callout" style="margin-top:10px">✅ 正确！${esc(v.p)}（${esc(v.c)}）</div>`;}
+      fb.innerHTML=`<div class="callout" style="margin-top:10px"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M4.5 10.3 8 13.8l7.5-7.5'/></svg> 正确！${esc(v.p)}（${esc(v.c)}）</div>`;}
     else{vState.quizWrong++;
-      fb.innerHTML=`<div class="callout danger" style="margin-top:10px">❌ 正确答案：<b>${esc(v.w)}</b> — ${esc(v.p)}（${esc(v.c)}）${isStubborn(v.id)?' <span class="pill r">顽固词 ×'+wrongCount(v.id)+'</span>':''}</div>`;}
+      fb.innerHTML=`<div class="callout danger" style="margin-top:10px"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M5 5l10 10M15 5L5 15'/></svg> 正确答案：<b>${esc(v.w)}</b> — ${esc(v.p)}（${esc(v.c)}）${isStubborn(v.id)?' <span class="pill r">顽固词 ×'+wrongCount(v.id)+'</span>':''}</div>`;}
     fb.innerHTML+=`<div style="margin-top:10px"><button class="btn" id="quizNext">下一题</button></div>`;
     document.getElementById("quizCheck").disabled=true;
     document.getElementById("quizNext").onclick=()=>{vState.i++;renderQuizItem();};
@@ -3181,7 +3188,7 @@ function startSpell(){
 function renderSpell(){
   const st=vStage();
   if(spState.i>=spState.list.length){
-    st.innerHTML=`<div class="card" style="text-align:center"><h3>🎧 拼写完成</h3>
+    st.innerHTML=`<div class="card" style="text-align:center"><h3><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M3 11v-1a7 7 0 0 1 14 0v1'/><rect x='2' y='11' width='4' height='6' rx='1.5'/><rect x='14' y='11' width='4' height='6' rx='1.5'/></svg> 拼写完成</h3>
       <div class="stat-chips" style="justify-content:center">
         <div class="chip"><b>${spState.ok}</b><span>拼对</span></div>
         <div class="chip"><b>${spState.ng}</b><span>拼错</span></div></div>
@@ -3191,9 +3198,9 @@ function renderSpell(){
   }
   const v=spState.list[spState.i];
   st.innerHTML=`<div class="card" style="text-align:center">
-    <div class="muted" style="text-align:right">🎧 ${spState.i+1} / ${spState.list.length}${isStubborn(v.id)?' <span class="pill r">顽固词</span>':''}</div>
+    <div class="muted" style="text-align:right"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M3 11v-1a7 7 0 0 1 14 0v1'/><rect x='2' y='11' width='4' height='6' rx='1.5'/><rect x='14' y='11' width='4' height='6' rx='1.5'/></svg> ${spState.i+1} / ${spState.list.length}${isStubborn(v.id)?' <span class="pill r">顽固词</span>':''}</div>
     <h3>听发音，拼出这个单词</h3>
-    <div style="margin:12px 0"><button class="btn ghost" id="spPlay">🔊 再听一遍</button></div>
+    <div style="margin:12px 0"><button class="btn ghost" id="spPlay"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M3 8v4h3l4.5 3.5v-11L6 7.5H3Z'/><path d='M13.6 7.3a3.6 3.6 0 0 1 0 5.4M16 5.4a7 7 0 0 1 0 9.2'/></svg> 再听一遍</button></div>
     <div class="muted" style="margin-bottom:10px">提示：${esc(v.c)}</div>
     <div class="formrow" style="justify-content:center">
       <input type="text" id="spInp" autocomplete="off" autocapitalize="off" placeholder="输入单词" style="width:220px;text-align:center;font-size:18px">
@@ -3206,9 +3213,9 @@ function renderSpell(){
     const ok=inp.value.trim().toLowerCase()===v.w.toLowerCase();
     srsMark(v,ok);
     const fb=document.getElementById("spFb");
-    if(ok){spState.ok++;fb.innerHTML=`<div class="callout" style="margin-top:10px">✅ 正确！<b>${esc(v.w)}</b> ${window.IPA[v.w.toLowerCase()]?"/"+esc(window.IPA[v.w.toLowerCase()])+"/":""} — ${esc(v.p)}</div>`;}
+    if(ok){spState.ok++;fb.innerHTML=`<div class="callout" style="margin-top:10px"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M4.5 10.3 8 13.8l7.5-7.5'/></svg> 正确！<b>${esc(v.w)}</b> ${window.IPA[v.w.toLowerCase()]?"/"+esc(window.IPA[v.w.toLowerCase()])+"/":""} — ${esc(v.p)}</div>`;}
     else{spState.ng++;spState.wrong.push(v.w);
-      fb.innerHTML=`<div class="callout danger" style="margin-top:10px">❌ 正确拼写：<b>${esc(v.w)}</b> ${window.IPA[v.w.toLowerCase()]?"/"+esc(window.IPA[v.w.toLowerCase()])+"/":""} — ${esc(v.p)}（${esc(v.c)}）</div>`;}
+      fb.innerHTML=`<div class="callout danger" style="margin-top:10px"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M5 5l10 10M15 5L5 15'/></svg> 正确拼写：<b>${esc(v.w)}</b> ${window.IPA[v.w.toLowerCase()]?"/"+esc(window.IPA[v.w.toLowerCase()])+"/":""} — ${esc(v.p)}（${esc(v.c)}）</div>`;}
     fb.innerHTML+=`<div style="margin-top:10px"><button class="btn" id="spNext">下一个</button></div>`;
     document.getElementById("spGo").disabled=true;
     document.getElementById("spNext").onclick=()=>{spState.i++;renderSpell();};
@@ -3251,8 +3258,8 @@ function renderOrder(){
         const s=document.createElement("span");s.className="seq-w fixed";s.textContent=expected;out.appendChild(s);
         oState.cur.next++;
         if(oState.cur.next>=oState.cur.tokens.length){
-          document.getElementById("seqFb").innerHTML=`<div class="callout">✅ ${esc(v.e)}<div class="t">${esc(transOf(v))}</div>
-          <div style="margin-top:8px"><button class="btn small ghost" id="seqSay">🔊 听整句</button> <button class="btn small" id="seqNext">下一句</button></div></div>`;
+          document.getElementById("seqFb").innerHTML=`<div class="callout"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M4.5 10.3 8 13.8l7.5-7.5'/></svg> ${esc(v.e)}<div class="t">${esc(transOf(v))}</div>
+          <div style="margin-top:8px"><button class="btn small ghost" id="seqSay"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M3 8v4h3l4.5 3.5v-11L6 7.5H3Z'/><path d='M13.6 7.3a3.6 3.6 0 0 1 0 5.4M16 5.4a7 7 0 0 1 0 9.2'/></svg> 听整句</button> <button class="btn small" id="seqNext">下一句</button></div></div>`;
           speak(v.e);
           document.getElementById("seqSay").onclick=()=>speak(v.e);
           document.getElementById("seqNext").onclick=()=>{oState.i++;renderOrder();};
@@ -3270,7 +3277,7 @@ function recordAttempt(o){
   S.attempts.push(Object.assign({date:todayStr(),mastered:false},o));save();
 }
 function answerUI(container,opts,onPick){
-  container.innerHTML=opts.map((o,i)=>`<button class="opt" data-i="${i}">${String.fromCharCode(65+i)}. ${esc(o)}</button>`).join("");
+  container.innerHTML=opts.map((o,i)=>`<button class="opt" data-i="${i}"><span class="opt-ltr">${String.fromCharCode(65+i)}</span><span class="opt-txt">${esc(o)}</span></button>`).join("");
   container.querySelectorAll(".opt").forEach(b=>b.onclick=()=>onPick(parseInt(b.dataset.i),container));
 }
 function markOpts(container,picked,correct){
@@ -3320,14 +3327,14 @@ function renderReading(){
       <div class="chip"><b>${rT===null?"—":rT+"s"}</b><span>平均用时/题</span></div>
       <div class="chip"><b>${recentAttempts(7,"reading").length}</b><span>近7天题量</span></div>
     </div>
-    ${rAcc!==null&&rAcc<70?`<div class="callout warn" style="margin:8px 0">⚠️ 阅读正确率低于 70%，明日计划已自动增加阅读时间。</div>`:""}
+    ${rAcc!==null&&rAcc<70?`<div class="callout warn" style="margin:8px 0"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M10 3.5 2.5 16h15L10 3.5Z'/><path d='M10 8.2v3.2M10 13.8h.01'/></svg> 阅读正确率低于 70%，明日计划已自动增加阅读时间。</div>`:""}
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
-      <button class="btn" id="rp5">Part 5 语法词汇（剩 ${p5left}）</button>
-      <button class="btn" id="rp6">Part 6 段落填空</button>
-      <button class="btn" id="rp7">Part 7 阅读理解</button>
+      <button class="btn" id="rp5"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;pointer-events:none"><rect x="3" y="3" width="14" height="14" rx="2"/><path d="M6.5 8h3M6.5 11h7M6.5 14h5"/></svg>Part 5 语法词汇（剩 ${p5left}）</button>
+      <button class="btn" id="rp6"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;pointer-events:none"><rect x="3" y="3" width="14" height="14" rx="2"/><path d="M6.5 7h7M6.5 10h7M6.5 13h4"/></svg>Part 6 段落填空</button>
+      <button class="btn" id="rp7"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;pointer-events:none"><path d="M3 5h14M3 9h14M3 13h9"/></svg>Part 7 阅读理解</button>
       <button class="btn gray" id="rManual">录入外部练习结果</button>
     </div>
-    <div class="muted" style="margin-top:12px;font-size:13px">🤖 AI 出题（用你已学的词和薄弱错因现场生成，题目不重复）</div>
+    <div class="muted" style="margin-top:12px;font-size:13px"><svg viewBox="0 0 20 20" width="13" height="13" fill="currentColor" stroke="none" style="vertical-align:-1px;margin-right:4px"><path d="M10 2l1.4 4.6L16 8l-4.6 1.4L10 14l-1.4-4.6L4 8l4.6-1.4L10 2Z"/></svg>AI 出题（用你已学的词和薄弱错因现场生成，题目不重复）</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
       <button class="btn ghost" id="ai5">Part 5 · 5题</button>
       <button class="btn ghost" id="ai6">Part 6 · 1篇</button>
@@ -3353,7 +3360,7 @@ function startP5(){
 }
 function renderP5Item(){
   const st=document.getElementById("readStage");
-  if(qState.i>=qState.list.length){st.innerHTML=`<div class="card" style="text-align:center"><h2>✅ 本组完成</h2><button class="btn" onclick="renderReading()">返回</button></div>`;stopTimer();return;}
+  if(qState.i>=qState.list.length){st.innerHTML=`<div class="card" style="text-align:center"><h2><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M4.5 10.3 8 13.8l7.5-7.5'/></svg> 本组完成</h2><button class="btn" onclick="renderReading()">返回</button></div>`;stopTimer();return;}
   const q=qState.list[qState.i];
   st.innerHTML=`<div class="card">
     <div style="display:flex;justify-content:space-between"><h3>Part 5 · ${qState.i+1}/${qState.list.length}</h3><span class="timerbox" id="tmr">0:00</span></div>
@@ -3377,7 +3384,7 @@ function renderP5Item(){
   function finish(ok,t,conf){
     const fb=document.getElementById("fbBox");
     aiCtx={part:"Part 5",q:q.q,o:q.o,a:q.a,pick:picked,exp:q.exp};
-    fb.innerHTML=`<div class="callout ${ok?"":"danger"}" style="margin-top:10px">${ok?"✅ 正确":"❌ 错误"} · 用时 ${t}s<br>${esc(q.exp)}</div>`+aiAskBtn();
+    fb.innerHTML=`<div class="callout ${ok?"":"danger"}" style="margin-top:10px">${ok?"<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M4.5 10.3 8 13.8l7.5-7.5'/></svg> 正确":"<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M5 5l10 10M15 5L5 15'/></svg> 错误"} · 用时 ${t}s<br>${esc(q.exp)}</div>`+aiAskBtn();
     if(!ok){
       fb.appendChild(reasonPicker(q.id,t,reasons=>{
         recordAttempt({qid:q.id,type:"reading",part:"P5",correct:false,time:t,conf,reasons,q:q.q,ans:q.o[q.a],exp:q.exp,tag:q.tag,ai:!!q.ai});
@@ -3406,7 +3413,7 @@ function startPassage(bank,part){
 function renderPassageItem(){
   const st=document.getElementById("readStage");
   const p=qState.passage;
-  if(qState.i>=p.qs.length){st.innerHTML=`<div class="card" style="text-align:center"><h2>✅ 本篇完成</h2><button class="btn" onclick="renderReading()">返回</button></div>`;stopTimer();return;}
+  if(qState.i>=p.qs.length){st.innerHTML=`<div class="card" style="text-align:center"><h2><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M4.5 10.3 8 13.8l7.5-7.5'/></svg> 本篇完成</h2><button class="btn" onclick="renderReading()">返回</button></div>`;stopTimer();return;}
   const q=p.qs[qState.i];
   st.innerHTML=`<div class="card">
     <div style="display:flex;justify-content:space-between"><h3>${qState.part} ${p.type?("· "+p.type):""}${p.ai?' <span class="pill b">AI 生成</span>':""} · 第 ${qState.i+1}/${p.qs.length} 题</h3><span class="timerbox" id="tmr">0:00</span></div>
@@ -3427,7 +3434,7 @@ function renderPassageItem(){
       document.getElementById("confBox").classList.add("hidden");
       const fb=document.getElementById("fbBox");
       aiCtx={part:qState.part,q:q.q,o:q.o,a:q.a,pick:i,exp:q.exp,passage:p.passage};
-      fb.innerHTML=`<div class="callout ${ok?"":"danger"}" style="margin-top:10px">${ok?"✅ 正确":"❌ 错误"} · 用时 ${t}s<br>${esc(q.exp)}</div>`+aiAskBtn();
+      fb.innerHTML=`<div class="callout ${ok?"":"danger"}" style="margin-top:10px">${ok?"<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M4.5 10.3 8 13.8l7.5-7.5'/></svg> 正确":"<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M5 5l10 10M15 5L5 15'/></svg> 错误"} · 用时 ${t}s<br>${esc(q.exp)}</div>`+aiAskBtn();
       const qid=p.id+"-"+q.q;
       if(!ok){
         fb.appendChild(reasonPicker(qid.replace(/[^a-z0-9-]/gi,""),t,reasons=>{
@@ -3476,10 +3483,15 @@ function renderListening(){
   const d=doneIds();
   const left=part=>Q_LC.filter(q=>q.part===part&&(q.qs?!q.qs.every(x=>d.has(q.id+"-"+x.q)):!d.has(q.id))).length;
   const total=part=>Q_LC.filter(q=>q.part===part).length;
+  const PART_IC={P1:'<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3.5" width="15" height="13" rx="2"/><circle cx="7" cy="8" r="1.4"/><path d="M4 15l4.5-4.5 3 3 2-2 4 4"/></svg>',
+    P2:'<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5A2.5 2.5 0 0 1 5.5 3h9A2.5 2.5 0 0 1 17 5.5v5A2.5 2.5 0 0 1 14.5 13H8l-3.5 3v-3H5.5A2.5 2.5 0 0 1 3 10.5v-5Z"/></svg>',
+    P3:'<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5A2 2 0 0 1 4.5 2.5h5A2 2 0 0 1 11.5 4.5v3A2 2 0 0 1 9.5 9.5H6l-2 1.6V9.5A2 2 0 0 1 2.5 7.5v-3Z"/><path d="M8.5 11.5h1A2 2 0 0 0 11.5 13.5v3l2-1.6h2.5A2 2 0 0 0 18 13.5v-3A2 2 0 0 0 16 8.5"/></svg>',
+    P4:'<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h14M3 9h14M3 13h9"/></svg>'};
   const card=(part,title,desc,btnId,btnText,extra)=>{
     const st=partStat(part);
     return `<div class="card">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div class="part-ic">${PART_IC[part]}</div>
         <h3 style="margin:0">${title}</h3>
         <span class="muted" style="font-size:13px">${desc}</span>
         <span style="margin-left:auto;display:flex;gap:8px">
@@ -3499,9 +3511,9 @@ function renderListening(){
       <div class="chip"><b>${lAcc===null?"—":lAcc+"%"}</b><span>近7天正确率</span></div>
       <div class="chip"><b>${recentAttempts(7,"listening").length}</b><span>近7天题量</span></div>
     </div>
-    ${lAcc!==null&&rAcc!==null&&lAcc<rAcc-10?`<div class="callout warn" style="margin:8px 0">⚠️ 听力已成为短板，明日计划已自动从阅读调时间给听力。</div>`:""}
+    ${lAcc!==null&&rAcc!==null&&lAcc<rAcc-10?`<div class="callout warn" style="margin:8px 0"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M10 3.5 2.5 16h15L10 3.5Z'/><path d='M10 8.2v3.2M10 13.8h.01'/></svg> 听力已成为短板，明日计划已自动从阅读调时间给听力。</div>`:""}
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
-      <button class="btn ghost" id="lStart">🎧 混合练习（P2+P3+P4）</button>
+      <button class="btn ghost" id="lStart"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M3 11v-1a7 7 0 0 1 14 0v1'/><rect x='2' y='11' width='4' height='6' rx='1.5'/><rect x='14' y='11' width='4' height='6' rx='1.5'/></svg> 混合练习（P2+P3+P4）</button>
       <button class="btn gray" id="lManual">录入外部练习结果</button>
     </div>
   </div>
@@ -3539,12 +3551,12 @@ function startListening(part){
 }
 function renderListenItem(){
   const st=document.getElementById("listenStage");
-  if(qState.i>=qState.list.length){st.innerHTML=`<div class="card" style="text-align:center"><h2>✅ 今日听力完成</h2><button class="btn" onclick="renderListening()">返回</button></div>`;return;}
+  if(qState.i>=qState.list.length){st.innerHTML=`<div class="card" style="text-align:center"><h2><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M4.5 10.3 8 13.8l7.5-7.5'/></svg> 今日听力完成</h2><button class="btn" onclick="renderListening()">返回</button></div>`;return;}
   const item=qState.list[qState.i];
   if(item.part==="P2"){
     st.innerHTML=`<div class="card"><h3>Part 2 应答问题 · ${qState.i+1}/${qState.list.length}</h3>
       <p class="muted">听问题，选择最合适的应答。</p>
-      <button class="btn ghost" id="playBtn">🔊 播放问题</button>
+      <button class="btn ghost" id="playBtn"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M3 8v4h3l4.5 3.5v-11L6 7.5H3Z'/><path d='M13.6 7.3a3.6 3.6 0 0 1 0 5.4M16 5.4a7 7 0 0 1 0 9.2'/></svg> 播放问题</button>
       <div id="lOptBox" style="margin-top:12px"></div><div id="lFbBox"></div></div>`;
     document.getElementById("playBtn").onclick=()=>speak(item.script,0.9);
     speak(item.script,0.9);
@@ -3555,7 +3567,7 @@ function renderListenItem(){
       markOpts(c,i,item.a);
       const fb=document.getElementById("lFbBox");
       aiCtx={part:"Part 2",q:item.script,o:item.o,a:item.a,pick:i,exp:item.exp};
-      fb.innerHTML=`<div class="callout ${ok?"":"danger"}" style="margin-top:10px">${ok?"✅ 正确":"❌ 错误"}<br>原文：<span class="withipa">${ipaRuby(item.script)}</span>${starS(item.script,"",("听力 "+item.part))}<br>${esc(item.exp)}</div>`+aiAskBtn();
+      fb.innerHTML=`<div class="callout ${ok?"":"danger"}" style="margin-top:10px">${ok?"<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M4.5 10.3 8 13.8l7.5-7.5'/></svg> 正确":"<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M5 5l10 10M15 5L5 15'/></svg> 错误"}<br>原文：<span class="withipa">${ipaRuby(item.script)}</span>${starS(item.script,"",("听力 "+item.part))}<br>${esc(item.exp)}</div>`+aiAskBtn();
       recordAttempt({qid:item.id,type:"listening",part:"P2",correct:ok,time:t,conf:"n",
         reasons:ok?undefined:[item.tag.includes("应答")?"定位关键信息":item.tag],q:item.script,ans:item.o[item.a],exp:item.exp,tag:item.tag});
       const d=document.createElement("div");d.style.marginTop="10px";d.innerHTML=`<button class="btn">下一题</button>`;
@@ -3564,7 +3576,7 @@ function renderListenItem(){
   }else{
     const q=item.qs[qState.sub];
     st.innerHTML=`<div class="card"><h3>Part ${item.part==="P3"?"3 对话":"4 短文"} · 第 ${qState.sub+1}/${item.qs.length} 题</h3>
-      <button class="btn ghost" id="playBtn">🔊 播放音频</button>
+      <button class="btn ghost" id="playBtn"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M3 8v4h3l4.5 3.5v-11L6 7.5H3Z'/><path d='M13.6 7.3a3.6 3.6 0 0 1 0 5.4M16 5.4a7 7 0 0 1 0 9.2'/></svg> 播放音频</button>
       <p style="margin:10px 0;font-weight:600">${esc(q.q)}</p>
       <div id="lOptBox"></div><div id="lFbBox"></div></div>`;
     document.getElementById("playBtn").onclick=()=>speak(item.script,0.95);
@@ -3576,7 +3588,7 @@ function renderListenItem(){
       markOpts(c,i,q.a);
       const fb=document.getElementById("lFbBox");
       aiCtx={part:"Part "+item.part.slice(1),q:q.q,o:q.o,a:q.a,pick:i,exp:q.exp,passage:item.script};
-      fb.innerHTML=`<div class="callout ${ok?"":"danger"}" style="margin-top:10px">${ok?"✅ 正确":"❌ 错误"}<br>${esc(q.exp)}${qState.sub===item.qs.length-1?`<details style="margin-top:6px"><summary>查看听力原文（带音标）</summary><div class="muted withipa">${ipaRuby(item.script)}${starS(item.script,"",("听力 "+item.part))}</div></details>`:""}</div>`+aiAskBtn();
+      fb.innerHTML=`<div class="callout ${ok?"":"danger"}" style="margin-top:10px">${ok?"<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M4.5 10.3 8 13.8l7.5-7.5'/></svg> 正确":"<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M5 5l10 10M15 5L5 15'/></svg> 错误"}<br>${esc(q.exp)}${qState.sub===item.qs.length-1?`<details style="margin-top:6px"><summary>查看听力原文（带音标）</summary><div class="muted withipa">${ipaRuby(item.script)}${starS(item.script,"",("听力 "+item.part))}</div></details>`:""}</div>`+aiAskBtn();
       recordAttempt({qid:item.id+"-"+q.q,type:"listening",part:item.part,correct:ok,time:t,conf:"n",
         reasons:ok?undefined:["定位关键信息"],q:q.q,ans:q.o[q.a],exp:q.exp,tag:q.tag});
       const d=document.createElement("div");d.style.marginTop="10px";d.innerHTML=`<button class="btn">下一题</button>`;
@@ -3599,7 +3611,7 @@ function reviewHtml(){
   <div class="card"><h2>错因分析</h2>
     ${sorted.length?`<h3 style="margin-top:6px">你最近反复卡在哪里（近30天）</h3>
     ${sorted.map(([r,n])=>`<div class="bar-row"><div class="bl">${R_LABEL[r]}</div><div class="track"><div class="fill" style="width:${Math.round(100*n/maxN)}%"></div></div><div class="val">${n} 题</div></div>`).join("")}
-    ${sorted[0]&&sorted[0][1]>=2?`<div class="callout warn" style="margin-top:10px">🎯 优先攻克：<b>${R_LABEL[sorted[0][0]]}</b> — ${adviceFor(sorted[0][0])}</div>`:""}`
+    ${sorted[0]&&sorted[0][1]>=2?`<div class="callout warn" style="margin-top:10px"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.7' style='vertical-align:-2px;margin-right:3px'><circle cx='10' cy='10' r='7'/><circle cx='10' cy='10' r='3.5'/><circle cx='10' cy='10' r='0.8' fill='currentColor' stroke='none'/></svg> 优先攻克：<b>${R_LABEL[sorted[0][0]]}</b> — ${adviceFor(sorted[0][0])}</div>`:""}`
     :`<p class="muted">暂无错题数据。去做阅读/听力训练吧。</p>`}
   </div>
   <div class="card"><h3>待复盘错题（${wrongs.length}）</h3>
@@ -3613,7 +3625,7 @@ function reviewHtml(){
       <details style="margin-top:6px"><summary class="muted">答案与解析</summary>
         <div style="margin-top:6px">正确答案：<b>${esc(a.ans||"")}</b><br><span class="muted">${esc(a.exp||"")}</span></div></details>
       <div style="margin-top:8px"><button class="btn small" data-master="${idx}">已掌握 ✓</button>
-      <button class="btn small gray" data-aiexp="${idx}">🤖 AI 解答</button></div><div class="aians"></div>
+      <button class="btn small gray" data-aiexp="${idx}"><svg viewBox='0 0 20 20' width='13' height='13' fill='currentColor' stroke='none' style='vertical-align:-1px;margin-right:3px'><path d='M10 2l1.4 4.6L16 8l-4.6 1.4L10 14l-1.4-4.6L4 8l4.6-1.4L10 2Z'/></svg> AI 解答</button></div><div class="aians"></div>
       </div>`;}).join("")
     :`<p class="muted">没有待复盘的错题 🎉</p>`}
   </div>`;
@@ -3656,12 +3668,12 @@ function progressHtml(){
   </div>
   <div class="card"><h3>各 Part 表现（近30天）</h3>
     ${Object.keys(partStats).length?Object.entries(partStats).map(([p,s])=>
-      `<div class="bar-row"><div class="bl">${p}（${s.n}题）</div><div class="track"><div class="fill" style="width:${s.acc}%;background:${s.acc>=80?"var(--green)":s.acc>=65?"#d97706":"var(--red)"}"></div></div><div class="val">${s.acc}%</div></div>`).join("")
+      `<div class="bar-row"><div class="bl">${p}（${s.n}题）</div><div class="track"><div class="fill" style="width:${s.acc}%;background:${s.acc>=80?"var(--green)":s.acc>=65?"var(--amber)":"var(--red)"}"></div></div><div class="val">${s.acc}%</div></div>`).join("")
     :`<p class="muted">暂无数据</p>`}
   </div>
   <div class="grid2">
     <div class="card"><h3>📌 本周唯一改进重点</h3>
-      <div class="callout"><div>🎯</div><div><b>${esc(w.text)}</b><br><span class="muted">${esc(w.detail)}</span><br><span class="muted">${esc(adviceFor(w.key)||"保持当前节奏，持续积累数据。")}</span></div></div>
+      <div class="callout"><div><svg viewBox='0 0 20 20' width='16' height='16' fill='none' stroke='currentColor' stroke-width='1.6'><circle cx='10' cy='10' r='7'/><circle cx='10' cy='10' r='3.5'/><circle cx='10' cy='10' r='0.8' fill='currentColor' stroke='none'/></svg></div><div><b>${esc(w.text)}</b><br><span class="muted">${esc(w.detail)}</span><br><span class="muted">${esc(adviceFor(w.key)||"保持当前节奏，持续积累数据。")}</span></div></div>
     </div>
     <div class="card"><h3>近期停滞原因</h3>
       ${stag.length?`<ul style="padding-left:18px;font-size:14px">${stag.map(s=>`<li>${esc(s)}</li>`).join("")}</ul>`:`<p class="muted">暂未发现明显停滞。</p>`}
@@ -3688,10 +3700,10 @@ function drawTrend(days){
   const cv=document.getElementById("trendChart");if(!cv)return;
   const ctx=cv.getContext("2d");const W=cv.width,H=cv.height,pad=30;
   ctx.clearRect(0,0,W,H);
-  ctx.strokeStyle="#e3ece6";ctx.beginPath();
+  ctx.strokeStyle=cssVar("--line");ctx.beginPath();
   [0,25,50,75,100].forEach(p=>{const y=H-pad-(H-2*pad)*p/100;ctx.moveTo(pad,y);ctx.lineTo(W-10,y);});
   ctx.stroke();
-  ctx.fillStyle="#6b7a70";ctx.font="11px sans-serif";
+  ctx.fillStyle=cssVar("--gray");ctx.font="11px sans-serif";
   [0,50,100].forEach(p=>{const y=H-pad-(H-2*pad)*p/100;ctx.fillText(p+"%",2,y+4);});
   const step=(W-pad-20)/(days.length-1);
   function line(key,color){
@@ -3704,7 +3716,7 @@ function drawTrend(days){
       const x=pad+i*step,y=H-pad-(H-2*pad)*d[key]/100;
       ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,3,0,7);ctx.fill();});
   }
-  line("r","#1e7a3c");line("l","#1d4ed8");
+  line("r",cssVar("--green"));line("l",cssVar("--blue"));
 }
 function stagnationReasons(){
   const out=[];
@@ -3813,7 +3825,7 @@ function renderFavs(){
   const qs=Object.entries(f.q).sort((a,b)=>b[1].ts-a[1].ts);
   const showIpa=S.settings.showIPA!==false;
   el.innerHTML=`
-  <div class="card"><h2>⭐ 我的收藏</h2>
+  <div class="card"><h2><svg viewBox='0 0 20 20' width='15' height='15' fill='currentColor' stroke='none' style='vertical-align:-2px;margin-right:5px'><path d='M10 2.6l2.2 4.5 4.9.6-3.6 3.5.9 4.9L10 13.8l-4.4 2.3.9-4.9-3.6-3.5 4.9-.6L10 2.6Z'/></svg> 我的收藏</h2>
     <p class="muted">在词卡、闪卡、Talk、听力原文旁点 ☆ 即可收藏；再点一次取消。</p>
     <div class="fav-tabs">
       <button class="btn small ${favTab==="w"?"":"gray"}" data-ft="w">单词 ${ws.length}</button>
@@ -3821,11 +3833,11 @@ function renderFavs(){
       <button class="btn small ${favTab==="q"?"":"gray"}" data-ft="q">题目 ${qs.length}</button>
     </div>
     ${favTab==="w"&&ws.length?`<div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn small" id="favFlash">⚡ 用收藏刷闪卡</button>
-      <button class="btn small ghost" id="favTalk">🎙️ 用收藏练跟读</button>
+      <button class="btn small" id="favFlash"><svg viewBox='0 0 20 20' width='14' height='14' fill='currentColor' stroke='none' style='vertical-align:-2px;margin-right:3px'><path d='M11 2 4 12h5l-1 6 8-11h-5l1-5Z'/></svg> 用收藏刷闪卡</button>
+      <button class="btn small ghost" id="favTalk"><svg viewBox='0 0 20 20' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:4px'><rect x='7.4' y='2.4' width='5.2' height='8.6' rx='2.6'/><path d='M4.4 9.6a5.6 5.6 0 0 0 11.2 0'/><path d='M10 15.2v2.4M7 17.6h6'/></svg>用收藏练跟读</button>
       <button class="btn small gray" id="favClearW">清空单词收藏</button></div>`:""}
     ${favTab==="s"&&ss.length?`<div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn small" id="favPlayAll">🔊 依次朗读全部</button>
+      <button class="btn small" id="favPlayAll"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M3 8v4h3l4.5 3.5v-11L6 7.5H3Z'/><path d='M13.6 7.3a3.6 3.6 0 0 1 0 5.4M16 5.4a7 7 0 0 1 0 9.2'/></svg> 依次朗读全部</button>
       <button class="btn small gray" id="favClearS">清空句子收藏</button></div>`:""}
     ${favTab==="q"&&qs.length?`<div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn small gray" id="favClearQ">清空题目收藏</button></div>`:""}
@@ -3841,7 +3853,7 @@ function renderFavs(){
             <div class="muted">${esc(d.c)}${v&&isStubborn(v.id)?' <span class="pill r">顽固词</span>':""}</div>
             ${v?`<div class="muted" style="margin-top:4px;font-size:13px">${esc(v.e)}</div>`:""}
           </div>
-          <button class="btn small ghost" data-say="${esc(d.p)}">🔊</button>
+          <button class="btn small ghost" data-say="${esc(d.p)}"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M3 8v4h3l4.5 3.5v-11L6 7.5H3Z'/><path d='M13.6 7.3a3.6 3.6 0 0 1 0 5.4M16 5.4a7 7 0 0 1 0 9.2'/></svg></button>
         </div>`;}).join("")
       :`<p class="muted">还没有收藏单词。在词卡或闪卡上点 ☆ 试试。</p>`)
     : favTab==="q"
@@ -3856,7 +3868,7 @@ function renderFavs(){
           ${(d.o||[]).map((x,i)=>`<div style="font-size:13px;padding:3px 0;color:${i===d.a?"var(--green)":"var(--gray)"}">
             ${String.fromCharCode(65+i)}. ${esc(x)}${i===d.a?" ✓":""}</div>`).join("")}
           ${d.exp?`<div class="muted" style="margin-top:6px;font-size:13px">${esc(d.exp)}</div>`:""}
-          ${(d.o&&d.o.length)?`<div style="margin-top:6px"><button class="btn small ghost" data-say="${esc((d.o||[]).join(". "))}">🔊 朗读选项</button></div>`:""}
+          ${(d.o&&d.o.length)?`<div style="margin-top:6px"><button class="btn small ghost" data-say="${esc((d.o||[]).join(". "))}"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M3 8v4h3l4.5 3.5v-11L6 7.5H3Z'/><path d='M13.6 7.3a3.6 3.6 0 0 1 0 5.4M16 5.4a7 7 0 0 1 0 9.2'/></svg> 朗读选项</button></div>`:""}
         </div>`).join("")
       :`<p class="muted">还没有收藏题目。做完任意一题后，在解析下方点 ☆ 即可收藏。</p>`)
     : (ss.length?ss.map(([k,d])=>`<div class="fav-row">
@@ -3866,7 +3878,7 @@ function renderFavs(){
             ${d.tr?`<div class="muted" style="margin-top:4px">${esc(d.tr)}</div>`:""}
             ${d.src?`<div class="muted" style="font-size:12px;margin-top:2px">来源：${esc(d.src)}</div>`:""}
           </div>
-          <button class="btn small ghost" data-say="${esc(d.text)}">🔊</button>
+          <button class="btn small ghost" data-say="${esc(d.text)}"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M3 8v4h3l4.5 3.5v-11L6 7.5H3Z'/><path d='M13.6 7.3a3.6 3.6 0 0 1 0 5.4M16 5.4a7 7 0 0 1 0 9.2'/></svg></button>
         </div>`).join("")
       :`<p class="muted">还没有收藏句子。在例句或听力原文旁点 ☆ 试试。</p>`)}
   </div>`;
@@ -3908,28 +3920,28 @@ function saveMM(){try{localStorage.setItem(MMKEY,JSON.stringify(MM));}catch(e){}
 function mmReady(){return !!MM.key;}
 
 const SCENES=[
- {id:"hotel",n:"🏨 酒店入住",role:"a hotel front desk clerk",
+ {id:"hotel",n:'<svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><rect x="4" y="2.5" width="12" height="15" rx="1"/><path d="M7 6h1M12 6h1M7 9.5h1M12 9.5h1M7 13h1M12 13h1"/><path d="M8.5 17.5v-4h3v4"/></svg>酒店入住',role:"a hotel front desk clerk",
   task:"办理入住、要求换房、询问设施与早餐时间",
   first:"Good evening! Welcome to the Grandview Hotel. Do you have a reservation with us?"},
- {id:"restaurant",n:"🍽️ 餐厅点餐",role:"a restaurant server",
+ {id:"restaurant",n:'<svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M6 2.5v6.5M4.5 2.5v4a1.5 1.5 0 0 0 3 0v-4M6 9v9"/><path d="M14.5 2.5c-1.5 1-2 3-2 4.5 0 1.5.7 2.2 1.3 2.5V18M14.5 2.5v15.5"/></svg>餐厅点餐',role:"a restaurant server",
   task:"点餐、询问推荐、要求打包、结账",
   first:"Good evening! Have you dined with us before? Can I start you off with something to drink?"},
- {id:"office",n:"💼 办公室同事",role:"a coworker in the marketing department",
+ {id:"office",n:'<svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><rect x="2.5" y="6.5" width="15" height="10" rx="1.5"/><path d="M7 6.5v-2a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 13 4.5v2"/><path d="M2.5 11h15"/></svg>办公室同事',role:"a coworker in the marketing department",
   task:"讨论会议改期、请对方帮忙、汇报进度",
   first:"Hi! Do you have a minute? I wanted to ask about the schedule for Thursday's meeting."},
- {id:"client",n:"🤝 客户会谈",role:"a client evaluating our services",
+ {id:"client",n:'<svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M2.5 9l3-2.5 3 2 2-1.7 3 2.2 3-2"/><path d="M6.5 8.5l3 3.2a1.3 1.3 0 0 0 1.9-1.8M11 10l1.6 1.7a1.3 1.3 0 0 0 1.9-1.8"/><path d="M2.5 9v3.5l2.5 2M17.5 9v3.5l-2.5 2"/></svg>客户会谈',role:"a client evaluating our services",
   task:"介绍产品、协商价格与交期、回应疑虑",
   first:"Thanks for meeting me today. Could you walk me through what your company offers?"},
- {id:"interview",n:"🎤 求职面试",role:"a hiring manager interviewing the user",
+ {id:"interview",n:'<svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><rect x="7.4" y="2.4" width="5.2" height="8.6" rx="2.6"/><path d="M4.4 9.6a5.6 5.6 0 0 0 11.2 0"/><path d="M10 15.2v2.4M7 17.6h6"/></svg>求职面试',role:"a hiring manager interviewing the user",
   task:"自我介绍、谈经历与优势、反问问题",
   first:"Thanks for coming in. To start, could you tell me a little about your background?"},
- {id:"airport",n:"✈️ 机场值机",role:"an airline check-in agent",
+ {id:"airport",n:'<svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor" stroke="none" style="vertical-align:-2px;margin-right:4px"><path d="M18 10l-6-2V3.5a1.2 1.2 0 0 0-2.4 0V8L3 10v2l6.6-1.6v3.8l-2 1.4v1.4l2.9-.9 2.9.9v-1.4l-2-1.4V10.4L18 12v-2Z"/></svg>机场值机',role:"an airline check-in agent",
   task:"值机、托运行李、改签、询问登机口",
   first:"Good morning! May I see your passport and booking reference, please?"},
- {id:"phone",n:"📞 电话咨询",role:"a customer service representative",
+ {id:"phone",n:'<svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M4 3.5h3l1.5 3.5-1.8 1.3a9 9 0 0 0 4.5 4.5l1.3-1.8 3.5 1.5v3a1.5 1.5 0 0 1-1.6 1.5A13.5 13.5 0 0 1 3 5.1 1.5 1.5 0 0 1 4 3.5Z"/></svg>电话咨询',role:"a customer service representative",
   task:"报修、催单、退换货、投诉",
   first:"Thank you for calling Cedar Office Supplies. How may I help you today?"},
- {id:"store",n:"🛍️ 商店购物",role:"a shop assistant in a department store",
+ {id:"store",n:'<svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M5 6.5h10l-.8 10a1.5 1.5 0 0 1-1.5 1.3H7.3a1.5 1.5 0 0 1-1.5-1.3L5 6.5Z"/><path d="M7.5 6.5V5a2.5 2.5 0 0 1 5 0v1.5"/></svg>商店购物',role:"a shop assistant in a department store",
   task:"询价、要求换货、使用优惠券、查询库存",
   first:"Hello! Are you looking for anything in particular today?"}
 ];
@@ -4077,7 +4089,7 @@ function renderChat(){
   const el=document.getElementById("v-chat");
   const sc=SCENES.find(s=>s.id===cState.scene)||SCENES[0];
   el.innerHTML=`
-  <div class="card"><h2>💬 AI 英语对话</h2>
+  <div class="card"><h2><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:4px'><path d='M3 5.5A2.5 2.5 0 0 1 5.5 3h9A2.5 2.5 0 0 1 17 5.5v5A2.5 2.5 0 0 1 14.5 13H8l-3.5 3v-3H5.5A2.5 2.5 0 0 1 3 10.5v-5Z'/></svg> AI 英语对话</h2>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px">
       <span class="pill ${mmReady()?"g":"r"}">${mmReady()?"MiniMax 已连接":"未配置密钥"}</span>
       <button class="btn small gray" id="mmCfg">⚙️ 设置</button>
@@ -4090,25 +4102,25 @@ function renderChat(){
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
       ${SCENES.map(s=>`<button class="btn small ${s.id===cState.scene?"":"gray"}" data-sc="${s.id}">${s.n}</button>`).join("")}
     </div>
-    <div class="callout" style="margin-top:10px"><div>🎯</div><div>
+    <div class="callout" style="margin-top:10px"><div><svg viewBox='0 0 20 20' width='16' height='16' fill='none' stroke='currentColor' stroke-width='1.6'><circle cx='10' cy='10' r='7'/><circle cx='10' cy='10' r='3.5'/><circle cx='10' cy='10' r='0.8' fill='currentColor' stroke='none'/></svg></div><div>
       对方身份：${esc(sc.role)}<br><span class="muted">练习目标：${esc(sc.task)}</span></div></div>`:
     `<p class="muted" style="margin-top:8px">随便聊什么都行，AI 会用英语回应并继续提问。</p>`}
   </div>
-  ${!mmReady()?`<div class="card"><div class="callout warn"><div>🔑</div><div>
+  ${!mmReady()?`<div class="card"><div class="callout warn"><div><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><circle cx='7' cy='7' r='4'/><path d='M10 10l7 7M14 13l2.5-2.5M16.5 15.5l2-2'/></svg></div><div>
     请先点「⚙️ 设置」填入 MiniMax API 密钥。密钥只存在这台设备的浏览器里，不会写进网站代码。</div></div></div>`:""}
   <div class="card">
     <div id="chatBox" style="max-height:420px;overflow:auto;padding-right:4px">
       ${cState.msgs.map((m,i)=>{
-        if(m.role==="error")return `<div class="callout danger" style="margin-bottom:8px">❌ ${esc(m.content)}</div>`;
+        if(m.role==="error")return `<div class="callout danger" style="margin-bottom:8px"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M5 5l10 10M15 5L5 15'/></svg> ${esc(m.content)}</div>`;
         const me=m.role==="user";
         return `<div style="display:flex;justify-content:${me?"flex-end":"flex-start"};margin-bottom:8px">
           <div style="max-width:82%;padding:9px 12px;border-radius:12px;font-size:15px;
             background:${me?"var(--green)":"var(--bg)"};color:${me?"#fff":"var(--ink)"};
             border:1px solid ${me?"var(--green)":"var(--line)"}">
             ${me?esc(m.content):`<span class="withipa">${ipaRuby(m.content)}</span>`}
-            ${me?"":`<div style="margin-top:4px"><button class="btn small ghost" data-csay="${esc(m.content)}">🔊</button>${starS(m.content,"","AI 对话")}</div>`}
+            ${me?"":`<div style="margin-top:4px"><button class="btn small ghost" data-csay="${esc(m.content)}"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M3 8v4h3l4.5 3.5v-11L6 7.5H3Z'/><path d='M13.6 7.3a3.6 3.6 0 0 1 0 5.4M16 5.4a7 7 0 0 1 0 9.2'/></svg></button>${starS(m.content,"","AI 对话")}</div>`}
           </div></div>`;}).join("")}
-      ${cState.busy?`<div class="muted">⏳ 对方正在输入…</div>`:""}
+      ${cState.busy?`<div class="muted"><svg viewBox='0 0 20 20' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><circle cx='10' cy='10' r='7.2'/><path d='M10 6v4l3 2'/></svg>对方正在输入…</div>`:""}
     </div>
     <div class="formrow" style="margin-top:12px">
       <input type="text" id="chatInp" placeholder="用英语回复…" style="flex:1;min-width:180px" ${mmReady()?"":"disabled"}>
@@ -4159,7 +4171,7 @@ document.getElementById("mmSave").onclick=()=>{
   MM.speed=Number(document.getElementById("mmSpeed").value)||1;
   MM.autoPlay=document.getElementById("mmAuto").checked;
   saveMM();
-  document.getElementById("mmMsg").textContent=mmReady()?"✅ 已保存":"请填写密钥";
+  document.getElementById("mmMsg").innerHTML=mmReady()?"<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M4.5 10.3 8 13.8l7.5-7.5'/></svg>已保存":"请填写密钥";
   renderChat();
 };
 document.getElementById("mmTest").onclick=async()=>{
@@ -4168,11 +4180,11 @@ document.getElementById("mmTest").onclick=async()=>{
   MM.model=document.getElementById("mmModel").value.trim()||"MiniMax-Text-01";
   MM.region=document.getElementById("mmRegion").value;
   if(!mmReady()){m.textContent="请先填写密钥";return;}
-  m.textContent="⏳ 正在连接 "+mmHost()+" …";
+  m.innerHTML="<svg viewBox='0 0 20 20' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><circle cx='10' cy='10' r='7.2'/><path d='M10 6v4l3 2'/></svg>正在连接 "+esc(mmHost())+" …";
   try{
     const r=await mmSend([{role:"user",content:"Say hello in one short sentence."}],"You are a helpful assistant.");
-    m.textContent="✅ 连接成功：“"+r.slice(0,60)+"”　记得点保存。";
-  }catch(e){m.textContent="❌ "+e.message;}
+    m.innerHTML="<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M4.5 10.3 8 13.8l7.5-7.5'/></svg>连接成功：“"+esc(r.slice(0,60))+"”　记得点保存。";
+  }catch(e){m.innerHTML="<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M5 5l10 10M15 5L5 15'/></svg>"+esc(e.message);}
 };
 document.getElementById("mmVoiceTest").onclick=async()=>{
   const m=document.getElementById("mmMsg");
@@ -4181,11 +4193,11 @@ document.getElementById("mmVoiceTest").onclick=async()=>{
   MM.voice=document.getElementById("mmVoice").value;
   MM.speed=Number(document.getElementById("mmSpeed").value)||1;
   if(!mmReady()){m.textContent="请先填写密钥";return;}
-  m.textContent="⏳ 正在合成语音…";
+  m.innerHTML="<svg viewBox='0 0 20 20' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><circle cx='10' cy='10' r='7.2'/><path d='M10 6v4l3 2'/></svg>正在合成语音…";
   try{
     mmPlayBlob(await mmTTS("Good evening! Welcome to the Grandview Hotel. Do you have a reservation?"));
-    m.textContent="✅ 语音正常，记得点保存。";
-  }catch(e){m.textContent="❌ "+e.message;}
+    m.innerHTML="<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M4.5 10.3 8 13.8l7.5-7.5'/></svg>语音正常，记得点保存。";
+  }catch(e){m.innerHTML="<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M5 5l10 10M15 5L5 15'/></svg>"+esc(e.message);}
 };
 document.getElementById("mmClear").onclick=()=>{
   MM={};saveMM();
@@ -4310,7 +4322,7 @@ async function aiGenerate(part){
 let aiCtx=null;
 function aiAskBtn(){
   return `<div style="margin-top:10px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-    <button class="btn small gray" onclick="aiExplainHere(this)">🤖 AI 解答</button>
+    <button class="btn small gray" onclick="aiExplainHere(this)"><svg viewBox='0 0 20 20' width='13' height='13' fill='currentColor' stroke='none' style='vertical-align:-1px;margin-right:3px'><path d='M10 2l1.4 4.6L16 8l-4.6 1.4L10 14l-1.4-4.6L4 8l4.6-1.4L10 2Z'/></svg> AI 解答</button>
     ${starQCtx()}<span class="muted" style="font-size:12px">收藏这道题 · 看不懂解析可让 AI 再讲一遍</span>
     </div><div class="aians"></div>`;
 }
@@ -4319,8 +4331,8 @@ async function aiExplainHere(btn){
   if(!aiCtx){box.innerHTML=`<div class="callout danger" style="margin-top:8px">没有可解答的题目上下文</div>`;return;}
   if(!mmReady()){
     box.innerHTML=`<div class="callout warn" style="margin-top:8px">请先在「口语 → AI 对话 → ⚙️ 设置」里填入 MiniMax 密钥。</div>`;return;}
-  const old=btn.textContent;btn.disabled=true;btn.textContent="⏳ 思考中…";
-  box.innerHTML=`<div class="muted" style="margin-top:8px">🤖 正在分析这道题…</div>`;
+  const old=btn.innerHTML;btn.disabled=true;btn.innerHTML="<svg viewBox='0 0 20 20' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><circle cx='10' cy='10' r='7.2'/><path d='M10 6v4l3 2'/></svg>思考中…";
+  box.innerHTML=`<div class="muted" style="margin-top:8px"><svg viewBox='0 0 20 20' width='13' height='13' fill='currentColor' stroke='none' style='vertical-align:-1px;margin-right:3px'><path d='M10 2l1.4 4.6L16 8l-4.6 1.4L10 14l-1.4-4.6L4 8l4.6-1.4L10 2Z'/></svg> 正在分析这道题…</div>`;
   try{
     const c=aiCtx;
     const L=i=>String.fromCharCode(65+i);
@@ -4334,27 +4346,27 @@ async function aiExplainHere(btn){
       "\\n【我选了】"+(c.pick===undefined||c.pick===null?"（未作答）":L(c.pick))+
       (c.exp?("\\n【已有解析】"+c.exp):"");
     const r=await mmSend([{role:"user",content:usr}],sys,{max_tokens:700,temperature:0.4});
-    box.innerHTML=`<div class="callout" style="margin-top:8px;white-space:pre-wrap;text-align:left">🤖 ${esc(r)}
+    box.innerHTML=`<div class="callout" style="margin-top:8px;white-space:pre-wrap;text-align:left"><svg viewBox='0 0 20 20' width='13' height='13' fill='currentColor' stroke='none' style='vertical-align:-1px;margin-right:3px'><path d='M10 2l1.4 4.6L16 8l-4.6 1.4L10 14l-1.4-4.6L4 8l4.6-1.4L10 2Z'/></svg> ${esc(r)}
       <div style="margin-top:8px"><button class="btn small gray" onclick="aiExplainHere(this)">🔄 换个说法再讲</button></div></div>`;
   }catch(e){
-    box.innerHTML=`<div class="callout danger" style="margin-top:8px;text-align:left">❌ ${esc(e.message)}</div>`;
+    box.innerHTML=`<div class="callout danger" style="margin-top:8px;text-align:left"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M5 5l10 10M15 5L5 15'/></svg> ${esc(e.message)}</div>`;
   }
-  btn.disabled=false;btn.textContent=old;
+  btn.disabled=false;btn.innerHTML=old;
 }
 async function aiStart(part,btn){
   const st=document.getElementById("readStage");
-  const old=btn?btn.textContent:"";
-  if(btn){btn.disabled=true;btn.textContent="⏳ 出题中…";}
-  st.innerHTML=`<div class="card"><div class="muted">🤖 MiniMax 正在按你的学习进度出题，通常 5-15 秒…</div></div>`;
+  const old=btn?btn.innerHTML:"";
+  if(btn){btn.disabled=true;btn.innerHTML="<svg viewBox='0 0 20 20' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><circle cx='10' cy='10' r='7.2'/><path d='M10 6v4l3 2'/></svg>出题中…";}
+  st.innerHTML=`<div class="card"><div class="muted"><svg viewBox='0 0 20 20' width='13' height='13' fill='currentColor' stroke='none' style='vertical-align:-1px;margin-right:3px'><path d='M10 2l1.4 4.6L16 8l-4.6 1.4L10 14l-1.4-4.6L4 8l4.6-1.4L10 2Z'/></svg> MiniMax 正在按你的学习进度出题，通常 5-15 秒…</div></div>`;
   try{
     const r=await aiGenerate(part);
     if(part==="P5"){qState={list:r,i:0,part:"P5"};renderP5Item();}
     else{qState={passage:r,i:0,part:part};renderPassageItem();}
   }catch(e){
-    st.innerHTML=`<div class="card"><div class="callout danger" style="text-align:left">❌ ${esc(e.message)}
+    st.innerHTML=`<div class="card"><div class="callout danger" style="text-align:left"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M5 5l10 10M15 5L5 15'/></svg> ${esc(e.message)}
       <div class="muted" style="margin-top:6px">若反复失败：检查密钥与「国内/海外版」选择，或稍后重试（模型偶尔会返回非标准 JSON）。</div></div></div>`;
   }
-  if(btn){btn.disabled=false;btn.textContent=old;}
+  if(btn){btn.disabled=false;btn.innerHTML=old;}
 }
 
 /* ================= Part 1 照片描述（MiniMax 文生图 + 语音） ================= */
@@ -4417,19 +4429,19 @@ function p1Script(o,withPause){
 }
 async function p1Play(item){
   const btn=document.getElementById("p1Play");
-  if(btn){btn.disabled=true;btn.textContent="🔊 播放中…";}
+  if(btn){btn.disabled=true;btn.innerHTML="<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M3 8v4h3l4.5 3.5v-11L6 7.5H3Z'/><path d='M13.6 7.3a3.6 3.6 0 0 1 0 5.4M16 5.4a7 7 0 0 1 0 9.2'/></svg>播放中…";}
   try{
     if(mmReady()){mmPlayBlob(await mmTTS(p1Script(item.o,true)));}
     else speak(p1Script(item.o,false));
   }catch(e){speak(p1Script(item.o,false));}
-  if(btn){btn.disabled=false;btn.textContent="🔊 再听一遍";}
+  if(btn){btn.disabled=false;btn.innerHTML="<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M3 8v4h3l4.5 3.5v-11L6 7.5H3Z'/><path d='M13.6 7.3a3.6 3.6 0 0 1 0 5.4M16 5.4a7 7 0 0 1 0 9.2'/></svg>再听一遍";}
 }
 let p1State=null;
 async function p1Start(btn){
   const st=document.getElementById("listenStage");
-  const old=btn?btn.textContent:"";
-  if(btn){btn.disabled=true;btn.textContent="⏳ 生成中…";}
-  st.innerHTML=`<div class="card"><div class="muted">🤖 正在生成照片与四句陈述，约 15-30 秒…<br>
+  const old=btn?btn.innerHTML:"";
+  if(btn){btn.disabled=true;btn.innerHTML="<svg viewBox='0 0 20 20' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><circle cx='10' cy='10' r='7.2'/><path d='M10 6v4l3 2'/></svg>生成中…";}
+  st.innerHTML=`<div class="card"><div class="muted"><svg viewBox='0 0 20 20' width='13' height='13' fill='currentColor' stroke='none' style='vertical-align:-1px;margin-right:3px'><path d='M10 2l1.4 4.6L16 8l-4.6 1.4L10 14l-1.4-4.6L4 8l4.6-1.4L10 2Z'/></svg> 正在生成照片与四句陈述，约 15-30 秒…<br>
     <span style="font-size:12px">先由文本模型设计题目，再据此生成照片，确保图文一致</span></div></div>`;
   try{
     const item=await aiGenP1();
@@ -4437,10 +4449,10 @@ async function p1Start(btn){
     renderP1();
     p1Play(item);
   }catch(e){
-    st.innerHTML=`<div class="card"><div class="callout danger" style="text-align:left">❌ ${esc(e.message)}
+    st.innerHTML=`<div class="card"><div class="callout danger" style="text-align:left"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M5 5l10 10M15 5L5 15'/></svg> ${esc(e.message)}
       <div class="muted" style="margin-top:6px">图像生成需要套餐支持；若提示余额不足，说明当前档位不含文生图。</div></div></div>`;
   }
-  if(btn){btn.disabled=false;btn.textContent=old;}
+  if(btn){btn.disabled=false;btn.innerHTML=old;}
 }
 function renderP1(){
   const st=document.getElementById("listenStage");
@@ -4455,7 +4467,7 @@ function renderP1(){
       border-radius:12px;border:1px solid var(--line)" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
     <div class="callout warn" style="display:none">图片加载失败（链接 24 小时后过期），请重新生成一题。</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:10px 0">
-      <button class="btn ghost" id="p1Play">🔊 再听一遍</button>
+      <button class="btn ghost" id="p1Play"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M3 8v4h3l4.5 3.5v-11L6 7.5H3Z'/><path d='M13.6 7.3a3.6 3.6 0 0 1 0 5.4M16 5.4a7 7 0 0 1 0 9.2'/></svg> 再听一遍</button>
       ${done?"":`<span class="muted" style="align-self:center;font-size:13px">听四句陈述，选出与照片相符的一句</span>`}
     </div>
     <div id="p1Opts">${item.o.map((s,i)=>{
@@ -4486,7 +4498,7 @@ function p1Feedback(){
   aiCtx={part:"Part 1 照片描述",q:"照片内容："+item.prompt,o:item.o,a:item.a,pick:picked,exp:item.exp,img:item.img};
   document.getElementById("p1Fb").innerHTML=
     `<div class="callout ${ok?"":"danger"}" style="margin-top:10px;text-align:left">
-      ${ok?"✅ 正确":"❌ 错误"} · 正确答案 ${String.fromCharCode(65+item.a)}<br>${esc(item.exp)}
+      ${ok?"<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M4.5 10.3 8 13.8l7.5-7.5'/></svg> 正确":"<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M5 5l10 10M15 5L5 15'/></svg> 错误"} · 正确答案 ${String.fromCharCode(65+item.a)}<br>${esc(item.exp)}
     </div>`+aiAskBtn()+
     `<div style="margin-top:10px;text-align:center"><button class="btn" id="p1Next">下一题 →</button></div>`;
   document.getElementById("p1Next").onclick=()=>p1Start(null);
@@ -4791,8 +4803,8 @@ function renderSpeak(){
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <b style="font-size:15px">口语训练</b>
       <div style="margin-left:auto;display:flex;gap:6px">
-        <button class="btn small ${speakMode==="talk"?"":"gray"}" data-sm="talk">🎙️ 跟读评测</button>
-        <button class="btn small ${speakMode==="chat"?"":"gray"}" data-sm="chat">💬 AI 对话</button>
+        <button class="btn small ${speakMode==="talk"?"":"gray"}" data-sm="talk"><svg viewBox='0 0 20 20' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:4px'><rect x='7.4' y='2.4' width='5.2' height='8.6' rx='2.6'/><path d='M4.4 9.6a5.6 5.6 0 0 0 11.2 0'/><path d='M10 15.2v2.4M7 17.6h6'/></svg>跟读评测</button>
+        <button class="btn small ${speakMode==="chat"?"":"gray"}" data-sm="chat"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:4px'><path d='M3 5.5A2.5 2.5 0 0 1 5.5 3h9A2.5 2.5 0 0 1 17 5.5v5A2.5 2.5 0 0 1 14.5 13H8l-3.5 3v-3H5.5A2.5 2.5 0 0 1 3 10.5v-5Z'/></svg> AI 对话</button>
       </div>
     </div></div>`;
   tabs.querySelectorAll("[data-sm]").forEach(b=>b.onclick=()=>{speakMode=b.dataset.sm;renderSpeak();});
@@ -4824,7 +4836,7 @@ function renderTalk(){
   const hist=(S.talk||[]).slice(-30);
   const avg=hist.length?Math.round(hist.reduce((s,x)=>s+x.score,0)/hist.length):null;
   el.innerHTML=`
-  <div class="card"><h2>🎙️ Talk 跟读训练</h2>
+  <div class="card"><h2><svg viewBox='0 0 20 20' width='16' height='16' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:5px'><rect x='7.4' y='2.4' width='5.2' height='8.6' rx='2.6'/><path d='M4.4 9.6a5.6 5.6 0 0 0 11.2 0'/><path d='M10 15.2v2.4M7 17.6h6'/></svg>Talk 跟读训练</h2>
     <p class="muted">听 Azure 真人语音 → 按住录音跟读 → 逐词打分。读错的词会标红，并自动加入顽固词优先复习。</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px">
       <span class="pill ${azReady()?"g":"r"}">${azReady()?"Azure 已连接":"未配置 Azure"}</span>
@@ -4839,7 +4851,7 @@ function renderTalk(){
       <div class="chip"><b>${hist.length}</b><span>已练句数</span></div>
     </div>`:""}
   </div>
-  ${!azReady()?`<div class="card"><div class="callout warn"><div>🔑</div><div>
+  ${!azReady()?`<div class="card"><div class="callout warn"><div><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><circle cx='7' cy='7' r='4'/><path d='M10 10l7 7M14 13l2.5-2.5M16.5 15.5l2-2'/></svg></div><div>
     请先点「⚙️ 语音设置」填入 Azure 语音服务的密钥和区域。密钥只保存在这台设备的浏览器里，不会写进网站代码。</div></div></div>`:""}
   <div class="card" style="text-align:center">
     <div class="muted" style="text-align:right">${tState.i+1} / ${tState.list.length}${t&&isStubborn(t.v.id)?' · <span class="pill r">顽固词</span>':""}</div>
@@ -4849,9 +4861,9 @@ function renderTalk(){
     </div>
     <div class="muted">${t?esc(tState.mode==="phrase"?t.v.c:transOf(t.v)):""}</div>
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">
-      <button class="btn ghost" id="tPlay">🔊 听真人示范</button>
+      <button class="btn ghost" id="tPlay"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M3 8v4h3l4.5 3.5v-11L6 7.5H3Z'/><path d='M13.6 7.3a3.6 3.6 0 0 1 0 5.4M16 5.4a7 7 0 0 1 0 9.2'/></svg> 听真人示范</button>
       <button class="btn ghost" id="tSlow">🐢 慢速</button>
-      <button class="btn" id="tRec" style="min-width:150px" ${azReady()?"":"disabled"}>🎙️ 开始录音</button>
+      <button class="btn" id="tRec" style="min-width:150px" ${azReady()?"":"disabled"}><svg viewBox='0 0 20 20' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:4px'><rect x='7.4' y='2.4' width='5.2' height='8.6' rx='2.6'/><path d='M4.4 9.6a5.6 5.6 0 0 0 11.2 0'/><path d='M10 15.2v2.4M7 17.6h6'/></svg>开始录音</button>
     </div>
     <div id="tResult" style="margin-top:14px"></div>
     <div style="margin-top:14px;display:flex;gap:8px;justify-content:center">
@@ -4879,7 +4891,7 @@ async function toggleRec(btn){
     btn.textContent="⏹️ 停止并评分";btn.style.background="var(--red)";
     document.getElementById("tResult").innerHTML=`<div class="muted">🔴 录音中…请朗读上面的内容</div>`;
   }else{
-    tState.busy=true;btn.disabled=true;btn.textContent="⏳ 评分中…";btn.style.background="";
+    tState.busy=true;btn.disabled=true;btn.innerHTML="<svg viewBox='0 0 20 20' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><circle cx='10' cy='10' r='7.2'/><path d='M10 6v4l3 2'/></svg>评分中…";btn.style.background="";
     const pcm=stopRec();
     const box=document.getElementById("tResult");
     try{
@@ -4894,7 +4906,7 @@ async function toggleRec(btn){
         box.innerHTML=`<div class="callout warn" style="text-align:left">Azure 识别到「${esc(r.text||"（空）")}」，但未返回评分。
         <div class="muted" style="margin-top:6px">通道：${esc(r.via||"?")}${esc(r.note||"")}</div>
         <div style="margin-top:8px"><button class="btn small gray" onclick="dumpDiag()">🔧 查看原始响应</button></div></div>`;
-        tState.busy=false;btn.disabled=false;btn.textContent="🎙️ 开始录音";return;
+        tState.busy=false;btn.disabled=false;btn.innerHTML="<svg viewBox='0 0 20 20' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:4px'><rect x='7.4' y='2.4' width='5.2' height='8.6' rx='2.6'/><path d='M4.4 9.6a5.6 5.6 0 0 0 11.2 0'/><path d='M10 15.2v2.4M7 17.6h6'/></svg>开始录音";return;
       }
       const score=Math.round(r.pa.PronScore||0);
       S.talk=(S.talk||[]).concat([{date:todayStr(),id:t.v.id,mode:tState.mode,score}]);
@@ -4906,13 +4918,13 @@ async function toggleRec(btn){
       tState.last=r;showResult(r);
     }catch(e){
       const a=tState.lastAudio&&tState.lastAudio.info;
-      box.innerHTML=`<div class="callout danger" style="text-align:left">❌ ${esc(e.message)}
+      box.innerHTML=`<div class="callout danger" style="text-align:left"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M5 5l10 10M15 5L5 15'/></svg> ${esc(e.message)}
       <div class="muted" style="margin-top:6px">对照排查：401=密钥错 · 403/404=区域填错 · 429=额度用尽 · NoMatch=没读清或与屏幕内容不符。</div>
       ${a?`<div class="muted" style="margin-top:4px">本次录音：${a.seconds.toFixed(1)}秒 · 峰值 ${a.peak.toFixed(3)} · 16kHz WAV</div>
       <div style="margin-top:8px"><button class="btn small gray" onclick="playMyRec()">▶️ 回放我的录音</button>
       <button class="btn small gray" onclick="dumpDiag()">🔧 诊断信息</button></div>`:""}</div>`;
     }
-    tState.busy=false;btn.disabled=false;btn.textContent="🎙️ 开始录音";
+    tState.busy=false;btn.disabled=false;btn.innerHTML="<svg viewBox='0 0 20 20' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:4px'><rect x='7.4' y='2.4' width='5.2' height='8.6' rx='2.6'/><path d='M4.4 9.6a5.6 5.6 0 0 0 11.2 0'/><path d='M10 15.2v2.4M7 17.6h6'/></svg>开始录音";
   }
 }
 function showResult(r){
@@ -4938,7 +4950,7 @@ function showResult(r){
     const scored=r.words.filter(w=>(w.PronunciationAssessment||{}).AccuracyScore!==undefined);
     if(!scored.length)return `<div class="callout warn" style="margin-top:10px">本次未取得逐词评分，请重录一次。</div>`;
     const bad=scored.filter(w=>w.PronunciationAssessment.AccuracyScore<60);
-    if(!bad.length)return `<div class="callout" style="margin-top:10px">✅ 发音清晰，继续保持！</div>`;
+    if(!bad.length)return `<div class="callout" style="margin-top:10px"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M4.5 10.3 8 13.8l7.5-7.5'/></svg> 发音清晰，继续保持！</div>`;
     return `<div class="callout warn" style="margin-top:10px">重点重练：${bad.map(w=>
       `<b>${esc(w.Word)}</b>${window.IPA[w.Word.toLowerCase()]?" /"+esc(window.IPA[w.Word.toLowerCase()])+"/":""}`).join("、")}</div>`;
   })()}`;
@@ -5010,7 +5022,7 @@ document.getElementById("azSave").onclick=()=>{
   AZ.voice=document.getElementById("azVoice").value;
   AZ.useForAll=document.getElementById("azAll").checked;
   saveAZ();
-  document.getElementById("azMsg").textContent=azReady()?"✅ 已保存":"请填写密钥";
+  document.getElementById("azMsg").innerHTML=azReady()?"<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M4.5 10.3 8 13.8l7.5-7.5'/></svg>已保存":"请填写密钥";
   renderTalk();
 };
 document.getElementById("azTest").onclick=async()=>{
@@ -5019,11 +5031,11 @@ document.getElementById("azTest").onclick=async()=>{
   AZ.region=document.getElementById("azRegion").value.trim().toLowerCase()||"eastus";
   AZ.voice=document.getElementById("azVoice").value;
   if(!azReady()){m.textContent="请先填写密钥和区域";return;}
-  m.textContent="⏳ 正在请求 Azure…";
+  m.innerHTML="<svg viewBox='0 0 20 20' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><circle cx='10' cy='10' r='7.2'/><path d='M10 6v4l3 2'/></svg>正在请求 Azure…";
   try{await azSpeak("Please keep the receipt for the exchange.",1);
-    m.textContent="✅ 连接成功，已用所选语音朗读。记得点「保存」。";
+    m.innerHTML="<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M4.5 10.3 8 13.8l7.5-7.5'/></svg>连接成功，已用所选语音朗读。记得点「保存」。";
   }catch(e){
-    m.textContent="❌ 失败："+e.message+"（401=密钥错，403/404=区域错，429=额度用尽）";
+    m.innerHTML="<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M5 5l10 10M15 5L5 15'/></svg>失败："+esc(e.message)+"（401=密钥错，403/404=区域错，429=额度用尽）";
   }
 };
 document.getElementById("azClear").onclick=()=>{
@@ -5046,7 +5058,7 @@ function syncUrl(){
   if(!/^https:\/\//.test(u))return null;
   return u+"/toeic/"+encodeURIComponent(SY.code.trim())+".json";
 }
-function setSyncStatus(t){const e=document.getElementById("syncStatus");if(e)e.textContent=t;}
+function setSyncStatus(t){const e=document.getElementById("syncStatus");if(e)e.innerHTML=t;}
 let pushTmr=null;
 function schedulePush(){if(!syncUrl())return;clearTimeout(pushTmr);pushTmr=setTimeout(pushRemote,2500);}
 async function pushRemote(){
@@ -5056,8 +5068,8 @@ async function pushRemote(){
     const res=await fetch(u,{method:"PUT",body:JSON.stringify(S)});
     if(!res.ok)throw 0;
     SY.last=Date.now();saveSY();
-    setSyncStatus("✅ 已同步 "+new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"}));
-  }catch(e){setSyncStatus("⚠️ 同步失败");}
+    setSyncStatus("<svg viewBox='0 0 20 20' width='13' height='13' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M4.5 10.3 8 13.8l7.5-7.5'/></svg>已同步 "+esc(new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"})));
+  }catch(e){setSyncStatus("<svg viewBox='0 0 20 20' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M10 3.5 2.5 16h15L10 3.5Z'/><path d='M10 8.2v3.2M10 13.8h.01'/></svg>同步失败");}
 }
 function mergeState(r){
   if(!r||typeof r!=="object")return;
@@ -5100,7 +5112,7 @@ function mergeState(r){
 async function pullAndMerge(){
   const u=syncUrl();if(!u)return false;
   try{
-    setSyncStatus("⏳ 同步中…");
+    setSyncStatus("<svg viewBox='0 0 20 20' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><circle cx='10' cy='10' r='7.2'/><path d='M10 6v4l3 2'/></svg>同步中…");
     const res=await fetch(u);
     if(!res.ok)throw 0;
     const remote=await res.json();
@@ -5108,7 +5120,7 @@ async function pullAndMerge(){
     save0();
     await pushRemote();
     return true;
-  }catch(e){setSyncStatus("⚠️ 同步失败");return false;}
+  }catch(e){setSyncStatus("<svg viewBox='0 0 20 20' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M10 3.5 2.5 16h15L10 3.5Z'/><path d='M10 8.2v3.2M10 13.8h.01'/></svg>同步失败");return false;}
 }
 const save0=save;
 save=function(){save0();schedulePush();};
@@ -5132,9 +5144,9 @@ document.getElementById("sySave").onclick=async()=>{
   saveSY();
   const m=document.getElementById("syMsg");
   if(!syncUrl()){m.textContent="请填写完整：数据库地址需以 https:// 开头";return;}
-  m.textContent="⏳ 同步中…";
+  m.innerHTML="<svg viewBox='0 0 20 20' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><circle cx='10' cy='10' r='7.2'/><path d='M10 6v4l3 2'/></svg>同步中…";
   const ok=await pullAndMerge();
-  m.textContent=ok?"✅ 同步成功！两端数据已合并。":"❌ 同步失败：请检查数据库地址（形如 https://xxx-default-rtdb.firebasedatabase.app）、规则是否已开放、网络是否可用。";
+  m.innerHTML=ok?"<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M4.5 10.3 8 13.8l7.5-7.5'/></svg>同步成功！两端数据已合并。":"<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M5 5l10 10M15 5L5 15'/></svg>同步失败：请检查数据库地址（形如 https://xxx-default-rtdb.firebasedatabase.app）、规则是否已开放、网络是否可用。";
   if(ok)renderHome();
 };
 if(syncUrl()){pullAndMerge().then(ok=>{renderHome();});}
