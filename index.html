@@ -4375,7 +4375,7 @@ async function mmImage(prompt){
     method:"POST",
     headers:{"Content-Type":"application/json","Authorization":"Bearer "+MM.key},
     body:JSON.stringify({model:"image-01",prompt:String(prompt).slice(0,1400),
-      aspect_ratio:"4:3",response_format:"url",n:1,prompt_optimizer:true})
+      aspect_ratio:"4:3",response_format:"url",n:1,prompt_optimizer:false})
   });
   if(!res.ok)throw new Error("图片 HTTP "+res.status+"："+(await res.text()).slice(0,140));
   const j=await res.json();
@@ -4419,8 +4419,15 @@ async function aiGenP1(){
     throw new Error("生成的四句陈述格式不合法，请重试");
   if(!Number.isInteger(j.a)||j.a<0||j.a>3)throw new Error("正确答案下标不合法，请重试");
   if(!j.image_prompt)throw new Error("缺少画面描述，请重试");
+  // MiniMax 生成的 JSON 里正确答案几乎总落在下标 0（即 A 项），大概率是被示例 JSON 里的 "a":0 锚定了。
+  // 与其指望改提示词能稳定解决，这里直接在客户端把四个选项重新洗牌，正确答案下标一并同步，
+  // 从根上保证 A/B/C/D 四个位置概率均等，不依赖模型是否真的随机。
+  const order=[0,1,2,3];
+  for(let i=order.length-1;i>0;i--){const r=Math.floor(Math.random()*(i+1));[order[i],order[r]]=[order[r],order[i]];}
+  const shuffledSt=order.map(i=>st[i]);
+  const shuffledA=order.indexOf(j.a);
   const url=await mmImage(j.image_prompt);
-  return {id:"ai-p1-"+Date.now(),img:url,o:st,a:j.a,exp:j.exp||"",scene:j.scene||scene,prompt:j.image_prompt};
+  return {id:"ai-p1-"+Date.now(),img:url,o:shuffledSt,a:shuffledA,exp:j.exp||"",scene:j.scene||scene,prompt:j.image_prompt};
 }
 /* 四句连读：用 MiniMax 停顿标记，一次合成 */
 function p1Script(o,withPause){
