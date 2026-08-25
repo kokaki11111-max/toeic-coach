@@ -187,8 +187,8 @@ ruby.rwk{color:var(--gray);font-weight:400;}
       <option value="global">海外版 api.minimax.io</option>
       <option value="cn">国内版 api.minimaxi.com</option>
     </select>
-    <label class="muted" style="font-size:13px">对话模型（默认 MiniMax-Text-01）</label>
-    <input type="text" id="mmModel" placeholder="MiniMax-Text-01">
+    <label class="muted" style="font-size:13px">对话模型</label>
+    <select id="mmModel"></select>
     <label class="muted" style="font-size:13px"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M3 8v4h3l4.5 3.5v-11L6 7.5H3Z'/><path d='M13.6 7.3a3.6 3.6 0 0 1 0 5.4M16 5.4a7 7 0 0 1 0 9.2'/></svg> 对话语音（MiniMax 语音合成）</label>
     <select id="mmVoice"></select>
     <div style="display:flex;gap:8px;align-items:center">
@@ -204,6 +204,7 @@ ruby.rwk{color:var(--gray);font-weight:400;}
   <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
     <button class="btn" id="mmSave">保存</button>
     <button class="btn ghost" id="mmTest">测试连接</button>
+    <button class="btn ghost" id="mmBench">⚡ 测速对比</button>
     <button class="btn gray" id="mmClear">清除密钥</button>
     <button class="btn gray" id="mmClose">关闭</button>
   </div>
@@ -3946,7 +3947,7 @@ const SCENES=[
   first:"Hello! Are you looking for anything in particular today?"}
 ];
 
-let cState={mode:"scene",scene:"hotel",msgs:[],busy:false,fb:null};
+let cState={mode:"scene",scene:"hotel",msgs:[],busy:false,fb:null,stream:""};
 
 function mmSystem(){
   const lv="Use natural but clear business English at TOEIC 600-800 level. Keep replies to 1-3 sentences.";
@@ -3961,31 +3962,79 @@ function mmSystem(){
     `${lv} Reply in English only, and end most replies with a question to keep the chat going.`;
 }
 function mmHost(){return (MM.region==="cn")?"https://api.minimaxi.com":"https://api.minimax.io";}
+const MM_DEF_MODEL="MiniMax-M3";
+const MM_MODELS=[
+ {id:"MiniMax-M3",n:"M3（最新，推荐）"},
+ {id:"MiniMax-M2.7-highspeed",n:"M2.7 HighSpeed（低延迟）"},
+ {id:"MiniMax-M2.5-highspeed",n:"M2.5 HighSpeed（低延迟）"},
+ {id:"MiniMax-M2.1-highspeed",n:"M2.1 HighSpeed（低延迟）"},
+ {id:"MiniMax-M2.7",n:"M2.7（标准速度）"}
+];
+// Text-01 是早期版本的默认值而非主动选择，且已不在官方模型列表里，一律落到 M3
+function mmModel(){const m=MM.model;return (!m||m==="MiniMax-Text-01")?MM_DEF_MODEL:m;}
+// M2/M3 会先生成思考内容再作答，思考同样计入 max_tokens，长 JSON 需要更大预算才不被截断
+function mmIsReasoning(id){return /^MiniMax-M[23]/i.test(id||mmModel());}
+// M3 可以按请求关掉思考，官方推荐用于对话这类低延迟场景；M2 系列没有这个开关
+function mmCanSkipThinking(id){return /^MiniMax-M3/i.test(id||mmModel());}
+function mmCheckResp(j){
+  const c=j.base_resp&&j.base_resp.status_code;
+  if(c&&c!==0)throw new Error("MiniMax 错误 "+c+"："+((j.base_resp&&j.base_resp.status_msg)||""));
+}
+// 推理模型偶尔把思考收尾标记带进正文
+function mmClean(t){return String(t).replace(/^\s*(?:<\/think>|Final Answer[:：])\s*/i,"").trim();}
+async function mmReadStream(res,onDelta){
+  const reader=res.body.getReader(),dec=new TextDecoder();
+  let buf="",out="";
+  for(;;){
+    const r=await reader.read();
+    if(r.done)break;
+    buf+=dec.decode(r.value,{stream:true});
+    let nl;
+    while((nl=buf.indexOf("\n"))>=0){
+      const line=buf.slice(0,nl).trim();buf=buf.slice(nl+1);
+      if(!line.startsWith("data:"))continue;
+      const d=line.slice(5).trim();
+      if(d==="[DONE]")continue;
+      let j;try{j=JSON.parse(d);}catch(e){continue;}
+      mmCheckResp(j);
+      const c=j.choices&&j.choices[0];
+      const piece=c&&(c.delta||c.message||{}).content;
+      if(piece){out+=piece;onDelta(out);}
+    }
+  }
+  out=mmClean(out);
+  if(!out)throw new Error("未返回内容");
+  return out;
+}
 async function mmSend(messages,system,opts){
   opts=opts||{};
+  const onDelta=opts.onDelta;
   // 官方推荐的 OpenAI 兼容接口；海外版 api.minimax.io，国内版 api.minimaxi.com
+  const body={
+    model:opts.model||mmModel(),
+    messages:[{role:"system",content:system}].concat(messages),
+    max_tokens:opts.max_tokens||400,temperature:opts.temperature!==undefined?opts.temperature:0.8};
+  if(mmCanSkipThinking(body.model))body.thinking={type:"disabled"};
+  if(onDelta)body.stream=true;
   const res=await fetch(mmHost()+"/v1/chat/completions",{
     method:"POST",
     headers:{"Content-Type":"application/json","Authorization":"Bearer "+MM.key},
-    body:JSON.stringify({
-      model:MM.model||"MiniMax-Text-01",
-      messages:[{role:"system",content:system}].concat(messages),
-      max_tokens:opts.max_tokens||400,temperature:opts.temperature!==undefined?opts.temperature:0.8})
+    body:JSON.stringify(body),signal:opts.signal
   });
   if(!res.ok){
     const t=(await res.text()).slice(0,200);
     const tip=res.status===401?"（密钥无效，或选错了国内/海外版）":
-               res.status===404?"（接口地址不对，请在设置里切换国内/海外版）":
+               res.status===404?"（接口地址不对，或这个模型你的账号用不了）":
                res.status===429?"（额度用尽或调用过频）":"";
     throw new Error("HTTP "+res.status+tip+"："+t);
   }
+  if(onDelta)return await mmReadStream(res,onDelta);
   const j=await res.json();
-  if(j.base_resp&&j.base_resp.status_code&&j.base_resp.status_code!==0)
-    throw new Error("MiniMax 错误 "+j.base_resp.status_code+"："+(j.base_resp.status_msg||""));
+  mmCheckResp(j);
   const c=j.choices&&j.choices[0];
   const txt=(c&&c.message&&c.message.content)||"";
   if(!txt)throw new Error("未返回内容");
-  return txt.trim();
+  return mmClean(txt);
 }
 /* ---- MiniMax 语音合成（T2A v2） ---- */
 const MM_VOICES=[
@@ -4056,23 +4105,34 @@ function cStart(){
   renderChat();
   if(mmReady()&&MM.autoPlay!==false)chatSpeak(cState.msgs[0].content);
 }
+// 只发最近若干轮：历史越长首字越慢。error 条目是本地提示，不是模型说过的话，不能混进请求。
+const CHAT_KEEP=20;
+function cHistory(){
+  return cState.msgs.filter(m=>m.role==="user"||m.role==="assistant").slice(-CHAT_KEEP);
+}
+function paintStream(){
+  const el=document.getElementById("chatStream");
+  if(!el){renderChat();return;}
+  el.textContent=cState.stream;
+  const box=document.getElementById("chatBox");if(box)box.scrollTop=box.scrollHeight;
+}
 async function cSay(text){
   if(!text.trim()||cState.busy)return;
   cState.msgs.push({role:"user",content:text.trim()});
-  cState.busy=true;renderChat();
+  cState.busy=true;cState.stream="";renderChat();
   try{
-    const reply=await mmSend(cState.msgs,mmSystem());
+    const reply=await mmSend(cHistory(),mmSystem(),{onDelta:t=>{cState.stream=t;paintStream();}});
     cState.msgs.push({role:"assistant",content:reply});
     if(MM.autoPlay!==false)chatSpeak(reply);
   }catch(e){
     cState.msgs.push({role:"error",content:e.message});
   }
-  cState.busy=false;renderChat();
+  cState.busy=false;cState.stream="";renderChat();
 }
 async function cFeedback(){
   const mine=cState.msgs.filter(m=>m.role==="user").map(m=>m.content);
   if(!mine.length){alert("先说几句再看点评");return;}
-  cState.busy=true;renderChat();
+  cState.busy=true;cState.fb="正在点评…";renderChat();
   try{
     const sys="You are an encouraging TOEIC English coach. The learner is Japanese. "+
       "Given their sentences from a conversation, reply in Chinese with exactly three short sections:\n"+
@@ -4080,10 +4140,15 @@ async function cFeedback(){
       "【需要修正】up to 3 items, each as: 原句 → 更自然的说法（附一句中文说明）。\n"+
       "【下次试试】2 useful phrases for this situation, English + 中文.\n"+
       "Be concise.";
-    const fb=await mmSend([{role:"user",content:mine.map((s,i)=>(i+1)+". "+s).join("\n")}],sys);
+    const fb=await mmSend([{role:"user",content:mine.map((s,i)=>(i+1)+". "+s).join("\n")}],sys,
+      {onDelta:t=>{cState.fb=t;paintFb();}});
     cState.fb=fb;
   }catch(e){cState.fb="点评失败："+e.message;}
   cState.busy=false;renderChat();
+}
+function paintFb(){
+  const el=document.getElementById("chatFbBox");
+  if(el)el.textContent=cState.fb;else renderChat();
 }
 function renderChat(){
   const el=document.getElementById("v-chat");
@@ -4120,7 +4185,11 @@ function renderChat(){
             ${me?esc(m.content):`<span class="withipa">${ipaRuby(m.content)}</span>`}
             ${me?"":`<div style="margin-top:4px"><button class="btn small ghost" data-csay="${esc(m.content)}"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M3 8v4h3l4.5 3.5v-11L6 7.5H3Z'/><path d='M13.6 7.3a3.6 3.6 0 0 1 0 5.4M16 5.4a7 7 0 0 1 0 9.2'/></svg></button>${starS(m.content,"","AI 对话")}</div>`}
           </div></div>`;}).join("")}
-      ${cState.busy?`<div class="muted"><svg viewBox='0 0 20 20' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><circle cx='10' cy='10' r='7.2'/><path d='M10 6v4l3 2'/></svg>对方正在输入…</div>`:""}
+      ${cState.busy?`<div style="display:flex;justify-content:flex-start;margin-bottom:8px">
+        <div style="max-width:82%;padding:9px 12px;border-radius:12px;font-size:15px;
+          background:var(--bg);color:var(--ink);border:1px solid var(--line)">
+          <span id="chatStream">${esc(cState.stream||"")}</span>${cState.stream?"":`<span class="muted"><svg viewBox='0 0 20 20' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><circle cx='10' cy='10' r='7.2'/><path d='M10 6v4l3 2'/></svg>对方正在输入…</span>`}
+        </div></div>`:""}
     </div>
     <div class="formrow" style="margin-top:12px">
       <input type="text" id="chatInp" placeholder="用英语回复…" style="flex:1;min-width:180px" ${mmReady()?"":"disabled"}>
@@ -4130,7 +4199,7 @@ function renderChat(){
       <button class="btn small ghost" id="chatFb" ${mmReady()?"":"disabled"}>📝 点评我的英语</button>
       <button class="btn small gray" id="chatNew">🔄 重新开始</button>
     </div>
-    ${cState.fb?`<div class="callout" style="margin-top:12px;white-space:pre-wrap;text-align:left">${esc(cState.fb)}</div>`:""}
+    ${cState.fb?`<div class="callout" id="chatFbBox" style="margin-top:12px;white-space:pre-wrap;text-align:left">${esc(cState.fb)}</div>`:""}
   </div>`;
   el.querySelectorAll("[data-cm]").forEach(b=>b.onclick=()=>{cState.mode=b.dataset.cm;cStart();});
   el.querySelectorAll("[data-sc]").forEach(b=>b.onclick=()=>{cState.scene=b.dataset.sc;cStart();});
@@ -4150,7 +4219,8 @@ function renderChatPage(){
 }
 function openMMDlg(){
   document.getElementById("mmKey").value=MM.key||"";
-  document.getElementById("mmModel").value=MM.model||"MiniMax-Text-01";
+  const ms=document.getElementById("mmModel"),cur=mmModel();
+  ms.innerHTML=MM_MODELS.map(m=>`<option value="${m.id}" ${m.id===cur?"selected":""}>${m.n}</option>`).join("");
   document.getElementById("mmRegion").value=MM.region||"global";
   const vs=document.getElementById("mmVoice");
   vs.innerHTML=MM_VOICES.map(v=>`<option value="${v.id}" ${MM.voice===v.id?"selected":""}>${v.n}</option>`).join("");
@@ -4165,7 +4235,7 @@ function openMMDlg(){
 document.getElementById("mmClose").onclick=()=>document.getElementById("mmDlg").close();
 document.getElementById("mmSave").onclick=()=>{
   MM.key=document.getElementById("mmKey").value.trim();
-  MM.model=document.getElementById("mmModel").value.trim()||"MiniMax-Text-01";
+  MM.model=document.getElementById("mmModel").value||MM_DEF_MODEL;
   MM.region=document.getElementById("mmRegion").value;
   MM.voice=document.getElementById("mmVoice").value;
   MM.speed=Number(document.getElementById("mmSpeed").value)||1;
@@ -4177,7 +4247,7 @@ document.getElementById("mmSave").onclick=()=>{
 document.getElementById("mmTest").onclick=async()=>{
   const m=document.getElementById("mmMsg");
   MM.key=document.getElementById("mmKey").value.trim();
-  MM.model=document.getElementById("mmModel").value.trim()||"MiniMax-Text-01";
+  MM.model=document.getElementById("mmModel").value||MM_DEF_MODEL;
   MM.region=document.getElementById("mmRegion").value;
   if(!mmReady()){m.textContent="请先填写密钥";return;}
   m.innerHTML="<svg viewBox='0 0 20 20' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><circle cx='10' cy='10' r='7.2'/><path d='M10 6v4l3 2'/></svg>正在连接 "+esc(mmHost())+" …";
@@ -4198,6 +4268,43 @@ document.getElementById("mmVoiceTest").onclick=async()=>{
     mmPlayBlob(await mmTTS("Good evening! Welcome to the Grandview Hotel. Do you have a reservation?"));
     m.innerHTML="<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M4.5 10.3 8 13.8l7.5-7.5'/></svg>语音正常，记得点保存。";
   }catch(e){m.innerHTML="<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M5 5l10 10M15 5L5 15'/></svg>"+esc(e.message);}
+};
+function mmPickModel(id){
+  const s=document.getElementById("mmModel");
+  if(s)s.value=id;
+  document.getElementById("mmMsg").innerHTML="已选择 <b>"+esc(id)+"</b>，记得点保存。";
+}
+function mmBenchTable(rows,note){
+  const ok=rows.filter(r=>!r.err);
+  const best=ok.length?Math.min.apply(null,ok.map(r=>r.first)):0;
+  return (note?`<div class="muted" style="margin-bottom:6px">${note}</div>`:"")+
+    rows.map(r=>r.err
+      ? `<div style="display:flex;gap:8px;padding:3px 0;align-items:center"><span style="flex:1">${esc(r.n)}</span><span class="pill r">失败</span></div>`
+      : `<div style="display:flex;gap:8px;padding:3px 0;align-items:center">
+           <span style="flex:1">${esc(r.n)}</span>
+           <span style="font-variant-numeric:tabular-nums">首字 <b>${r.first}</b> ms · 全文 ${r.total} ms</span>
+           ${r.first===best?`<span class="pill g">最快</span>`:""}
+           <button class="btn small ghost" onclick="mmPickModel('${esc(r.id)}')">选用</button>
+         </div>`).join("");
+}
+document.getElementById("mmBench").onclick=async(ev)=>{
+  const m=document.getElementById("mmMsg"),btn=ev.currentTarget;
+  MM.key=document.getElementById("mmKey").value.trim();
+  MM.region=document.getElementById("mmRegion").value;
+  if(!mmReady()){m.textContent="请先填写密钥";return;}
+  btn.disabled=true;
+  const rows=[];
+  for(const mo of MM_MODELS){
+    m.innerHTML=mmBenchTable(rows,`正在测「${esc(mo.n)}」…（${rows.length+1}/${MM_MODELS.length}）`);
+    const t0=performance.now();let first=0;
+    try{
+      await mmSend([{role:"user",content:"Say hello in one short sentence."}],"You are a helpful assistant.",
+        {model:mo.id,max_tokens:60,onDelta:()=>{if(!first)first=performance.now()-t0;}});
+      rows.push({n:mo.n,id:mo.id,first:Math.round(first),total:Math.round(performance.now()-t0)});
+    }catch(e){rows.push({n:mo.n,id:mo.id,err:e.message});}
+  }
+  m.innerHTML=mmBenchTable(rows,"「首字」是你实际感觉到的等待时间，对话已改成流式，看这一列就够了。");
+  btn.disabled=false;
 };
 document.getElementById("mmClear").onclick=()=>{
   MM={};saveMM();
@@ -4295,7 +4402,9 @@ async function aiGenerate(part){
       'and 4 questions about it (purpose/detail/inference/vocabulary-in-context). JSON shape:\n'+
       '{"type":"邮件","passage":"the passage text","qs":[{"q":"question in English","o":["a","b","c","d"],"a":0,"tag":"定位关键信息","exp":"中文解析"}]}';
   }
-  const budget=part==="P5"?1800:part==="P6"?2200:2800;
+  const base=part==="P5"?1800:part==="P6"?2200:2800;
+  // M2 系列无法关闭思考，思考内容会挤占 max_tokens，得多留一倍余量，否则 JSON 被截断
+  const budget=(mmIsReasoning()&&!mmCanSkipThinking())?base*2:base;
   let raw,j;
   try{
     raw=await mmSend([{role:"user",content:usr}],sys,{max_tokens:budget});
@@ -4345,7 +4454,8 @@ async function aiExplainHere(btn){
       "\\n【正确答案】"+L(c.a)+
       "\\n【我选了】"+(c.pick===undefined||c.pick===null?"（未作答）":L(c.pick))+
       (c.exp?("\\n【已有解析】"+c.exp):"");
-    const r=await mmSend([{role:"user",content:usr}],sys,{max_tokens:700,temperature:0.4});
+    const paint=t=>{box.innerHTML=`<div class="callout" style="margin-top:8px;white-space:pre-wrap;text-align:left">${esc(t)}</div>`;};
+    const r=await mmSend([{role:"user",content:usr}],sys,{max_tokens:700,temperature:0.4,onDelta:paint});
     box.innerHTML=`<div class="callout" style="margin-top:8px;white-space:pre-wrap;text-align:left"><svg viewBox='0 0 20 20' width='13' height='13' fill='currentColor' stroke='none' style='vertical-align:-1px;margin-right:3px'><path d='M10 2l1.4 4.6L16 8l-4.6 1.4L10 14l-1.4-4.6L4 8l4.6-1.4L10 2Z'/></svg> ${esc(r)}
       <div style="margin-top:8px"><button class="btn small gray" onclick="aiExplainHere(this)">🔄 换个说法再讲</button></div></div>`;
   }catch(e){
@@ -4353,15 +4463,27 @@ async function aiExplainHere(btn){
   }
   btn.disabled=false;btn.innerHTML=old;
 }
+/* ---- 预取：做当前这组时后台先生成下一组，翻页就不用干等 ---- */
+const aiPre={};
+function aiWarm(key,make){
+  if(aiPre[key])return;
+  aiPre[key]=make().catch(()=>{aiPre[key]=null;});
+}
+async function aiNext(key,make){
+  const p=aiPre[key];aiPre[key]=null;
+  if(p){const v=await p;if(v)return v;}
+  return await make();
+}
 async function aiStart(part,btn){
   const st=document.getElementById("readStage");
   const old=btn?btn.innerHTML:"";
   if(btn){btn.disabled=true;btn.innerHTML="<svg viewBox='0 0 20 20' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><circle cx='10' cy='10' r='7.2'/><path d='M10 6v4l3 2'/></svg>出题中…";}
-  st.innerHTML=`<div class="card"><div class="muted"><svg viewBox='0 0 20 20' width='13' height='13' fill='currentColor' stroke='none' style='vertical-align:-1px;margin-right:3px'><path d='M10 2l1.4 4.6L16 8l-4.6 1.4L10 14l-1.4-4.6L4 8l4.6-1.4L10 2Z'/></svg> MiniMax 正在按你的学习进度出题，通常 5-15 秒…</div></div>`;
+  st.innerHTML=`<div class="card"><div class="muted"><svg viewBox='0 0 20 20' width='13' height='13' fill='currentColor' stroke='none' style='vertical-align:-1px;margin-right:3px'><path d='M10 2l1.4 4.6L16 8l-4.6 1.4L10 14l-1.4-4.6L4 8l4.6-1.4L10 2Z'/></svg> ${aiPre["q"+part]?"题目已在后台备好，正在载入…":"MiniMax 正在按你的学习进度出题，通常 5-15 秒…"}</div></div>`;
   try{
-    const r=await aiGenerate(part);
+    const r=await aiNext("q"+part,()=>aiGenerate(part));
     if(part==="P5"){qState={list:r,i:0,part:"P5"};renderP5Item();}
     else{qState={passage:r,i:0,part:part};renderPassageItem();}
+    aiWarm("q"+part,()=>aiGenerate(part));
   }catch(e){
     st.innerHTML=`<div class="card"><div class="callout danger" style="text-align:left"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M5 5l10 10M15 5L5 15'/></svg> ${esc(e.message)}
       <div class="muted" style="margin-top:6px">若反复失败：检查密钥与「国内/海外版」选择，或稍后重试（模型偶尔会返回非标准 JSON）。</div></div></div>`;
@@ -4408,11 +4530,12 @@ async function aiGenP1(){
     "answer is right and why one tempting distractor is wrong. Return ONLY raw JSON, no markdown fences.";
   const usr='Setting: '+scene+'.\nJSON shape:\n'+
     '{"image_prompt":"...","statements":["...","...","...","..."],"a":0,"exp":"中文解析","scene":"中文场景名"}';
+  const p1Budget=(mmIsReasoning()&&!mmCanSkipThinking())?1800:900;
   let j;
   try{
-    j=aiParseJSON(await mmSend([{role:"user",content:usr}],sys,{max_tokens:900}));
+    j=aiParseJSON(await mmSend([{role:"user",content:usr}],sys,{max_tokens:p1Budget}));
   }catch(e){
-    j=aiParseJSON(await mmSend([{role:"user",content:usr}],sys,{max_tokens:900,temperature:0.3}));
+    j=aiParseJSON(await mmSend([{role:"user",content:usr}],sys,{max_tokens:p1Budget,temperature:0.3}));
   }
   const st=j.statements||j.options||j.o;
   if(!Array.isArray(st)||st.length!==4||!st.every(x=>typeof x==="string"&&x.trim()))
@@ -4448,13 +4571,14 @@ async function p1Start(btn){
   const st=document.getElementById("listenStage");
   const old=btn?btn.innerHTML:"";
   if(btn){btn.disabled=true;btn.innerHTML="<svg viewBox='0 0 20 20' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><circle cx='10' cy='10' r='7.2'/><path d='M10 6v4l3 2'/></svg>生成中…";}
-  st.innerHTML=`<div class="card"><div class="muted"><svg viewBox='0 0 20 20' width='13' height='13' fill='currentColor' stroke='none' style='vertical-align:-1px;margin-right:3px'><path d='M10 2l1.4 4.6L16 8l-4.6 1.4L10 14l-1.4-4.6L4 8l4.6-1.4L10 2Z'/></svg> 正在生成照片与四句陈述，约 15-30 秒…<br>
-    <span style="font-size:12px">先由文本模型设计题目，再据此生成照片，确保图文一致</span></div></div>`;
+  st.innerHTML=`<div class="card"><div class="muted"><svg viewBox='0 0 20 20' width='13' height='13' fill='currentColor' stroke='none' style='vertical-align:-1px;margin-right:3px'><path d='M10 2l1.4 4.6L16 8l-4.6 1.4L10 14l-1.4-4.6L4 8l4.6-1.4L10 2Z'/></svg> ${aiPre["P1"]?"下一题已在后台备好，正在载入…":`正在生成照片与四句陈述，约 15-30 秒…<br>
+    <span style="font-size:12px">先由文本模型设计题目，再据此生成照片，确保图文一致</span>`}</div></div>`;
   try{
-    const item=await aiGenP1();
+    const item=await aiNext("P1",aiGenP1);
     p1State={item,picked:null,t0:Date.now()};
     renderP1();
     p1Play(item);
+    aiWarm("P1",aiGenP1);
   }catch(e){
     st.innerHTML=`<div class="card"><div class="callout danger" style="text-align:left"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M5 5l10 10M15 5L5 15'/></svg> ${esc(e.message)}
       <div class="muted" style="margin-top:6px">图像生成需要套餐支持；若提示余额不足，说明当前档位不含文生图。</div></div></div>`;
