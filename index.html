@@ -239,8 +239,9 @@ ruby.rwk{color:var(--gray);font-weight:400;}
   <div style="display:flex;flex-direction:column;gap:8px">
     <input type="password" id="azKey" placeholder="Azure 语音服务密钥">
     <input type="text" id="azRegion" placeholder="区域（如 eastus）">
-    <label class="muted" style="font-size:13px">朗读语音</label>
+    <label class="muted" style="font-size:13px">朗读语音（英语）</label>
     <select id="azVoice"></select>
+    <div class="muted" style="font-size:12px">日语内容（地道表达页的日语小故事）自动用 Azure 的日语音色 ja-JP-NanamiNeural，无需在此选择。</div>
     <label style="font-size:13px;display:flex;align-items:center;gap:6px">
       <input type="checkbox" id="azAll" style="width:auto"> 全站朗读都用 Azure 真人语音（关闭则只在 Talk 页使用）
     </label>
@@ -4381,7 +4382,7 @@ function mmSystem(){
 }
 function mmHost(){return (MM.region==="cn")?"https://api.minimaxi.com":"https://api.minimax.io";}
 // 页面版本号：更新后如果这里没变，说明浏览器还在用缓存的旧文件
-const BUILD="2026-08-27e";
+const BUILD="2026-08-27f";
 const MM_DEF_MODEL="MiniMax-M3";
 const MM_MODELS=[
  {id:"MiniMax-M3",n:"M3（最新，推荐）"},
@@ -5263,13 +5264,15 @@ function azHost(kind){return "https://"+(AZ.region||"eastus")+"."+kind+".speech.
 
 /* ---- 神经语音朗读 ---- */
 const azCache={};
-async function azSpeak(text,rate){
+async function azSpeak(text,rate,voice){
   if(!azReady())throw new Error("no-key");
-  const voice=AZ.voice||"en-US-JennyNeural";
-  const key=voice+"|"+(rate||0)+"|"+text;
+  const v=voice||AZ.voice||"en-US-JennyNeural";
+  /* xml:lang 跟着音色走，之前写死 en-US，选英音/澳音音色时其实也不匹配 */
+  const loc=(String(v).match(/^([a-z]{2}-[A-Za-z]{2,})/)||[])[1]||"en-US";
+  const key=v+"|"+(rate||0)+"|"+text;
   if(azCache[key]){playBlob(azCache[key]);return;}
   const pct=Math.round(((rate||1)-1)*100);
-  const ssml=`<speak version='1.0' xml:lang='en-US'><voice name='${voice}'>`+
+  const ssml=`<speak version='1.0' xml:lang='${loc}'><voice name='${v}'>`+
     `<prosody rate='${pct>=0?"+":""}${pct}%'>${text.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]))}</prosody></voice></speak>`;
   const res=await fetch(azHost("tts")+"/cognitiveservices/v1",{
     method:"POST",
@@ -5290,12 +5293,17 @@ function playBlob(blob){
   const p=curAudio.play();
   if(p&&p.catch)p.catch(()=>{});   // iOS 自动播放受限时静默失败，不抛错
 }
+/* 英文音色由用户在设置里选；日语没有对应下拉项，固定用 Azure 的 ja-JP 神经音色。
+   万一该音色名无效，azSpeak 会抛错并回退，不会静默失败。 */
+const AZ_JA_VOICE="ja-JP-NanamiNeural";
+function azVoiceFor(pre){return pre==="ja"?AZ_JA_VOICE:(AZ.voice||"en-US-JennyNeural");}
 // 覆盖全站 speak：有 Azure 且开启则用神经语音，失败自动退回浏览器
 const browserSpeak=speak;
-speak=function(text,rate){
+speak=function(text,rate,lang){
+  const pre=String(lang||"en").slice(0,2);
   if(azReady()&&AZ.useForAll!==false){
-    azSpeak(text,rate).catch(()=>browserSpeak(text,rate));
-  }else browserSpeak(text,rate);
+    azSpeak(text,rate,azVoiceFor(pre)).catch(()=>browserSpeak(text,rate,lang));
+  }else browserSpeak(text,rate,lang);
 };
 
 /* ---- 录音 + 发音评测 ---- */
@@ -5787,14 +5795,26 @@ function idmIdiomCard(key){
 }
 /* 整段朗读：复用 chatSpeak（有 MiniMax 用神经语音，否则回退浏览器 TTS）。
    两条路径内部都会打断上一段播放，重复点击不会叠音。 */
+/* 朗读优先级：Azure（英日都支持）→ MiniMax（仅英语，它这边写死了
+   language_boost:"English"，日语音色 ID 未经证实不乱猜）→ 浏览器 TTS。
+   每一层失败都往下退，不会静默无声。 */
+async function idmSpeak(text,lang){
+  const pre=lang==="ja"?"ja":"en";
+  if(azReady()){
+    try{await azSpeak(text,1,azVoiceFor(pre));return "azure";}catch(e){}
+  }
+  if(pre==="en"&&mmReady()){
+    try{mmPlayBlob(await mmTTS(text));return "minimax";}catch(e){}
+  }
+  browserSpeak(text,0.95,pre==="ja"?"ja-JP":"en-US");
+  return "browser";
+}
 async function idmPlay(btn){
   const text=btn.dataset.idmplay||"";
   if(!text)return;
-  /* 日语走浏览器 TTS：mmTTS 写死 language_boost:"English" 且默认英文音色，读日语不对味 */
-  if(btn.dataset.idmlang==="ja"){speak(text,0.95,"ja-JP");return;}
   const old=btn.innerHTML;
   btn.disabled=true;btn.innerHTML=IDM_SAY+" 播放中…";
-  try{await chatSpeak(text);}catch(e){}
+  try{await idmSpeak(text,btn.dataset.idmlang);}catch(e){}
   btn.disabled=false;btn.innerHTML=old;
 }
 function idmRenderStage(){
@@ -5849,7 +5869,7 @@ function idmRenderStage(){
     const play=e.target.closest("[data-idmplay]");
     if(play){idmPlay(play);return;}
     const say=e.target.closest("[data-idmsay]");
-    if(say){speak(say.dataset.idmsay,0.95,say.dataset.idmlang==="ja"?"ja-JP":"en-US");return;}
+    if(say){idmSpeak(say.dataset.idmsay,say.dataset.idmlang);return;}
     const w=e.target.closest("[data-twid]"),im=e.target.closest("[data-idm]");
     if(!w&&!im)return;
     const card=(w||im).closest(".card");
