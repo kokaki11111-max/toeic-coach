@@ -134,8 +134,9 @@ ruby.rwk{color:var(--gray);font-weight:400;}
 .withipa{line-height:2.7;}
 .vocab-card .phrase.withipa{line-height:2.2;}
 /* ===== 地道表达页 ===== */
-.idm-en{font-size:20px;line-height:1.85;letter-spacing:.1px;}
-.idm-cn{font-size:15px;line-height:1.85;color:var(--gray);}
+.idm-en{font-size:20px;line-height:1.85;letter-spacing:.1px;white-space:pre-wrap;}
+.idm-cn{font-size:15px;line-height:1.85;color:var(--gray);white-space:pre-wrap;}
+.idm-title{font-size:19px;font-weight:700;line-height:1.5;margin-bottom:12px;}
 .idm-sep{border:none;border-top:1px solid var(--line);margin:16px 0;}
 .idm-src{display:inline-flex;align-items:center;gap:5px;background:var(--green-light);color:var(--green-dark);
   font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:999px;margin-bottom:14px;}
@@ -4374,7 +4375,7 @@ function mmSystem(){
 }
 function mmHost(){return (MM.region==="cn")?"https://api.minimaxi.com":"https://api.minimax.io";}
 // 页面版本号：更新后如果这里没变，说明浏览器还在用缓存的旧文件
-const BUILD="2026-08-27c";
+const BUILD="2026-08-27d";
 const MM_DEF_MODEL="MiniMax-M3";
 const MM_MODELS=[
  {id:"MiniMax-M3",n:"M3（最新，推荐）"},
@@ -5790,14 +5791,23 @@ function idmRenderStage(){
   const d=idmState.data;
   if(!d){st.innerHTML="";return;}
   const seen=[];
+  const isStory=!!(d.kws&&d.kws.length);
   const cards=(d.posts||[]).map(p=>{
     const h=idmHighlight(p.en,d.idioms);
     h.ids.forEach(x=>{if(seen.indexOf(x)===-1)seen.push(x);});
+    let titleHtml="";
+    if(p.title){
+      const ht=idmHighlight(p.title,d.idioms);
+      ht.ids.forEach(x=>{if(seen.indexOf(x)===-1)seen.push(x);});
+      titleHtml=`<div class="idm-title">${ht.html}</div>`;
+    }
     return `<div class="card">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-        <div class="idm-src" style="margin-bottom:0"><svg viewBox='0 0 20 20' width='12' height='12' fill='currentColor' stroke='none'><path d='M10 2l1.4 4.6L16 8l-4.6 1.4L10 14l-1.4-4.6L4 8l4.6-1.4L10 2Z'/></svg>AI 生成 · Reddit 风格讨论</div>
-        <button class="btn small ghost" style="margin-left:auto" data-idmplay="${esc(p.en)}">${IDM_SAY} 朗读整段</button>
+        <div class="idm-src" style="margin-bottom:0"><svg viewBox='0 0 20 20' width='12' height='12' fill='currentColor' stroke='none'><path d='M10 2l1.4 4.6L16 8l-4.6 1.4L10 14l-1.4-4.6L4 8l4.6-1.4L10 2Z'/></svg>AI 生成 · Reddit 风格${isStory?"小故事":"讨论"}</div>
+        <button class="btn small ghost" style="margin-left:auto" data-idmplay="${esc((p.title?p.title+". ":"")+p.en)}">${IDM_SAY} 朗读整段</button>
       </div>
+      ${isStory&&d.kws?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${d.kws.map(k=>`<span class="pill b">${esc(k)}</span>`).join("")}</div>`:""}
+      ${titleHtml}
       <div class="idm-en">${h.html}</div>
       <hr class="idm-sep">
       <div class="idm-cn">${esc(p.cn||"")}</div>
@@ -5864,6 +5874,56 @@ async function idmGenerate(btn){
   }
   if(btn){btn.disabled=false;btn.innerHTML=old;}
 }
+/* 段落规整：AI 有时会返回多余空行或行首缩进，.idm-en 是 pre-wrap 会原样显示 */
+function idmTidy(s){
+  return String(s||"").replace(/\r/g,"").split("\n").map(x=>x.trim()).join("\n").replace(/\n{3,}/g,"\n\n").trim();
+}
+async function idmStory(btn){
+  const st=document.getElementById("idmStage");
+  const hint=document.getElementById("idmKwHint");
+  const box=document.getElementById("idmKw");
+  const kws=String((box&&box.value)||"").split(/[,，、;；\s]+/).map(s=>s.trim()).filter(Boolean).slice(0,8);
+  if(!kws.length){
+    if(hint)hint.textContent="请先输入至少一个关键词。";
+    if(box)box.focus();
+    return;
+  }
+  if(hint)hint.textContent="";
+  const old=btn?btn.innerHTML:"";
+  if(btn){btn.disabled=true;btn.innerHTML="<svg viewBox='0 0 20 20' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><circle cx='10' cy='10' r='7.2'/><path d='M10 6v4l3 2'/></svg>生成中…";}
+  st.innerHTML=`<div class="card"><div class="muted">正在用「${esc(kws.join(" / "))}」写一篇小故事，通常 10-20 秒…</div></div>`;
+  try{
+    const sys="You write short first-person stories in the style of a Reddit personal-story post, "+
+      "as reading practice for a Chinese learner of English. "+
+      "Voice: casual native speaker telling something that happened to them — contractions, phrasal verbs, "+
+      "everyday idioms, a bit of humour or mild frustration, and a small twist or punchline at the end. "+
+      "Keep it clean and safe: no profanity, no slurs, no sexual, political, violent or medical content, "+
+      "and never use real people's names, brands or real usernames. "+
+      "Length: 2-3 short paragraphs, about 120-180 words total, separated by a blank line. "+
+      "Give it a short title written the way Reddit post titles are written. "+
+      "EVERY keyword the user gives must appear in the story, used naturally and in a normal sense. "+
+      "Then list the idiomatic or colloquial expressions you actually used (phrasal verbs, set phrases, "+
+      "casual slang) that a textbook would not teach, and explain each in Chinese. "+
+      "Every expression in idioms[].en MUST appear verbatim in the story. "+
+      "cn is a natural Chinese translation of the whole story, not word-for-word, keeping the paragraph breaks. "+
+      "Return ONLY raw JSON, no markdown fences.";
+    const usr="Keywords that must all appear: "+kws.join(", ")+".\nJSON shape:\n"+
+      '{"title":"英文标题","en":"故事正文，段落之间用 \\n\\n 分隔","cn":"中文翻译，段落同样用 \\n\\n 分隔","idioms":[{"en":"...","cn":"中文意思","note":"用法说明"}]}';
+    let j;
+    try{j=aiParseJSON(await mmSend([{role:"user",content:usr}],sys,{max_tokens:2600}));}
+    catch(e){j=aiParseJSON(await mmSend([{role:"user",content:usr}],sys,{max_tokens:2600,temperature:0.7}));}
+    const en=idmTidy(j.en);
+    if(!en)throw new Error("生成的内容格式不合法，请重试");
+    idmState.data={topic:"关键词小故事",kws,
+      posts:[{title:idmTidy(j.title),en,cn:idmTidy(j.cn)}],
+      idioms:(j.idioms||[]).filter(x=>x&&x.en)};
+    idmRenderStage();
+  }catch(e){
+    st.innerHTML=`<div class="card"><div class="callout danger" style="text-align:left"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M5 5l10 10M15 5L5 15'/></svg>${esc(e.message)}
+      <div class="muted" style="margin-top:6px">若反复失败：检查 MiniMax 密钥与「国内/海外版」选择，或换几个更常见的关键词重试。</div></div></div>`;
+  }
+  if(btn){btn.disabled=false;btn.innerHTML=old;}
+}
 function renderIdiom(){
   const el=document.getElementById("v-idiom");
   el.innerHTML=`
@@ -5876,6 +5936,14 @@ function renderIdiom(){
       <button class="btn" id="idmGo">生成一组讨论</button>
       ${mmReady()?"":`<span class="muted" style="font-size:12px">需先在「口语 → AI 对话 → 设置」填入 MiniMax 密钥</span>`}
     </div>
+    <hr class="idm-sep">
+    <h3 style="margin-bottom:4px">关键词小故事</h3>
+    <p class="muted" style="font-size:12.5px;margin-bottom:8px">输入几个想练的词（空格或逗号分隔），生成一篇用上这些词的 Reddit 风格小故事。</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <input type="text" id="idmKw" placeholder="例：refund, receipt, manager" style="flex:1;min-width:200px" value="${esc(idmState.kw||"")}">
+      <button class="btn" id="idmGoStory">生成小故事</button>
+    </div>
+    <div class="muted" id="idmKwHint" style="font-size:12px;margin-top:6px"></div>
     <div class="idm-legend">
       <span><i style="background:var(--green)"></i>没学过</span>
       <span><i style="background:var(--green-mid)"></i>学习中</span>
@@ -5890,6 +5958,13 @@ function renderIdiom(){
     idmState.topic=b.dataset.idmt;renderIdiom();
   };
   document.getElementById("idmGo").onclick=function(){idmGenerate(this);};
+  /* 关键词存进 state，切话题重渲染时不会被清空 */
+  const kw=document.getElementById("idmKw");
+  if(kw){
+    kw.oninput=()=>{idmState.kw=kw.value;};
+    kw.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();idmStory(document.getElementById("idmGoStory"));}};
+  }
+  document.getElementById("idmGoStory").onclick=function(){idmStory(this);};
   idmRenderStage();
 }
 
