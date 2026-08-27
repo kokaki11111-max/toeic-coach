@@ -4374,7 +4374,7 @@ function mmSystem(){
 }
 function mmHost(){return (MM.region==="cn")?"https://api.minimaxi.com":"https://api.minimax.io";}
 // 页面版本号：更新后如果这里没变，说明浏览器还在用缓存的旧文件
-const BUILD="2026-08-27b";
+const BUILD="2026-08-27c";
 const MM_DEF_MODEL="MiniMax-M3";
 const MM_MODELS=[
  {id:"MiniMax-M3",n:"M3（最新，推荐）"},
@@ -5775,6 +5775,16 @@ function idmIdiomCard(key){
     ${o.note?`<div class="muted" style="margin-top:4px">${esc(o.note)}</div>`:""}
   </div>`;
 }
+/* 整段朗读：复用 chatSpeak（有 MiniMax 用神经语音，否则回退浏览器 TTS）。
+   两条路径内部都会打断上一段播放，重复点击不会叠音。 */
+async function idmPlay(btn){
+  const text=btn.dataset.idmplay||"";
+  if(!text)return;
+  const old=btn.innerHTML;
+  btn.disabled=true;btn.innerHTML=IDM_SAY+" 播放中…";
+  try{await chatSpeak(text);}catch(e){}
+  btn.disabled=false;btn.innerHTML=old;
+}
 function idmRenderStage(){
   const st=document.getElementById("idmStage");if(!st)return;
   const d=idmState.data;
@@ -5784,7 +5794,10 @@ function idmRenderStage(){
     const h=idmHighlight(p.en,d.idioms);
     h.ids.forEach(x=>{if(seen.indexOf(x)===-1)seen.push(x);});
     return `<div class="card">
-      <div class="idm-src"><svg viewBox='0 0 20 20' width='12' height='12' fill='currentColor' stroke='none'><path d='M10 2l1.4 4.6L16 8l-4.6 1.4L10 14l-1.4-4.6L4 8l4.6-1.4L10 2Z'/></svg>AI 生成 · Reddit 风格讨论</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        <div class="idm-src" style="margin-bottom:0"><svg viewBox='0 0 20 20' width='12' height='12' fill='currentColor' stroke='none'><path d='M10 2l1.4 4.6L16 8l-4.6 1.4L10 14l-1.4-4.6L4 8l4.6-1.4L10 2Z'/></svg>AI 生成 · Reddit 风格讨论</div>
+        <button class="btn small ghost" style="margin-left:auto" data-idmplay="${esc(p.en)}">${IDM_SAY} 朗读整段</button>
+      </div>
       <div class="idm-en">${h.html}</div>
       <hr class="idm-sep">
       <div class="idm-cn">${esc(p.cn||"")}</div>
@@ -5796,7 +5809,7 @@ function idmRenderStage(){
   const summary=`<div class="card">
     <h3>本篇 TOEIC 词（${words.length}）</h3>
     ${words.length?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${
-      words.map(v=>`<span class="chip" style="text-align:left;padding:8px 12px"><b style="font-size:14px;display:inline">${esc(v.p)}</b> <span style="font-size:12px;color:var(--gray)">${esc(v.c)}</span> ${starW(v.id)}</span>`).join("")
+      words.map(v=>`<span class="chip" style="text-align:left;padding:8px 12px"><b style="font-size:14px;display:inline">${esc(v.p)}</b> <span style="font-size:12px;color:var(--gray)">${esc(v.c)}</span> <button class="starbtn" data-idmsay="${esc(v.p)}" title="朗读" aria-label="朗读">${IDM_SAY}</button>${starW(v.id)}</span>`).join("")
     }</div>`:`<p class="muted">这篇没命中你词库里的词。</p>`}
     <h3 style="margin-top:16px">地道说法（${idioms.length}）</h3>
     ${idioms.length?idioms.map(o=>`<div class="fav-row"><div class="body"><b>${esc(o.en)}</b>　<span style="font-size:13px">${esc(o.cn||"")}</span>${o.note?`<div class="muted" style="font-size:12px;margin-top:2px">${esc(o.note)}</div>`:""}</div><button class="btn small ghost" data-idmsay="${esc(o.en)}">${IDM_SAY}</button>${starS(o.en,o.cn||"","地道表达")}</div>`).join(""):`<p class="muted">这篇没提取到特别的口语说法。</p>`}
@@ -5804,6 +5817,8 @@ function idmRenderStage(){
   st.innerHTML=cards+summary;
   st.onclick=e=>{
     if(!e.target.closest)return;
+    const play=e.target.closest("[data-idmplay]");
+    if(play){idmPlay(play);return;}
     const say=e.target.closest("[data-idmsay]");
     if(say){speak(say.dataset.idmsay,0.95);return;}
     const w=e.target.closest("[data-twid]"),im=e.target.closest("[data-idm]");
