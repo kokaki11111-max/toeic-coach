@@ -2889,6 +2889,7 @@ function renderVocab(){
       <button class="btn gray" id="gSpell"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M3 11v-1a7 7 0 0 1 14 0v1'/><rect x='2' y='11' width='4' height='6' rx='1.5'/><rect x='14' y='11' width='4' height='6' rx='1.5'/></svg> 听音拼写</button>
       <button class="btn gray" id="gMatch">🔗 连连看</button>
       <button class="btn gray" id="gOrder">🧩 句子排序</button>
+      <button class="btn gray" id="gImgCard">🖼️ 图卡</button>
     </div>
   </div>
   <div id="vocabStage"></div>`;
@@ -2908,6 +2909,7 @@ function renderVocab(){
   document.getElementById("gMatch").onclick=startMatch;
   document.getElementById("gSpell").onclick=startSpell;
   document.getElementById("gOrder").onclick=startOrder;
+  document.getElementById("gImgCard").onclick=renderImgCardSetup;
 }
 /* ================= 闪卡速刷 ================= */
 let fState=null;
@@ -3743,6 +3745,340 @@ function nextWeekPlan(){
 }
 
 /* ================= 启动 ================= */
+/* ================= 图卡：看图记词 =================
+   图片缓存存的是字节而不是链接——MiniMax 返回的 URL 24 小时就过期。
+   缓存的 key 用单词文本而不是 v.id：id 是 "w"+下标算出来的，
+   词库顺序一改所有缓存就全部错位；单词文本已全局去重，是稳定的。 */
+const IC_DB="toeicCoachImg",IC_STORE="wordImages",IC_MAX=600;
+let icDBp=null;
+function icOpen(){
+  if(icDBp)return icDBp;
+  icDBp=new Promise(res=>{
+    let idb=null;
+    try{idb=window.indexedDB;}catch(e){}
+    if(!idb){res(null);return;}
+    let rq;
+    try{rq=idb.open(IC_DB,1);}catch(e){res(null);return;}
+    rq.onupgradeneeded=()=>{
+      const db=rq.result;
+      if(!db.objectStoreNames.contains(IC_STORE))
+        db.createObjectStore(IC_STORE,{keyPath:"k"}).createIndex("ts","ts");
+    };
+    rq.onsuccess=()=>res(rq.result);
+    rq.onerror=()=>res(null);
+    rq.onblocked=()=>res(null);
+  });
+  return icDBp;
+}
+/* 每次操作单开一个事务：事务跨 await 会被浏览器自动关闭 */
+function icTx(mode){
+  return icOpen().then(db=>{
+    if(!db)return null;
+    try{return db.transaction(IC_STORE,mode).objectStore(IC_STORE);}catch(e){return null;}
+  });
+}
+const icKey=w=>String(w).trim().toLowerCase();
+function icReq(r){return new Promise(res=>{
+  if(!r){res(null);return;}
+  r.onsuccess=()=>res(r.result);r.onerror=()=>res(null);
+});}
+async function icGet(word){
+  const st=await icTx("readonly");if(!st)return null;
+  let rec=null;
+  try{rec=await icReq(st.get(icKey(word)));}catch(e){return null;}
+  return rec&&rec.buf?{buf:rec.buf,type:rec.type||"image/jpeg",ts:rec.ts||0}:null;
+}
+async function icPut(word,buf,type,ts){
+  const st=await icTx("readwrite");if(!st)return false;
+  try{await icReq(st.put({k:icKey(word),buf,type:type||"image/jpeg",ts:ts||Date.now()}));}
+  catch(e){return false;}
+  return true;
+}
+async function icCount(){
+  const st=await icTx("readonly");if(!st)return 0;
+  try{return (await icReq(st.count()))||0;}catch(e){return 0;}
+}
+/* 超出上限按时间淘汰最旧的。游标不能跨 await，所以计数与删除分两个事务 */
+async function icEvict(max){
+  const cap=max||IC_MAX;
+  const n=await icCount();
+  if(n<=cap)return;
+  let drop=n-cap;
+  const st=await icTx("readwrite");if(!st)return;
+  await new Promise(res=>{
+    let cur;
+    try{cur=st.index("ts").openCursor();}catch(e){res();return;}
+    cur.onsuccess=()=>{
+      const c=cur.result;
+      if(!c||drop<=0){res();return;}
+      try{c.delete();}catch(e){}
+      drop--;c.continue();
+    };
+    cur.onerror=()=>res();
+  });
+}
+function icB64ToBuf(b64){
+  const s=atob(String(b64).replace(/^data:[^,]*,/,""));
+  const u=new Uint8Array(s.length);
+  for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);
+  return u.buffer;
+}
+function icPrompt(v){
+  return `A clear, simple photograph illustrating the phrase "${v.p}" in an everyday business or daily-life setting. `+
+    `Scene: ${v.e} `+
+    `No text, no letters, no words, no captions and no signage anywhere in the image.`;
+}
+/* 与 mmImage 的区别：要 base64 而不是 url，因为要长期缓存 */
+async function mmImageB64(prompt){
+  const res=await fetch(mmHost()+"/v1/image_generation",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","Authorization":"Bearer "+MM.key},
+    body:JSON.stringify({model:"image-01",prompt:String(prompt).slice(0,1400),
+      aspect_ratio:"4:3",response_format:"base64",n:1,prompt_optimizer:false})
+  });
+  if(!res.ok)throw new Error("图片 HTTP "+res.status+"："+(await res.text()).slice(0,140));
+  const j=await res.json();
+  const code=j.base_resp&&j.base_resp.status_code;
+  if(code&&code!==0){
+    const tips={1004:"（鉴权失败：密钥或国内/海外版选错）",1008:"（额度不足或已用尽）",
+      1026:"（提示词被判定为敏感内容）",2049:"（API Key 无效）",1002:"（调用过频，请稍后）"};
+    throw new Error("图片错误 "+code+(tips[code]||"")+"："+((j.base_resp&&j.base_resp.status_msg)||""));
+  }
+  const d=j.data||{},b=d.image_base64||d.image_base64s||d.images;
+  const one=Array.isArray(b)?b[0]:b;
+  if(!one)throw new Error("未返回图片（可能被内容安全拦截，请重试）");
+  return icB64ToBuf(one);
+}
+async function icImage(v){
+  const hit=await icGet(v.w);
+  if(hit)return hit;
+  const buf=await mmImageB64(icPrompt(v));
+  await icPut(v.w,buf,"image/jpeg");
+  icEvict().catch(()=>{});
+  return {buf,type:"image/jpeg",ts:Date.now()};
+}
+function icShuffle(a){
+  const r=a.slice();
+  for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=r[i];r[i]=r[j];r[j]=t;}
+  return r;
+}
+function icOptions(v){
+  let pool=VOCAB.filter(x=>x.b===v.b&&x.id!==v.id&&x.c&&x.c!==v.c);
+  if(pool.length<3)pool=VOCAB.filter(x=>x.id!==v.id&&x.c&&x.c!==v.c);
+  const seen=new Set([v.c]),picks=[];
+  for(let guard=0;guard<300&&picks.length<3&&pool.length;guard++){
+    const x=pool[Math.floor(Math.random()*pool.length)];
+    if(!x||seen.has(x.c))continue;
+    seen.add(x.c);picks.push(x.c);
+  }
+  for(let i=0;i<pool.length&&picks.length<3;i++)
+    if(!seen.has(pool[i].c)){seen.add(pool[i].c);picks.push(pool[i].c);}
+  return icShuffle(picks.concat([v.c]));
+}
+function icPick(scope,n){
+  let pool;
+  if(scope==="due")pool=dueWords();
+  else if(scope==="new")pool=VOCAB.filter(v=>v.b===vState.book&&!S.srs[v.id]);
+  else if(scope==="stubborn")pool=stubbornWords();
+  else pool=VOCAB.filter(v=>S.srs[v.id]);
+  return icShuffle(pool||[]).slice(0,Math.max(0,n|0));
+}
+const IC_SCOPES={due:"今日待复习",new:"本书新词",stubborn:"顽固词",learned:"已学过的词"};
+let icState=null;
+function icCur(){return icState&&icState.list?icState.list[icState.i]:null;}
+function icStart(scope,n){
+  icRevoke();
+  icState={scope,n,list:icPick(scope,n),i:0,ok:0,ng:0,
+    picked:null,revealed:false,showTr:false,url:"",imgErr:"",loading:false};
+  return icState;
+}
+function icRevoke(){
+  if(icState&&icState.url){try{URL.revokeObjectURL(icState.url);}catch(e){}icState.url="";}
+}
+function icSetUrl(rec){
+  icRevoke();
+  try{icState.url=URL.createObjectURL(new Blob([rec.buf],{type:rec.type||"image/jpeg"}));}
+  catch(e){icState.url="";}
+}
+async function icLoadImage(){
+  const v=icCur();
+  if(!v||!icState)return;
+  if(!mmReady()){icState.imgErr="no-key";return;}
+  if(icState.url)return;
+  icState.loading=true;icState.imgErr="";
+  renderImgCard();
+  try{
+    const rec=await icImage(v);
+    if(icCur()!==v)return;          // 已翻页，丢弃这张
+    icSetUrl(rec);
+  }catch(e){
+    if(icCur()===v)icState.imgErr=(e&&e.message)||"生成失败";
+  }finally{
+    if(icCur()===v){icState.loading=false;renderImgCard();}
+  }
+}
+/* 看当前这张时后台把下一张的图先生成好，失败静默丢弃 */
+function icPrefetch(){
+  if(!icState||!mmReady())return;
+  const nx=icState.list[icState.i+1];
+  if(nx)icImage(nx).catch(()=>{});
+}
+function icAnswer(choice){
+  const v=icCur();
+  if(!v||!icState||icState.revealed)return;
+  const ok=(choice===v.c);
+  icState.picked=choice;icState.revealed=true;
+  if(ok)icState.ok++;else icState.ng++;
+  srsMark(v,ok);
+  icPrefetch();
+}
+function icNext(){
+  if(!icState)return;
+  icRevoke();
+  icState.i++;icState.picked=null;icState.revealed=false;
+  icState.showTr=false;icState.imgErr="";icState.loading=false;
+  renderImgCard();
+  icLoadImage();
+}
+function icImgArea(v){
+  if(icState.url)
+    return `<img src="${icState.url}" alt="" style="width:100%;height:100%;object-fit:cover">`;
+  // 直接看 mmReady()，不依赖 icLoadImage 是否已经跑过——否则首屏会是一片空白没有说明
+  if(!mmReady())
+    return `<div class="muted" style="text-align:center;padding:12px">
+      <div style="font-size:34px;margin-bottom:6px">🔑</div>未配置 MiniMax 密钥，本轮无图<br>
+      <span style="font-size:12px">在「口语 → AI 对话 → ⚙️ 设置」里填入后即可看图</span></div>`;
+  if(icState.loading)
+    return `<div class="muted" style="text-align:center;padding:12px">
+      <div style="font-size:26px;margin-bottom:6px">🖼️</div>图片生成中…<br>
+      <span style="font-size:12px">下一张会提前备好，之后就不用等了</span></div>`;
+  if(icState.imgErr)
+    return `<div class="muted" style="text-align:center;padding:12px">
+      <div style="font-size:34px;margin-bottom:6px">🚫</div>图片生成失败，不影响做题<br>
+      <span style="font-size:12px">${esc(String(icState.imgErr).slice(0,80))}</span></div>`;
+  return `<div style="text-align:center;padding:12px"><div style="font-size:40px">📖</div></div>`;
+}
+function renderImgCard(){
+  const stage=document.getElementById("vocabStage");
+  if(!stage||!icState)return;
+  const v=icCur();
+  if(!v){
+    const done=icState.ok+icState.ng;
+    stage.innerHTML=`<div class="card"><h3>本轮结束</h3>
+      <div class="stat-chips" style="margin-top:8px">
+        <div class="chip"><b>${icState.ok}</b><span>答对</span></div>
+        <div class="chip"><b>${icState.ng}</b><span>答错</span></div>
+        <div class="chip"><b>${done}</b><span>共练</span></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        <button class="btn" id="icAgain">再来一轮</button>
+        <button class="btn gray" id="icQuitEnd">返回</button>
+      </div></div>`;
+    const ag=document.getElementById("icAgain");
+    if(ag)ag.onclick=()=>{icStart(icState.scope,icState.n);renderImgCard();icLoadImage();};
+    const q=document.getElementById("icQuitEnd");
+    if(q)q.onclick=()=>{icRevoke();icState=null;renderVocab();};
+    return;
+  }
+  const opts=icState.opts&&icState.optsFor===v.id?icState.opts:(icState.opts=icOptions(v),icState.optsFor=v.id,icState.opts);
+  const tr=transOf(v);
+  stage.innerHTML=`
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span class="pill">${esc(IC_SCOPES[icState.scope]||"图卡")}</span>
+      <span class="muted">${icState.i+1} / ${icState.list.length}</span>
+      <span class="muted">✅ ${icState.ok} ❌ ${icState.ng}</span>
+      <button class="btn small gray" id="icQuit" style="margin-left:auto">退出</button>
+    </div>
+    <div id="icImgBox" style="margin:10px auto 0;max-width:420px;aspect-ratio:4/3;border-radius:12px;overflow:hidden;
+      background:var(--bg);border:1px solid var(--line);display:flex;align-items:center;justify-content:center">
+      ${icImgArea(v)}
+    </div>
+    <div style="text-align:center;margin-top:12px">
+      <div style="font-size:26px;font-weight:700">${esc(v.w)}</div>
+      <div class="muted" style="margin-top:2px">
+        ${window.IPA&&window.IPA[v.w.toLowerCase()]?"/"+esc(window.IPA[v.w.toLowerCase()])+"/":""}
+        <button class="btn small ghost" id="icSay">🔊</button>
+      </div>
+    </div>
+    <div id="icOpts" style="display:grid;gap:8px;margin-top:12px">
+      ${opts.map(o=>{
+        let cls="btn gray";
+        if(icState.revealed){
+          if(o===v.c)cls="btn";
+          else if(o===icState.picked)cls="btn danger";
+        }
+        return `<button class="${cls}" data-icopt="${esc(o)}" ${icState.revealed?"disabled":""}
+          style="text-align:left;white-space:normal">${esc(o)}</button>`;
+      }).join("")}
+    </div>
+    ${icState.revealed?`
+    <div id="icFb" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <b>${esc(v.p)}</b><span class="muted">${esc(v.c)}</span>${starW(v.id)}
+      </div>
+      <div style="margin-top:8px"><span class="withipa">${ipaRuby(v.e)}</span></div>
+      <div style="margin-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <button class="btn small ghost" id="icTr">${icState.showTr?"隐藏译文":"显示译文"}</button>
+        ${starS(v.e,tr,"图卡")}
+        ${icState.showTr?`<span class="muted">${esc(tr)}</span>`:""}
+      </div>
+      <div style="margin-top:12px"><button class="btn" id="icNext">下一张 →</button></div>
+    </div>`:""}
+  </div>`;
+  const q=document.getElementById("icQuit");
+  if(q)q.onclick=()=>{icRevoke();icState=null;renderVocab();};
+  const say=document.getElementById("icSay");
+  if(say)say.onclick=()=>speak(v.w);
+  stage.querySelectorAll("[data-icopt]").forEach(b=>{
+    b.onclick=()=>{icAnswer(b.dataset.icopt);renderImgCard();};
+  });
+  const trb=document.getElementById("icTr");
+  if(trb)trb.onclick=()=>{icState.showTr=!icState.showTr;renderImgCard();};
+  const nx=document.getElementById("icNext");
+  if(nx)nx.onclick=icNext;
+}
+function renderImgCardSetup(){
+  const stage=document.getElementById("vocabStage");
+  if(!stage)return;
+  const counts={due:dueWords().length,
+    new:VOCAB.filter(v=>v.b===vState.book&&!S.srs[v.id]).length,
+    stubborn:stubbornWords().length,
+    learned:VOCAB.filter(v=>S.srs[v.id]).length};
+  stage.innerHTML=`
+  <div class="card"><h3>🖼️ 图卡</h3>
+    <p class="muted" style="margin-top:4px">一张图 + 一个单词，从四个释义里选。答完可以收藏单词和例句。</p>
+    ${mmReady()?"":`<div class="callout warn" style="margin-top:8px"><div>🔑</div><div>
+      还没配 MiniMax 密钥，现在开始也能正常做题，只是没有图。</div></div>`}
+    <div class="muted" style="margin-top:12px;font-size:13px">练哪批词</div>
+    <div style="display:grid;gap:8px;margin-top:6px">
+      ${Object.keys(IC_SCOPES).map(k=>`
+        <button class="btn ${counts[k]?"gray":""}" data-icscope="${k}" ${counts[k]?"":"disabled"}
+          style="text-align:left">${IC_SCOPES[k]}<span class="muted"> · ${counts[k]} 词</span></button>`).join("")}
+    </div>
+    <div class="muted" style="margin-top:12px;font-size:13px">这一轮练几张</div>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="btn gray" data-icn="10">10 张</button>
+      <button class="btn gray" data-icn="20">20 张</button>
+    </div>
+    <p class="muted" style="margin-top:12px;font-size:12px">
+      新词要现生成图（占用 MiniMax 额度），复习旧词直接读本机缓存，不花额度也不用等。</p>
+  </div>`;
+  let scope="due",n=10;
+  const paint=()=>{
+    stage.querySelectorAll("[data-icscope]").forEach(b=>
+      b.className="btn"+(b.dataset.icscope===scope?"":" gray"));
+    stage.querySelectorAll("[data-icn]").forEach(b=>
+      b.className="btn"+(+b.dataset.icn===n?"":" gray"));
+  };
+  stage.querySelectorAll("[data-icscope]").forEach(b=>b.onclick=()=>{
+    if(b.disabled)return;
+    scope=b.dataset.icscope;paint();
+    icStart(scope,n);renderImgCard();icLoadImage();
+  });
+  stage.querySelectorAll("[data-icn]").forEach(b=>b.onclick=()=>{n=+b.dataset.icn;paint();});
+  paint();
+}
 /* ================= 收藏（单词 / 句子） ================= */
 function favs(){
   if(!S.favs)S.favs={w:{},s:{},q:{}};
@@ -3964,7 +4300,7 @@ function mmSystem(){
 }
 function mmHost(){return (MM.region==="cn")?"https://api.minimaxi.com":"https://api.minimax.io";}
 // 页面版本号：更新后如果这里没变，说明浏览器还在用缓存的旧文件
-const BUILD="2026-08-25b";
+const BUILD="2026-08-25c";
 const MM_DEF_MODEL="MiniMax-M3";
 const MM_MODELS=[
  {id:"MiniMax-M3",n:"M3（最新，推荐）"},
@@ -4566,7 +4902,7 @@ async function mmImage(prompt){
   const j=await res.json();
   const code=j.base_resp&&j.base_resp.status_code;
   if(code&&code!==0){
-    const tips={1004:"（鉴权失败：密钥或国内/海外版选错）",1008:"（余额不足——29元 Starter 档不含图像生成，需升级或充值）",
+    const tips={1004:"（鉴权失败：密钥或国内/海外版选错）",1008:"（额度不足或已用尽——图像与文本共用同一份月度额度）",
       1026:"（提示词被判定为敏感内容，请重新生成）",2049:"（API Key 无效）",1002:"（调用过频，请稍后）"};
     throw new Error("图片错误 "+code+(tips[code]||"")+"："+((j.base_resp&&j.base_resp.status_msg)||""));
   }
