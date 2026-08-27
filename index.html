@@ -133,7 +133,26 @@ ruby.rst rt{color:var(--green);font-weight:600;}
 ruby.rwk{color:var(--gray);font-weight:400;}
 .withipa{line-height:2.7;}
 .vocab-card .phrase.withipa{line-height:2.2;}
+/* ===== 地道表达页 ===== */
+.idm-en{font-size:20px;line-height:1.85;letter-spacing:.1px;}
+.idm-cn{font-size:15px;line-height:1.85;color:var(--gray);}
+.idm-sep{border:none;border-top:1px solid var(--line);margin:16px 0;}
+.idm-src{display:inline-flex;align-items:center;gap:5px;background:var(--green-light);color:var(--green-dark);
+  font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:999px;margin-bottom:14px;}
+.tw{border-radius:5px;padding:1px 3px;cursor:pointer;transition:.12s;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
+.tw:hover{outline:2px solid var(--green-mid);}
+.tw-new{background:var(--green);color:#fff;font-weight:600;}
+.tw-learn{background:var(--green-mid);color:var(--ink);}
+.tw-done{background:var(--green-light);color:var(--ink);}
+.tw-stub{background:var(--red-bg);color:var(--red);font-weight:600;}
+.tw-idm{background:var(--amber-bg);color:var(--amber);border-bottom:2px dashed var(--amber);border-radius:5px 5px 0 0;}
+.idm-pop{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:12px;font-size:14px;}
+.idm-pop .pw{font-size:17px;font-weight:700;}
+.idm-pop .pi{font-size:13px;color:var(--gray);}
+.idm-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--gray);margin-top:6px;}
+.idm-legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:-1px;}
 @media(max-width:600px){
+  .idm-en{font-size:18px;line-height:1.8;}
   .app{padding:10px;}
   .scores .num{font-size:28px;}
   .hero .focus{font-size:17px;}
@@ -158,12 +177,14 @@ ruby.rwk{color:var(--gray);font-weight:400;}
   <button data-v="listening">听力训练</button>
   <button data-v="reading">阅读训练</button>
   <button data-v="speak"><svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;pointer-events:none"><rect x="7.4" y="2.4" width="5.2" height="8.6" rx="2.6"/><path d="M4.4 9.6a5.6 5.6 0 0 0 11.2 0"/><path d="M10 15.2v2.4M7 17.6h6"/></svg>口语</button>
+  <button data-v="idiom"><svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;pointer-events:none"><path d="M2.5 4.5A2 2 0 0 1 4.5 2.5h5A2 2 0 0 1 11.5 4.5v3A2 2 0 0 1 9.5 9.5H6l-2 1.6V9.5A2 2 0 0 1 2.5 7.5v-3Z"/><path d="M8.5 11.5h1A2 2 0 0 0 11.5 13.5v3l2-1.6h2.5A2 2 0 0 0 18 13.5v-3A2 2 0 0 0 16 8.5"/></svg>地道表达</button>
   <button data-v="favs"><svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;pointer-events:none"><path d="M10 2.6l2.2 4.5 4.9.6-3.6 3.5.9 4.9L10 13.8l-4.4 2.3.9-4.9-3.6-3.5 4.9-.6L10 2.6Z"/></svg>收藏</button>
   <button data-v="review">复盘与进度</button>
 </nav>
 
 <section class="view active" id="v-home"></section>
 <section class="view" id="v-vocab"></section>
+<section class="view" id="v-idiom"></section>
 <section class="view" id="v-favs"></section>
 <section class="view" id="v-speak">
   <div id="speakTabs"></div>
@@ -2766,11 +2787,11 @@ function getToday(){
 }
 
 /* ================= 视图切换 ================= */
-const VIEWS=["home","vocab","listening","reading","speak","favs","review"];
+const VIEWS=["home","vocab","listening","reading","speak","idiom","favs","review"];
 function show(v){
   document.querySelectorAll("#mainTabs button").forEach(b=>b.classList.toggle("active",b.dataset.v===v));
   VIEWS.forEach(x=>document.getElementById("v-"+x).classList.toggle("active",x===v));
-  ({home:renderHome,vocab:renderVocab,speak:renderSpeak,favs:renderFavs,reading:renderReading,listening:renderListening,review:renderReview})[v]();
+  ({home:renderHome,vocab:renderVocab,speak:renderSpeak,favs:renderFavs,reading:renderReading,listening:renderListening,review:renderReview,idiom:renderIdiom})[v]();
   window.scrollTo(0,0);
 }
 document.getElementById("mainTabs").addEventListener("click",e=>{if(e.target.dataset.v)show(e.target.dataset.v);});
@@ -3788,10 +3809,17 @@ async function icGet(word){
   try{rec=await icReq(st.get(icKey(word)));}catch(e){return null;}
   return rec&&rec.buf?{buf:rec.buf,type:rec.type||"image/jpeg",ts:rec.ts||0}:null;
 }
-async function icPut(word,buf,type,ts){
+async function icPut(word,buf,type,ts,keep){
   const st=await icTx("readwrite");if(!st)return false;
-  try{await icReq(st.put({k:icKey(word),buf,type:type||"image/jpeg",ts:ts||Date.now()}));}
+  const rec={k:icKey(word),buf,type:type||"image/jpeg",ts:ts||Date.now()};
+  if(keep)rec.keep=1;                 // 收藏的图：容量淘汰时跳过
+  try{await icReq(st.put(rec));}
   catch(e){return false;}
+  return true;
+}
+async function icDel(word){
+  const st=await icTx("readwrite");if(!st)return false;
+  try{await icReq(st.delete(icKey(word)));}catch(e){return false;}
   return true;
 }
 async function icCount(){
@@ -3811,6 +3839,7 @@ async function icEvict(max){
     cur.onsuccess=()=>{
       const c=cur.result;
       if(!c||drop<=0){res();return;}
+      if(c.value&&c.value.keep){c.continue();return;}   // 收藏的图不淘汰，宁可超一点上限
       try{c.delete();}catch(e){}
       drop--;c.continue();
     };
@@ -3828,7 +3857,7 @@ function icPrompt(v){
     `Scene: ${v.e} `+
     `No text, no letters, no words, no captions and no signage anywhere in the image.`;
 }
-/* 与 mmImage 的区别：要 base64 而不是 url，因为要长期缓存 */
+/* 一律要 base64 而不是 url：MiniMax 的图片链接 24 小时就过期，存下来的必须是字节 */
 async function mmImageB64(prompt){
   const res=await fetch(mmHost()+"/v1/image_generation",{
     method:"POST",
@@ -4089,14 +4118,34 @@ function favs(){
 }
 /* ---- 题目收藏（AI 生成题与内置题通用） ---- */
 function qKey(c){return (c.part||"")+"|"+String(c.q||"").replace(/\s+/g," ").trim().slice(0,140);}
+/* Part 1 的配图存在 IndexedDB 里，键由 qKey 推导出来——收藏键怎么变，图的键就怎么变，
+   两边永远对得上。"p1:" 前缀是为了和图卡的单词键分开。 */
+const P1_PART="Part 1 照片描述";
+function p1ImgKey(prompt){return "p1:"+qKey({part:P1_PART,q:"照片内容："+prompt});}
 function isFavQ(k){return !!favs().q[k];}
+/* 删题目收藏的唯一入口。收藏的图带 keep 不参与容量淘汰，
+   只能在这里主动删——漏一条路径，缓存里就会永远躺着一张没人认领的图。 */
+function favQDrop(k){
+  const d=favs().q[k];
+  if(!d)return;
+  delete favs().q[k];
+  if(d.imgKey)icDel(d.imgKey).catch(()=>{});
+}
 function favQCount(){return Object.keys(favs().q).length;}
 function toggleFavQCtx(){
   if(!aiCtx)return false;
   const f=favs(),k=qKey(aiCtx);
-  if(f.q[k])delete f.q[k];
-  else f.q[k]={part:aiCtx.part||"",q:aiCtx.q||"",o:aiCtx.o||[],a:aiCtx.a,
-    exp:aiCtx.exp||"",passage:aiCtx.passage||"",img:aiCtx.img||"",ts:Date.now()};
+  if(f.q[k])favQDrop(k);
+  else{
+    f.q[k]={part:aiCtx.part||"",q:aiCtx.q||"",o:aiCtx.o||[],a:aiCtx.a,
+      exp:aiCtx.exp||"",passage:aiCtx.passage||"",ts:Date.now()};
+    /* 图片存字节不存链接：文生图返回的 URL 24 小时就过期，存进收藏隔天必然变裂图。
+       字节进 IndexedDB（不同步），收藏记录里只留一个短短的键（跟着 S 同步）。 */
+    if(aiCtx.imgKey&&aiCtx.imgBuf){
+      f.q[k].imgKey=aiCtx.imgKey;
+      icPut(aiCtx.imgKey,aiCtx.imgBuf,aiCtx.imgType||"image/jpeg",Date.now(),true).catch(()=>{});
+    }else if(aiCtx.img)f.q[k].img=aiCtx.img;  // 兜底：万一还有别处传 URL 进来
+  }
   save();return isFavQ(k);
 }
 function starQCtx(){
@@ -4155,6 +4204,28 @@ document.addEventListener("click",e=>{
 
 /* ---- 收藏页 ---- */
 let favTab="w";
+/* 收藏页是同步渲染的，图片却要等 IndexedDB，所以先出占位再异步补上。
+   blob 地址统一记账，下次渲染前一起回收，免得越攒越多。 */
+let favImgUrls=[];
+function favImgRevoke(){
+  favImgUrls.forEach(u=>{try{URL.revokeObjectURL(u);}catch(e){}});
+  favImgUrls=[];
+}
+async function favImgFill(){
+  const el=document.getElementById("v-favs");
+  if(!el)return;
+  for(const box of [...el.querySelectorAll("[data-favimg]")]){
+    if(box.querySelector("img"))continue;             // 已经补过了
+    const rec=await icGet(box.dataset.favimg);
+    if(!rec||!el.contains(box))continue;              // 没有字节就保留那句说明
+    let u="";
+    try{u=URL.createObjectURL(new Blob([rec.buf],{type:rec.type||"image/jpeg"}));}catch(e){continue;}
+    if(!u)continue;
+    favImgUrls.push(u);
+    box.className="";box.removeAttribute("style");
+    box.innerHTML=`<img src="${u}" alt="" style="max-width:320px;width:100%;border-radius:10px;margin:8px 0;border:1px solid var(--line)">`;
+  }
+}
 function renderFavs(){
   const el=document.getElementById("v-favs");
   const f=favs();
@@ -4200,7 +4271,8 @@ function renderFavs(){
             <span class="pill b">${esc(d.part||"题目")}</span>
             <button class="starbtn on" data-unfavq="${esc(k)}" title="取消收藏">★</button>
           </div>
-          ${d.img?`<img src="${esc(d.img)}" style="max-width:320px;width:100%;border-radius:10px;margin:8px 0;border:1px solid var(--line)" onerror="this.style.display='none'">`:""}
+          ${d.imgKey?`<div data-favimg="${esc(d.imgKey)}" class="muted" style="font-size:12px;margin:8px 0">图片不随云同步，本机没有这张图的缓存</div>`
+            :d.img?`<img src="${esc(d.img)}" style="max-width:320px;width:100%;border-radius:10px;margin:8px 0;border:1px solid var(--line)" onerror="this.style.display='none'">`:""}
           ${d.passage?`<details style="margin:6px 0"><summary class="muted">查看文章 / 原文</summary><div class="passage" style="margin-top:6px">${esc(d.passage)}</div></details>`:""}
           <div style="font-size:14px;margin:4px 0">${esc(d.q)}</div>
           ${(d.o||[]).map((x,i)=>`<div style="font-size:13px;padding:3px 0;color:${i===d.a?"var(--green)":"var(--gray)"}">
@@ -4220,6 +4292,7 @@ function renderFavs(){
         </div>`).join("")
       :`<p class="muted">还没有收藏句子。在例句或听力原文旁点 ☆ 试试。</p>`)}
   </div>`;
+  favImgRevoke();favImgFill();
   el.querySelectorAll("[data-ft]").forEach(b=>b.onclick=()=>{favTab=b.dataset.ft;renderFavs();});
   el.querySelectorAll("[data-say]").forEach(b=>b.onclick=()=>speak(b.dataset.say));
   const ff=document.getElementById("favFlash");
@@ -4237,10 +4310,11 @@ function renderFavs(){
   const cw=document.getElementById("favClearW");
   if(cw)cw.onclick=()=>{if(confirm("清空全部收藏单词？")){favs().w={};save();renderFavs();}};
   el.querySelectorAll("[data-unfavq]").forEach(b=>b.onclick=()=>{
-    delete favs().q[b.dataset.unfavq];save();renderFavs();
+    favQDrop(b.dataset.unfavq);save();renderFavs();
   });
   const cq=document.getElementById("favClearQ");
-  if(cq)cq.onclick=()=>{if(confirm("清空全部收藏题目？")){favs().q={};save();renderFavs();}};
+  if(cq)cq.onclick=()=>{if(confirm("清空全部收藏题目？")){
+    Object.keys(favs().q).forEach(favQDrop);save();renderFavs();}};
   const cs=document.getElementById("favClearS");
   if(cs)cs.onclick=()=>{if(confirm("清空全部收藏句子？")){favs().s={};save();renderFavs();}};
   const pa=document.getElementById("favPlayAll");
@@ -4300,7 +4374,7 @@ function mmSystem(){
 }
 function mmHost(){return (MM.region==="cn")?"https://api.minimaxi.com":"https://api.minimax.io";}
 // 页面版本号：更新后如果这里没变，说明浏览器还在用缓存的旧文件
-const BUILD="2026-08-25c";
+const BUILD="2026-08-27b";
 const MM_DEF_MODEL="MiniMax-M3";
 const MM_MODELS=[
  {id:"MiniMax-M3",n:"M3（最新，推荐）"},
@@ -4891,25 +4965,6 @@ async function aiStart(part,btn){
 }
 
 /* ================= Part 1 照片描述（MiniMax 文生图 + 语音） ================= */
-async function mmImage(prompt){
-  const res=await fetch(mmHost()+"/v1/image_generation",{
-    method:"POST",
-    headers:{"Content-Type":"application/json","Authorization":"Bearer "+MM.key},
-    body:JSON.stringify({model:"image-01",prompt:String(prompt).slice(0,1400),
-      aspect_ratio:"4:3",response_format:"url",n:1,prompt_optimizer:false})
-  });
-  if(!res.ok)throw new Error("图片 HTTP "+res.status+"："+(await res.text()).slice(0,140));
-  const j=await res.json();
-  const code=j.base_resp&&j.base_resp.status_code;
-  if(code&&code!==0){
-    const tips={1004:"（鉴权失败：密钥或国内/海外版选错）",1008:"（额度不足或已用尽——图像与文本共用同一份月度额度）",
-      1026:"（提示词被判定为敏感内容，请重新生成）",2049:"（API Key 无效）",1002:"（调用过频，请稍后）"};
-    throw new Error("图片错误 "+code+(tips[code]||"")+"："+((j.base_resp&&j.base_resp.status_msg)||""));
-  }
-  const u=j.data&&j.data.image_urls&&j.data.image_urls[0];
-  if(!u)throw new Error("未返回图片（可能被内容安全拦截，请重试）");
-  return u;
-}
 const P1_SCENES=["a busy office","a hotel lobby","a restaurant kitchen","a construction site",
  "a train platform","a supermarket aisle","a public park","a library reading room",
  "a warehouse loading dock","a laboratory","an outdoor café terrace","a workshop with tools"];
@@ -4948,8 +5003,10 @@ async function aiGenP1(){
   for(let i=order.length-1;i>0;i--){const r=Math.floor(Math.random()*(i+1));[order[i],order[r]]=[order[r],order[i]];}
   const shuffledSt=order.map(i=>st[i]);
   const shuffledA=order.indexOf(j.a);
-  const url=await mmImage(j.image_prompt);
-  return {id:"ai-p1-"+Date.now(),img:url,o:shuffledSt,a:shuffledA,exp:j.exp||"",scene:j.scene||scene,prompt:j.image_prompt};
+  // 存字节不存链接：url 形式的图 24 小时就失效，收藏下来隔天就是裂图
+  const buf=await mmImageB64(j.image_prompt);
+  return {id:"ai-p1-"+Date.now(),buf,type:"image/jpeg",imgKey:p1ImgKey(j.image_prompt),
+    o:shuffledSt,a:shuffledA,exp:j.exp||"",scene:j.scene||scene,prompt:j.image_prompt};
 }
 /* 四句连读：用 MiniMax 停顿标记，一次合成 */
 function p1Script(o,withPause){
@@ -4966,6 +5023,14 @@ async function p1Play(item){
   if(btn){btn.disabled=false;btn.innerHTML="<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M3 8v4h3l4.5 3.5v-11L6 7.5H3Z'/><path d='M13.6 7.3a3.6 3.6 0 0 1 0 5.4M16 5.4a7 7 0 0 1 0 9.2'/></svg>再听一遍";}
 }
 let p1State=null;
+function p1Revoke(){
+  if(p1State&&p1State.url){try{URL.revokeObjectURL(p1State.url);}catch(e){}p1State.url="";}
+}
+function p1Blob(item){
+  if(!item||!item.buf)return "";
+  try{return URL.createObjectURL(new Blob([item.buf],{type:item.type||"image/jpeg"}));}
+  catch(e){return "";}
+}
 async function p1Start(btn){
   const st=document.getElementById("listenStage");
   const old=btn?btn.innerHTML:"";
@@ -4974,7 +5039,8 @@ async function p1Start(btn){
     <span style="font-size:12px">先由文本模型设计题目，再据此生成照片，确保图文一致</span>`}</div></div>`;
   try{
     const item=await aiNext("P1",aiGenP1);
-    p1State={item,picked:null,t0:Date.now()};
+    p1Revoke();
+    p1State={item,picked:null,t0:Date.now(),url:""};
     renderP1();
     p1Play(item);
     aiWarm("P1",aiGenP1);
@@ -4988,14 +5054,16 @@ function renderP1(){
   const st=document.getElementById("listenStage");
   const {item,picked}=p1State;
   const done=picked!==null;
+  if(!p1State.url)p1State.url=p1Blob(item);
   st.innerHTML=`<div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <h3>Part 1 照片描述 <span class="pill b">AI 生成</span></h3>
       <span class="muted">${esc(item.scene)}</span>
     </div>
-    <img src="${esc(item.img)}" alt="Part 1 photo" style="width:100%;max-width:520px;display:block;margin:10px auto;
+    ${p1State.url?`<img src="${p1State.url}" alt="Part 1 photo" style="width:100%;max-width:520px;display:block;margin:10px auto;
       border-radius:12px;border:1px solid var(--line)" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-    <div class="callout warn" style="display:none">图片加载失败（链接 24 小时后过期），请重新生成一题。</div>
+    <div class="callout warn" style="display:none">图片显示失败，请重新生成一题。</div>`
+      :`<div class="callout warn">这题没有拿到图片，请重新生成一题。</div>`}
     <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:10px 0">
       <button class="btn ghost" id="p1Play"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M3 8v4h3l4.5 3.5v-11L6 7.5H3Z'/><path d='M13.6 7.3a3.6 3.6 0 0 1 0 5.4M16 5.4a7 7 0 0 1 0 9.2'/></svg> 再听一遍</button>
       ${done?"":`<span class="muted" style="align-self:center;font-size:13px">听四句陈述，选出与照片相符的一句</span>`}
@@ -5025,7 +5093,8 @@ function p1Pick(i){
 function p1Feedback(){
   const {item,picked}=p1State;
   const ok=picked===item.a;
-  aiCtx={part:"Part 1 照片描述",q:"照片内容："+item.prompt,o:item.o,a:item.a,pick:picked,exp:item.exp,img:item.img};
+  aiCtx={part:P1_PART,q:"照片内容："+item.prompt,o:item.o,a:item.a,pick:picked,exp:item.exp,
+    imgBuf:item.buf,imgType:item.type,imgKey:item.imgKey};
   document.getElementById("p1Fb").innerHTML=
     `<div class="callout ${ok?"":"danger"}" style="margin-top:10px;text-align:left">
       ${ok?"<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M4.5 10.3 8 13.8l7.5-7.5'/></svg> 正确":"<svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M5 5l10 10M15 5L5 15'/></svg> 错误"} · 正确答案 ${String.fromCharCode(65+item.a)}<br>${esc(item.exp)}
@@ -5576,7 +5645,238 @@ document.getElementById("azClear").onclick=()=>{
 };
 
 document.getElementById("todayDate").textContent=new Date().toLocaleDateString("zh-CN",{month:"long",day:"numeric",weekday:"long"});
-if(speechSynthesis)speechSynthesis.getVoices();
+if(window.speechSynthesis)window.speechSynthesis.getVoices();
+
+/* ================= 地道表达（AI 生成 Reddit 风格讨论 + TOEIC 词高亮） ================= */
+const IDM_TOPICS=[
+  {id:"work",  n:"职场吐槽", en:"workplace and office life"},
+  {id:"daily", n:"日常生活", en:"everyday life and small annoyances"},
+  {id:"shop",  n:"购物消费", en:"shopping, deals and consumer experiences"},
+  {id:"travel",n:"旅行出行", en:"travel, flights and hotels"},
+  {id:"movie", n:"影视娱乐", en:"movies, streaming and entertainment"},
+  {id:"food",  n:"餐饮美食", en:"restaurants, food and dining out"}
+];
+let idmState={topic:"work",data:null};
+
+/* 词形变化：保守的启发式规则（只覆盖规则变化，不做不规则还原） */
+function idmForms(w){
+  const out=[],last=w.slice(-1);
+  if(/(?:[sxz]|ch|sh)$/.test(w))out.push(w+"es");else out.push(w+"s");
+  if(last==="y"&&!/[aeiou]y$/.test(w)){const st=w.slice(0,-1);out.push(st+"ies",st+"ied",st+"ier",st+"iest");}
+  if(last==="e"){out.push(w+"d",w.slice(0,-1)+"ing",w+"r",w+"st");}
+  else{
+    out.push(w+"ed",w+"ing");
+    /* 单音节短元音结尾双写辅音：plan→planned/planning */
+    if(/^[^aeiou]*[aeiou][bdgklmnprtvz]$/.test(w))out.push(w+last+"ed",w+last+"ing");
+  }
+  return out;
+}
+let IDM_IDX=null;
+function idmIndex(){
+  if(IDM_IDX)return IDM_IDX;
+  const word=new Map(),phrase=new Map();
+  /* 第一轮只放原形，保证原形永远压过别的词的变形（leaves 归 leave 还是 leaf 这类冲突时优先原形） */
+  VOCAB.forEach(v=>{
+    const w=String(v.w||"").toLowerCase();
+    if(!/^[a-z][a-z'-]{2,}$/.test(w))return;
+    if(!word.has(w))word.set(w,v);
+  });
+  VOCAB.forEach(v=>{
+    const w=String(v.w||"").toLowerCase();
+    if(!/^[a-z][a-z'-]{2,}$/.test(w))return;
+    idmForms(w).forEach(f=>{if(f.length>=3&&!word.has(f))word.set(f,v);});
+    const p=String(v.p||"").toLowerCase().trim();
+    if(p&&p.indexOf(" ")>0&&/^[a-z][a-z' -]*$/.test(p)&&!phrase.has(p))phrase.set(p,v);
+  });
+  IDM_IDX={word,phrase};
+  return IDM_IDX;
+}
+function idmCls(id){
+  const r=S.srs[id];
+  if(!r)return "tw-new";
+  if((r.w||0)>=3)return "tw-stub";
+  if((r.box||0)>=2)return "tw-done";
+  return "tw-learn";
+}
+/* 返回 {html, ids:[命中的 VOCAB id]}；原文一律走 esc()，AI 返回的内容按不可信文本处理 */
+function idmHighlight(text,idioms){
+  const idx=idmIndex(),src=String(text||""),lower=src.toLowerCase();
+  const taken=new Array(src.length).fill(false),marks=[],ids=[];
+  const free=(s,e)=>{for(let i=s;i<e;i++)if(taken[i])return false;return true;};
+  const take=(s,e)=>{for(let i=s;i<e;i++)taken[i]=true;};
+  const isB=i=>i<0||i>=src.length||!/[A-Za-z']/.test(src[i]);
+  const scan=(ph,fn)=>{
+    if(!ph)return;
+    let from=0,i;
+    while((i=lower.indexOf(ph,from))!==-1){
+      const e=i+ph.length;
+      if(isB(i-1)&&isB(e)&&free(i,e)){take(i,e);fn(i,e);}
+      from=i+1;
+    }
+  };
+  /* 1) 地道表达优先（最长优先） */
+  (idioms||[]).map(o=>String(o&&o.en||"").toLowerCase().trim()).filter(Boolean)
+    .sort((a,b)=>b.length-a.length)
+    .forEach(ph=>scan(ph,(s,e)=>marks.push({s,e,type:"idm",key:ph})));
+  /* 2) 词库里的多词短语 */
+  Array.from(idx.phrase.keys()).sort((a,b)=>b.length-a.length)
+    .forEach(ph=>scan(ph,(s,e)=>{const v=idx.phrase.get(ph);marks.push({s,e,type:"voc",v});ids.push(v.id);}));
+  /* 3) 单词（整词边界由正则保证） */
+  const re=/[A-Za-z][A-Za-z']*/g;let m;
+  while((m=re.exec(src))!==null){
+    const s=m.index,e=s+m[0].length;
+    if(!free(s,e))continue;
+    const v=idx.word.get(m[0].toLowerCase());
+    if(v){take(s,e);marks.push({s,e,type:"voc",v});ids.push(v.id);}
+  }
+  marks.sort((a,b)=>a.s-b.s);
+  let html="",pos=0;
+  marks.forEach(mk=>{
+    html+=esc(src.slice(pos,mk.s));
+    const seg=esc(src.slice(mk.s,mk.e));
+    html+=mk.type==="idm"
+      ?`<span class="tw tw-idm" data-idm="${esc(mk.key)}">${seg}</span>`
+      :`<span class="tw ${idmCls(mk.v.id)}" data-twid="${esc(mk.v.id)}">${seg}</span>`;
+    pos=mk.e;
+  });
+  html+=esc(src.slice(pos));
+  return {html,ids};
+}
+const IDM_SAY=`<svg viewBox='0 0 20 20' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px'><path d='M3 8v4h3l4.5 3.5v-11L6 7.5H3Z'/><path d='M13.6 7.3a3.6 3.6 0 0 1 0 5.4M16 5.4a7 7 0 0 1 0 9.2'/></svg>`;
+function idmWordCard(id){
+  const v=VOCAB.find(x=>x.id===id);if(!v)return "";
+  const ipa=window.IPA&&window.IPA[String(v.w).toLowerCase()];
+  const r=S.srs[id];
+  const st=!r?["未学过","b"]:((r.w||0)>=3?["顽固词 ×"+r.w,"r"]:((r.box||0)>=2?["已掌握","g"]:["学习中","a"]));
+  return `<div class="idm-pop">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span class="pw">${esc(v.w)}</span>
+      ${ipa?`<span class="pi">/${esc(ipa)}/</span>`:""}
+      <span class="pill ${st[1]}">${esc(st[0])}</span>
+      <span style="margin-left:auto;display:flex;align-items:center;gap:4px">
+        <button class="btn small ghost" data-idmsay="${esc(v.w)}">${IDM_SAY}</button>${starW(v.id)}
+      </span>
+    </div>
+    <div style="margin-top:6px"><b>${esc(v.p)}</b> — ${esc(v.c)}</div>
+    ${v.e?`<div class="muted" style="margin-top:6px">${esc(v.e)}${starS(v.e,transOf(v),"地道表达")}</div>`:""}
+  </div>`;
+}
+function idmIdiomCard(key){
+  const o=((idmState.data&&idmState.data.idioms)||[]).find(x=>String(x.en||"").toLowerCase()===key);
+  if(!o)return "";
+  return `<div class="idm-pop">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span class="pw">${esc(o.en)}</span><span class="pill a">地道说法</span>
+      <span style="margin-left:auto;display:flex;align-items:center;gap:4px">
+        <button class="btn small ghost" data-idmsay="${esc(o.en)}">${IDM_SAY}</button>${starS(o.en,o.cn||"","地道表达")}
+      </span>
+    </div>
+    <div style="margin-top:6px">${esc(o.cn||"")}</div>
+    ${o.note?`<div class="muted" style="margin-top:4px">${esc(o.note)}</div>`:""}
+  </div>`;
+}
+function idmRenderStage(){
+  const st=document.getElementById("idmStage");if(!st)return;
+  const d=idmState.data;
+  if(!d){st.innerHTML="";return;}
+  const seen=[];
+  const cards=(d.posts||[]).map(p=>{
+    const h=idmHighlight(p.en,d.idioms);
+    h.ids.forEach(x=>{if(seen.indexOf(x)===-1)seen.push(x);});
+    return `<div class="card">
+      <div class="idm-src"><svg viewBox='0 0 20 20' width='12' height='12' fill='currentColor' stroke='none'><path d='M10 2l1.4 4.6L16 8l-4.6 1.4L10 14l-1.4-4.6L4 8l4.6-1.4L10 2Z'/></svg>AI 生成 · Reddit 风格讨论</div>
+      <div class="idm-en">${h.html}</div>
+      <hr class="idm-sep">
+      <div class="idm-cn">${esc(p.cn||"")}</div>
+      <div class="idm-pop-slot"></div>
+    </div>`;
+  }).join("");
+  const words=seen.map(id=>VOCAB.find(v=>v.id===id)).filter(Boolean);
+  const idioms=d.idioms||[];
+  const summary=`<div class="card">
+    <h3>本篇 TOEIC 词（${words.length}）</h3>
+    ${words.length?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${
+      words.map(v=>`<span class="chip" style="text-align:left;padding:8px 12px"><b style="font-size:14px;display:inline">${esc(v.p)}</b> <span style="font-size:12px;color:var(--gray)">${esc(v.c)}</span> ${starW(v.id)}</span>`).join("")
+    }</div>`:`<p class="muted">这篇没命中你词库里的词。</p>`}
+    <h3 style="margin-top:16px">地道说法（${idioms.length}）</h3>
+    ${idioms.length?idioms.map(o=>`<div class="fav-row"><div class="body"><b>${esc(o.en)}</b>　<span style="font-size:13px">${esc(o.cn||"")}</span>${o.note?`<div class="muted" style="font-size:12px;margin-top:2px">${esc(o.note)}</div>`:""}</div><button class="btn small ghost" data-idmsay="${esc(o.en)}">${IDM_SAY}</button>${starS(o.en,o.cn||"","地道表达")}</div>`).join(""):`<p class="muted">这篇没提取到特别的口语说法。</p>`}
+  </div>`;
+  st.innerHTML=cards+summary;
+  st.onclick=e=>{
+    if(!e.target.closest)return;
+    const say=e.target.closest("[data-idmsay]");
+    if(say){speak(say.dataset.idmsay,0.95);return;}
+    const w=e.target.closest("[data-twid]"),im=e.target.closest("[data-idm]");
+    if(!w&&!im)return;
+    const card=(w||im).closest(".card");
+    const slot=card&&card.querySelector(".idm-pop-slot");
+    if(!slot)return;
+    const key=w?"w:"+w.dataset.twid:"i:"+im.dataset.idm;
+    if(slot.dataset.key===key){slot.innerHTML="";slot.dataset.key="";return;}
+    slot.dataset.key=key;
+    slot.innerHTML=w?idmWordCard(w.dataset.twid):idmIdiomCard(im.dataset.idm);
+  };
+}
+async function idmGenerate(btn){
+  const st=document.getElementById("idmStage");
+  const t=IDM_TOPICS.find(x=>x.id===idmState.topic)||IDM_TOPICS[0];
+  const old=btn?btn.innerHTML:"";
+  if(btn){btn.disabled=true;btn.innerHTML="<svg viewBox='0 0 20 20' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><circle cx='10' cy='10' r='7.2'/><path d='M10 6v4l3 2'/></svg>生成中…";}
+  st.innerHTML=`<div class="card"><div class="muted">正在生成「${esc(t.n)}」话题的英语讨论，通常 5-15 秒…</div></div>`;
+  try{
+    const sys="You write short, natural English forum comments in the style of Reddit discussions, "+
+      "as reading practice for a Chinese learner of English. "+
+      "Voice: casual native speaker — contractions, phrasal verbs, everyday idioms, mild humour or venting. "+
+      "Keep it clean and safe: no profanity, no slurs, no sexual, political or medical content, "+
+      "and never use real people's names or real usernames. "+
+      "Each comment is 2-4 sentences. Then list the idiomatic or colloquial expressions you actually used "+
+      "(phrasal verbs, set phrases, casual slang) that a textbook would not teach, and explain each in Chinese. "+
+      "Every expression in idioms[].en MUST appear verbatim in one of the comments. "+
+      "cn must read as natural Chinese, not a word-for-word translation. "+
+      "Return ONLY raw JSON, no markdown fences.";
+    const usr="Topic: "+t.en+".\nWrite 3 different comments, as if from 3 different people reacting to that topic.\nJSON shape:\n"+
+      '{"topic":"中文话题名","posts":[{"en":"...","cn":"..."}],"idioms":[{"en":"...","cn":"中文意思","note":"用法说明"}]}';
+    let j;
+    try{j=aiParseJSON(await mmSend([{role:"user",content:usr}],sys,{max_tokens:2000}));}
+    catch(e){j=aiParseJSON(await mmSend([{role:"user",content:usr}],sys,{max_tokens:2000,temperature:0.6}));}
+    const posts=(j.posts||[]).filter(p=>p&&p.en);
+    if(!posts.length)throw new Error("生成的内容格式不合法，请重试");
+    idmState.data={topic:j.topic||t.n,posts,idioms:(j.idioms||[]).filter(x=>x&&x.en)};
+    idmRenderStage();
+  }catch(e){
+    st.innerHTML=`<div class="card"><div class="callout danger" style="text-align:left"><svg viewBox='0 0 20 20' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;margin-right:3px'><path d='M5 5l10 10M15 5L5 15'/></svg>${esc(e.message)}
+      <div class="muted" style="margin-top:6px">若反复失败：检查 MiniMax 密钥与「国内/海外版」选择，或稍后重试（模型偶尔会返回非标准 JSON）。</div></div></div>`;
+  }
+  if(btn){btn.disabled=false;btn.innerHTML=old;}
+}
+function renderIdiom(){
+  const el=document.getElementById("v-idiom");
+  el.innerHTML=`
+  <div class="card"><h2>地道表达</h2>
+    <p class="muted" style="font-size:13.5px">按话题现场生成 Reddit 风格的英语讨论，自动标出你词库里的 TOEIC 词，以及教科书上学不到的口语说法。点任意高亮词即可看释义、听发音、加收藏。</p>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px" id="idmTopics">
+      ${IDM_TOPICS.map(t=>`<button class="btn small ${t.id===idmState.topic?"":"gray"}" data-idmt="${t.id}">${esc(t.n)}</button>`).join("")}
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center">
+      <button class="btn" id="idmGo">生成一组讨论</button>
+      ${mmReady()?"":`<span class="muted" style="font-size:12px">需先在「口语 → AI 对话 → 设置」填入 MiniMax 密钥</span>`}
+    </div>
+    <div class="idm-legend">
+      <span><i style="background:var(--green)"></i>没学过</span>
+      <span><i style="background:var(--green-mid)"></i>学习中</span>
+      <span><i style="background:var(--green-light)"></i>已掌握</span>
+      <span><i style="background:var(--red-bg)"></i>顽固词</span>
+      <span><i style="background:var(--amber-bg)"></i>地道说法</span>
+    </div>
+  </div>
+  <div id="idmStage"></div>`;
+  document.getElementById("idmTopics").onclick=e=>{
+    const b=e.target.closest&&e.target.closest("[data-idmt]");if(!b)return;
+    idmState.topic=b.dataset.idmt;renderIdiom();
+  };
+  document.getElementById("idmGo").onclick=function(){idmGenerate(this);};
+  idmRenderStage();
+}
 
 /* ================= 云同步（Firebase Realtime DB REST） ================= */
 const SYNCKEY="toeicCoach.sync";
